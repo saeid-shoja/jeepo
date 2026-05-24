@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum ProductType {
+  CLIENT
+  SHOP
+}
+
+enum CarBrand {
+  TOYOTA
+  NISSAN
+  MITSUBISHI
+  MERCEDES
+  FORD
+  SUZUKI
+  JAC
+  HAVAL
+  HYUNDAI
+  KIA
+  LAND_ROVER
+  LEXUS
+  RENAULT
+  VOLVO
+  JEEP
+  OTHER
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum CategoryGroup {
+  PART
+}
+
+model User {
+  id        String    @id @default(cuid())
+  phone     String    @unique
+  name      String
+  password  String
+  role      UserRole  @default(CLIENT)
+  city      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+  orders    Order[]
+}
+
+model Category {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String        @unique
+  group     CategoryGroup @default(PART)
+  sortOrder Int           @default(0)
+  parentId  String?
+  parent    Category?     @relation("CategoryParent", fields: [parentId], references: [id])
+  children  Category[]    @relation("CategoryParent")
+  products  Product[]
+
+  @@index([group])
+  @@index([parentId])
+}
+
+model ProductCarBrand {
+  productId String
+  brand     CarBrand
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, brand])
+  @@index([brand])
+}
+
+model Product {
+  id           String             @id @default(cuid())
+  title        String
+  description  String
+  price        Float
+  images       String             @default("[]")
+  categoryId   String
+  category     Category           @relation(fields: [categoryId], references: [id])
+  userId       String?
+  user         User?              @relation(fields: [userId], references: [id])
+  type         ProductType        @default(CLIENT)
+  hasGuarantee Boolean            @default(false)
+  isBoosted    Boolean            @default(false)
+  status       ProductStatus      @default(ACTIVE)
+  city         String?
+  phone        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  orderItems   OrderItem[]
+  carBrands    ProductCarBrand[]
+
+  @@index([type, status])
+  @@index([categoryId])
+  @@index([userId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  total     Float
+  status    OrderStatus @default(PENDING)
+  address   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  price     Float
+}

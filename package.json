@@ -1,0 +1,29 @@
+{
+  "name": "offroad-shop",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:generate": "pnpm --filter @offroad/api db:generate",
+    "db:migrate": "pnpm --filter @offroad/api db:migrate",
+    "db:deploy": "pnpm --filter @offroad/api db:deploy",
+    "db:push": "pnpm --filter @offroad/api db:push",
+    "db:seed": "pnpm --filter @offroad/api db:seed",
+    "db:studio": "pnpm --filter @offroad/api db:studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.5.0",
+    "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "@nestjs/core", "sharp"]
+  },
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22"
+  }
+}

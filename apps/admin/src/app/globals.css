@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Vazir', 'Tahoma', system-ui, sans-serif;
+  --color-primary: #059669;
+  --color-primary-dark: #047857;
+  --color-primary-light: #a7f3d0;
+  --color-secondary: #f59e0b;
+  --color-accent: #ef4444;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #f1f5f9;
+    color: #1e293b;
+    direction: rtl;
+  }
+}

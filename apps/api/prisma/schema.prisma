@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum Advertiser {
+  CLIENT
+  SHOP
+}
+
+enum CarBrand {
+  TOYOTA
+  NISSAN
+  MITSUBISHI
+  MERCEDES
+  FORD
+  SUZUKI
+  JAC
+  HAVAL
+  HYUNDAI
+  KIA
+  LAND_ROVER
+  LEXUS
+  RENAULT
+  VOLVO
+  JEEP
+  OTHER
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum ProductSituation {
+  NEW
+  USED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  ONLINE
+  COD
+}
+
+enum CategoryGroup {
+  PART
+}
+
+model User {
+  id        String    @id @default(cuid())
+  phone     String    @unique
+  name      String
+  password  String
+  role      UserRole  @default(CLIENT)
+  city      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+  orders    Order[]
+  auctionBids AuctionBid[]
+}
+
+model Category {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String        @unique
+  group     CategoryGroup @default(PART)
+  sortOrder Int           @default(0)
+  parentId  String?
+  parent    Category?     @relation("CategoryParent", fields: [parentId], references: [id])
+  children  Category[]    @relation("CategoryParent")
+  products  Product[]
+
+  @@index([group])
+  @@index([parentId])
+}
+
+model ProductCarBrand {
+  productId String
+  brand     CarBrand
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, brand])
+  @@index([brand])
+}
+
+model Product {
+  id                 String             @id @default(cuid())
+  title              String
+  description        String
+  price              Float
+  images             String             @default("[]")
+  categoryId         String
+  category           Category           @relation(fields: [categoryId], references: [id])
+  userId             String?
+  user               User?              @relation(fields: [userId], references: [id])
+  advertiser         Advertiser        @default(CLIENT)
+  hasGuarantee       Boolean            @default(false)
+  isBoosted          Boolean            @default(false)
+  status             ProductStatus      @default(ACTIVE)
+  situation          ProductSituation?
+  city               String?
+  phone              String?
+  isAuction          Boolean            @default(false)
+  auctionStartPrice  Float?
+  auctionCurrentPrice Float?
+  buyNowPrice        Float?
+  realPriceMin       Float?
+  realPriceMax       Float?
+  auctionEndsAt      DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  orderItems         OrderItem[]
+  carBrands          ProductCarBrand[]
+  auctionBids        AuctionBid[]
+
+  @@index([advertiser, status])
+  @@index([categoryId])
+  @@index([userId])
+  @@index([isAuction, auctionEndsAt])
+}
+
+model AuctionBid {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  amount        Float
+  bidderName    String
+  bidderPhone   String
+  bidderAddress String
+  bidderCity    String?
+  createdAt     DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@index([userId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  total           Float
+  status          OrderStatus    @default(PENDING)
+  address         String?
+  phone           String?
+  note            String?
+  paymentMethod   PaymentMethod?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  price     Float
+}

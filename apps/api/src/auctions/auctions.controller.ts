@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Request } from '@nestjs/common';
-import { AuctionsService } from './auctions.service';
-import { PlaceBidDto } from './dto';
 import { Public } from '../auth/custom.decorator';
+import type { AuctionsService } from './auctions.service';
+import type { PlaceBidDto } from './dto';
 
 @Controller('auctions')
 export class AuctionsController {
@@ -9,10 +9,7 @@ export class AuctionsController {
 
   @Public()
   @Get(':productId/summary')
-  getSummary(
-    @Param('productId') productId: string,
-    @Request() req: { user?: { userId: string } },
-  ) {
+  getSummary(@Param('productId') productId: string, @Request() req: { user?: { userId: string } }) {
     return this.auctionsService.getSummary(productId, req.user?.userId);
   }
 

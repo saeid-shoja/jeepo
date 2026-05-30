@@ -1,4 +1,4 @@
-import { Advertiser, ProductStatus } from '../prisma/generated/client';
+import type { Advertiser, ProductStatus } from '../prisma/generated/client';
 import { isAuctionActive } from './auction';
 
 type PurchasableProduct = {
@@ -11,11 +11,7 @@ type PurchasableProduct = {
 };
 
 export function getProductSalePrice(product: PurchasableProduct & { price: number }): number {
-  if (
-    product.isAuction &&
-    product.buyNowPrice != null &&
-    product.buyNowPrice > 0
-  ) {
+  if (product.isAuction && product.buyNowPrice != null && product.buyNowPrice > 0) {
     return product.buyNowPrice;
   }
   return product.price;

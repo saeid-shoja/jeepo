@@ -1,14 +1,17 @@
 'use client';
 
+import { Calendar, MapPin, Phone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/lib/api';
-import { Phone, MapPin, Calendar } from 'lucide-react';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    adminApi.users().then(setUsers).catch(() => { });
+    adminApi
+      .users()
+      .then(setUsers)
+      .catch(() => {});
   }, []);
 
   return (
@@ -46,7 +49,9 @@ export default function AdminUsersPage() {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}
+                  >
                     {u.role === 'ADMIN' ? 'مدیر' : 'کاربر'}
                   </span>
                 </td>

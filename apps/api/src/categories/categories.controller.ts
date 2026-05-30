@@ -1,19 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-} from '@nestjs/common';
-import { CategoriesService } from './categories.service';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { Public, Roles } from '../auth/custom.decorator';
-import { CreateCategoryDto, UpdateCategoryDto } from './dto';
+import type { CategoriesService } from './categories.service';
+import type { CreateCategoryDto, UpdateCategoryDto } from './dto';
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private categoriesService: CategoriesService) { }
+  constructor(private categoriesService: CategoriesService) {}
 
   @Public()
   @Get()

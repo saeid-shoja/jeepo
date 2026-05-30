@@ -1,17 +1,17 @@
 'use client';
 
+import {
+  ChevronLeft,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  ShoppingCart,
+  Store,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import {
-  LayoutDashboard,
-  Package,
-  Users,
-  ShoppingCart,
-  LogOut,
-  ChevronLeft,
-  Store,
-} from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
@@ -38,8 +38,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-screen">
       <aside
-        className={`fixed right-0 top-0 z-40 h-full bg-white shadow-lg transition-all ${sidebarOpen ? 'w-60' : 'w-16'
-          }`}
+        className={`fixed right-0 top-0 z-40 h-full bg-white shadow-lg transition-all ${
+          sidebarOpen ? 'w-60' : 'w-16'
+        }`}
       >
         <div className="flex items-center justify-between border-b p-4">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-primary">
@@ -50,7 +51,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="rounded-sm p-1.5 text-gray-500 hover:bg-gray-100"
           >
-            <ChevronLeft className={`h-5 w-5 transition-transform ${!sidebarOpen && 'rotate-180'}`} />
+            <ChevronLeft
+              className={`h-5 w-5 transition-transform ${!sidebarOpen && 'rotate-180'}`}
+            />
           </button>
         </div>
 
@@ -62,10 +65,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors ${active
-                  ? 'bg-primary/10 font-medium text-primary'
-                  : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors ${
+                  active
+                    ? 'bg-primary/10 font-medium text-primary'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 {sidebarOpen && <span>{item.label}</span>}

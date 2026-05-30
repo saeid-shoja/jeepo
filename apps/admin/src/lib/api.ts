@@ -25,14 +25,20 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const adminApi = {
   login: (phone: string, password: string) =>
-    request<{ token: string; user: any }>('/auth/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
+    request<{ token: string; user: any }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ phone, password }),
+    }),
   dashboard: () => request<any>('/admin/dashboard'),
   users: () => request<any[]>('/admin/users'),
   products: (params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<any>(`/admin/products${qs}`);
   },
   updateProductStatus: (id: string, status: string) =>
-    request<any>(`/admin/products/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    request<any>(`/admin/products/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   seedCategories: () => request<any>('/categories/seed', { method: 'POST' }),
 };

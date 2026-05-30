@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { adminApi } from '@/lib/api';
 
 export default function AdminLoginPage() {
@@ -51,7 +51,10 @@ export default function AdminLoginPage() {
               required
             />
           </div>
-          <button type="submit" className="w-full rounded-sm bg-primary py-2 text-white hover:bg-primary-dark">
+          <button
+            type="submit"
+            className="w-full rounded-sm bg-primary py-2 text-white hover:bg-primary-dark"
+          >
             ورود
           </button>
         </form>

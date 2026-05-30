@@ -1,19 +1,12 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Param,
-  Body,
-  Query,
-} from '@nestjs/common';
-import { AdminService } from './admin.service';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { Roles } from '../auth/custom.decorator';
-import { FindAdminProductsQueryDto, UpdateProductStatusDto } from './dto';
+import type { AdminService } from './admin.service';
+import type { FindAdminProductsQueryDto, UpdateProductStatusDto } from './dto';
 
 @Roles('ADMIN')
 @Controller('admin')
 export class AdminController {
-  constructor(private adminService: AdminService) { }
+  constructor(private adminService: AdminService) {}
 
   @Get('dashboard')
   getDashboard() {

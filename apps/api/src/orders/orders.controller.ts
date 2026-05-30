@@ -1,15 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Request,
-} from '@nestjs/common';
-import { OrdersService } from './orders.service';
+import { Body, Controller, Get, Param, Patch, Post, Request } from '@nestjs/common';
 import { Public, Roles } from '../auth/custom.decorator';
-import { CreateOrderDto, PreviewOrderDto, UpdateOrderStatusDto } from './dto';
+import type { CreateOrderDto, PreviewOrderDto, UpdateOrderStatusDto } from './dto';
+import type { OrdersService } from './orders.service';
 
 @Controller('orders')
 export class OrdersController {
@@ -33,18 +25,12 @@ export class OrdersController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id') id: string,
-    @Request() req: { user: { userId: string; role: string } },
-  ) {
+  findOne(@Param('id') id: string, @Request() req: { user: { userId: string; role: string } }) {
     return this.ordersService.findOne(id, req.user.userId, req.user.role);
   }
 
   @Post()
-  create(
-    @Request() req: { user: { userId: string } },
-    @Body() body: CreateOrderDto,
-  ) {
+  create(@Request() req: { user: { userId: string } }, @Body() body: CreateOrderDto) {
     return this.ordersService.create(req.user.userId, body);
   }
 

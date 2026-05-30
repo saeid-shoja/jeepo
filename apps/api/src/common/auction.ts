@@ -16,10 +16,7 @@ export function getMinimumNextBid(currentPrice: number): number {
   return currentPrice + getMinimumBidIncrement(currentPrice);
 }
 
-export function getAuctionCurrentPrice(
-  startPrice: number,
-  storedCurrent?: number | null,
-): number {
+export function getAuctionCurrentPrice(startPrice: number, storedCurrent?: number | null): number {
   if (storedCurrent != null && storedCurrent > 0) return storedCurrent;
   return startPrice;
 }

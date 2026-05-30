@@ -1,15 +1,18 @@
 'use client';
 
+import { formatPrice } from '@offroad/shared';
+import { Package, ShoppingCart, TrendingUp, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/lib/api';
-import { Package, Users, ShoppingCart, TrendingUp } from 'lucide-react';
-import { formatPrice } from '@offroad/shared';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    adminApi.dashboard().then(setData).catch(() => { });
+    adminApi
+      .dashboard()
+      .then(setData)
+      .catch(() => {});
   }, []);
 
   if (!data) {
@@ -71,15 +74,24 @@ export default function AdminDashboardPage() {
                   {p.images[0] ? (
                     <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-gray-400">بدون عکس</div>
+                    <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                      بدون عکس
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 truncate">
                   <p className="truncate font-medium">{p.title}</p>
-                  <p className="text-xs text-gray-500">{p.category?.name} • {formatPrice(p.price)} تومان</p>
+                  <p className="text-xs text-gray-500">
+                    {p.category?.name} • {formatPrice(p.price)} تومان
+                  </p>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    p.status === 'ACTIVE'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
                   {p.status === 'ACTIVE' ? 'فعال' : p.status}
                 </span>
               </div>

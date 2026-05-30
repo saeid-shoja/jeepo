@@ -1,9 +1,9 @@
 'use client';
 
+import { formatPrice } from '@offroad/shared';
+import { CheckCircle, Shield, TrendingUp, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/lib/api';
-import { formatPrice } from '@offroad/shared';
-import { Shield, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -16,19 +16,24 @@ export default function AdminProductsPage() {
     const params: Record<string, string> = { page: String(page), limit: '20' };
     if (type) params.advertiser = type;
     if (status) params.status = status;
-    adminApi.products(params).then((res) => {
-      setProducts(res.products);
-      setTotalPages(res.totalPages);
-    }).catch(() => { });
+    adminApi
+      .products(params)
+      .then((res) => {
+        setProducts(res.products);
+        setTotalPages(res.totalPages);
+      })
+      .catch(() => {});
   };
 
-  useEffect(() => { fetchProducts(); }, [page, type, status]);
+  useEffect(() => {
+    fetchProducts();
+  }, [page, type, status]);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await adminApi.updateProductStatus(id, newStatus);
       fetchProducts();
-    } catch { }
+    } catch {}
   };
 
   return (
@@ -40,7 +45,10 @@ export default function AdminProductsPage() {
       <div className="flex flex-wrap gap-3">
         <select
           value={type}
-          onChange={(e) => { setType(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setType(e.target.value);
+            setPage(1);
+          }}
           className="rounded-sm border px-3 py-2 text-sm outline-none"
         >
           <option value="">همه انواع</option>
@@ -49,7 +57,10 @@ export default function AdminProductsPage() {
         </select>
         <select
           value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
           className="rounded-sm border px-3 py-2 text-sm outline-none"
         >
           <option value="">همه وضعیت‌ها</option>
@@ -81,11 +92,11 @@ export default function AdminProductsPage() {
                   <p className="text-xs text-gray-500">{p.id.slice(0, 8)}...</p>
                 </td>
                 <td className="px-4 py-3 text-primary">{formatPrice(p.price)}</td>
-                <td className="px-4 py-3 text-xs">
-                  {p.user?.name || 'فروشگاه'}
-                </td>
+                <td className="px-4 py-3 text-xs">{p.user?.name || 'فروشگاه'}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${(p.advertiser ?? p.type) === 'SHOP' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs ${(p.advertiser ?? p.type) === 'SHOP' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
+                  >
                     {(p.advertiser ?? p.type) === 'SHOP' ? 'فروشگاه' : 'کاربری'}
                   </span>
                 </td>
@@ -99,11 +110,15 @@ export default function AdminProductsPage() {
                   <select
                     value={p.status}
                     onChange={(e) => handleStatusChange(p.id, e.target.value)}
-                    className={`rounded-sm border px-2 py-1 text-xs ${p.status === 'ACTIVE' ? 'border-green-300 text-green-700' :
-                      p.status === 'SOLD' ? 'border-blue-300 text-blue-700' :
-                        p.status === 'REJECTED' ? 'border-red-300 text-red-700' :
-                          'border-gray-300 text-gray-600'
-                      }`}
+                    className={`rounded-sm border px-2 py-1 text-xs ${
+                      p.status === 'ACTIVE'
+                        ? 'border-green-300 text-green-700'
+                        : p.status === 'SOLD'
+                          ? 'border-blue-300 text-blue-700'
+                          : p.status === 'REJECTED'
+                            ? 'border-red-300 text-red-700'
+                            : 'border-gray-300 text-gray-600'
+                    }`}
                   >
                     <option value="ACTIVE">فعال</option>
                     <option value="PENDING">در انتظار</option>
@@ -114,11 +129,17 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-3 text-center">
                   <div className="flex justify-center gap-1">
                     <button
-                      onClick={() => handleStatusChange(p.id, p.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE')}
+                      onClick={() =>
+                        handleStatusChange(p.id, p.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE')
+                      }
                       className="rounded p-1.5 text-gray-500 hover:bg-gray-100"
                       title={p.status === 'ACTIVE' ? 'غیرفعال' : 'فعال'}
                     >
-                      {p.status === 'ACTIVE' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                      {p.status === 'ACTIVE' ? (
+                        <XCircle className="h-4 w-4" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </td>

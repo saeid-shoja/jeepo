@@ -1,6 +1,11 @@
-import { PrismaClient } from '../src/prisma/generated/client';
+import {
+  MOTORCYCLE_ATV_NAME,
+  MOTORCYCLE_ATV_SLUG,
+  MOTORCYCLE_ATV_SUBCATEGORIES,
+} from '@offroad/shared';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import { PrismaClient } from '../src/prisma/generated/client';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -30,25 +35,54 @@ async function seedCategories() {
     groupIds.set(g.slug, row.id);
   }
 
-  await prisma.category.upsert({
-    where: { slug: 'motorcycle-atv' },
+  const motorcycleAtv = await prisma.category.upsert({
+    where: { slug: MOTORCYCLE_ATV_SLUG },
     update: {
-      name: 'موتورسیکلت و چهارچرخ',
+      name: MOTORCYCLE_ATV_NAME,
       group: 'PART',
       sortOrder: 0,
       parentId: null,
     },
     create: {
-      name: 'موتورسیکلت و چهارچرخ',
-      slug: 'motorcycle-atv',
+      name: MOTORCYCLE_ATV_NAME,
+      slug: MOTORCYCLE_ATV_SLUG,
       group: 'PART',
       sortOrder: 0,
     },
   });
 
+  for (const sub of MOTORCYCLE_ATV_SUBCATEGORIES) {
+    await prisma.category.upsert({
+      where: { slug: sub.slug },
+      update: {
+        name: sub.name,
+        group: 'PART',
+        sortOrder: sub.sortOrder,
+        parentId: motorcycleAtv.id,
+      },
+      create: {
+        name: sub.name,
+        slug: sub.slug,
+        group: 'PART',
+        sortOrder: sub.sortOrder,
+        parentId: motorcycleAtv.id,
+      },
+    });
+  }
+
   const children = [
-    { name: 'دنده و انتقال قدرت', slug: 'transmission', parentSlug: 'engine-drivetrain', sortOrder: 1 },
-    { name: 'لوازم یدکی انجین', slug: 'engine-parts', parentSlug: 'engine-drivetrain', sortOrder: 2 },
+    {
+      name: 'دنده و انتقال قدرت',
+      slug: 'transmission',
+      parentSlug: 'engine-drivetrain',
+      sortOrder: 1,
+    },
+    {
+      name: 'لوازم یدکی انجین',
+      slug: 'engine-parts',
+      parentSlug: 'engine-drivetrain',
+      sortOrder: 2,
+    },
     { name: 'تعلیق و زیربندی', slug: 'suspension', parentSlug: 'chassis', sortOrder: 1 },
     { name: 'لاستیک و رینگ', slug: 'tires-rims', parentSlug: 'chassis', sortOrder: 2 },
     { name: 'چراغ و نور', slug: 'lighting', parentSlug: 'electrical', sortOrder: 1 },
@@ -115,8 +149,7 @@ async function main() {
       await prisma.product.create({
         data: {
           title: 'لاستیک ۳۳ اینچ گرندپیت',
-          description:
-            'لاستیک آفرود سایز ۳۳ اینچ برند گرندپیت، مناسب برای تویوتا\nوضعیت: آکبند',
+          description: 'لاستیک آفرود سایز ۳۳ اینچ برند گرندپیت، مناسب برای تویوتا\nوضعیت: آکبند',
           price: 45000000,
           images: '[]',
           categoryId: cat.id,

@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { OrderStatus } from '../prisma/generated/client';
 import { getProductSalePrice, isPurchasableProduct } from '../common/purchasable';
-import { CreateOrderDto, OrderItemDto, PreviewOrderDto } from './dto';
+import type { OrderStatus } from '../prisma/generated/client';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { CreateOrderDto, OrderItemDto, PreviewOrderDto } from './dto';
 
 type ResolvedLine = {
   productId: string;
@@ -19,7 +19,7 @@ type ResolvedLine = {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private async resolveItems(items: OrderItemDto[]): Promise<ResolvedLine[]> {
     if (!items.length) {
@@ -44,9 +44,7 @@ export class OrdersService {
         throw new BadRequestException('محصول یافت نشد');
       }
       if (!isPurchasableProduct(product)) {
-        throw new BadRequestException(
-          `محصول «${product.title}» قابل خرید آنلاین نیست`,
-        );
+        throw new BadRequestException(`محصول «${product.title}» قابل خرید آنلاین نیست`);
       }
 
       const images: string[] = JSON.parse(product.images || '[]');

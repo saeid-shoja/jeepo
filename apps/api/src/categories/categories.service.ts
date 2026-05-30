@@ -1,8 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CategoryGroup } from '../prisma/generated/client';
+import {
+  MOTORCYCLE_ATV_NAME,
+  MOTORCYCLE_ATV_SLUG,
+  MOTORCYCLE_ATV_SUBCATEGORIES,
+} from '@offroad/shared';
 import { getCarBrandOptions } from '../common/car-brands';
-import { CreateCategoryDto, UpdateCategoryDto } from './dto';
+import { CategoryGroup } from '../prisma/generated/client';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { CreateCategoryDto, UpdateCategoryDto } from './dto';
 
 export type LibraryNode = {
   id: string;
@@ -11,8 +16,6 @@ export type LibraryNode = {
   kind: 'PART' | 'CAR_BRAND';
   children: LibraryNode[];
 };
-
-const MOTORCYCLE_ATV_SLUG = 'motorcycle-atv';
 
 @Injectable()
 export class CategoriesService {
@@ -103,7 +106,7 @@ export class CategoriesService {
       },
       {
         id: 'library-motorcycle',
-        name: 'موتورسیکلت و چهارچرخ',
+        name: MOTORCYCLE_ATV_NAME,
         slug: MOTORCYCLE_ATV_SLUG,
         kind: 'PART',
         children: motorcycleChildren,
@@ -189,25 +192,54 @@ export class CategoriesService {
       groupIds.set(g.slug, row.id);
     }
 
-    await this.prisma.category.upsert({
+    const motorcycleAtv = await this.prisma.category.upsert({
       where: { slug: MOTORCYCLE_ATV_SLUG },
       update: {
-        name: 'موتورسیکلت و چهارچرخ',
+        name: MOTORCYCLE_ATV_NAME,
         group: CategoryGroup.PART,
         sortOrder: 0,
         parentId: null,
       },
       create: {
-        name: 'موتورسیکلت و چهارچرخ',
+        name: MOTORCYCLE_ATV_NAME,
         slug: MOTORCYCLE_ATV_SLUG,
         group: CategoryGroup.PART,
         sortOrder: 0,
       },
     });
 
+    for (const sub of MOTORCYCLE_ATV_SUBCATEGORIES) {
+      await this.prisma.category.upsert({
+        where: { slug: sub.slug },
+        update: {
+          name: sub.name,
+          group: CategoryGroup.PART,
+          sortOrder: sub.sortOrder,
+          parentId: motorcycleAtv.id,
+        },
+        create: {
+          name: sub.name,
+          slug: sub.slug,
+          group: CategoryGroup.PART,
+          sortOrder: sub.sortOrder,
+          parentId: motorcycleAtv.id,
+        },
+      });
+    }
+
     const children: { name: string; slug: string; parentSlug: string; sortOrder: number }[] = [
-      { name: 'دنده و انتقال قدرت', slug: 'transmission', parentSlug: 'engine-drivetrain', sortOrder: 1 },
-      { name: 'لوازم یدکی انجین', slug: 'engine-parts', parentSlug: 'engine-drivetrain', sortOrder: 2 },
+      {
+        name: 'دنده و انتقال قدرت',
+        slug: 'transmission',
+        parentSlug: 'engine-drivetrain',
+        sortOrder: 1,
+      },
+      {
+        name: 'لوازم یدکی انجین',
+        slug: 'engine-parts',
+        parentSlug: 'engine-drivetrain',
+        sortOrder: 2,
+      },
       { name: 'تعلیق و زیربندی', slug: 'suspension', parentSlug: 'chassis', sortOrder: 1 },
       { name: 'لاستیک و رینگ', slug: 'tires-rims', parentSlug: 'chassis', sortOrder: 2 },
       { name: 'چراغ و نور', slug: 'lighting', parentSlug: 'electrical', sortOrder: 1 },

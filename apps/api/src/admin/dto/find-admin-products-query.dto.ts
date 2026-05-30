@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional } from 'class-validator';
-import { Advertiser, ProductStatus } from '../../prisma/generated/client';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { Advertiser, ProductStatus } from '../../prisma/generated/client';
 
 export class FindAdminProductsQueryDto extends PaginationQueryDto {
   @IsOptional()

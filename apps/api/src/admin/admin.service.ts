@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Advertiser, ProductStatus } from '../prisma/generated/client';
+import type { Advertiser, ProductStatus } from '../prisma/generated/client';
+import type { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getDashboard() {
     const [products, clientProducts, orders, users] = await Promise.all([

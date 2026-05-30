@@ -2,19 +2,14 @@
 
 import { formatPrice } from '@offroad/shared';
 import { ChevronDown, Filter, RotateCcw } from 'lucide-react';
-import type { LibraryNode } from '@/stores/categories-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import {
   GUARANTEE_FILTER_OPTIONS,
   POSTED_WITHIN_OPTIONS,
@@ -22,6 +17,7 @@ import {
   PRICE_FILTER_STEP,
   SITUATION_FILTER_OPTIONS,
 } from '@/lib/product-utils';
+import type { LibraryNode } from '@/stores/categories-store';
 
 export type ProductsFilters = {
   categoryId: string;
@@ -54,9 +50,7 @@ function LibraryNodeItem({
 }) {
   const hasChildren = node.children.length > 0;
   const isPart = node.kind === 'PART';
-  const isSelected = isPart
-    ? filters.categoryId === node.id
-    : filters.carBrand === node.id;
+  const isSelected = isPart ? filters.categoryId === node.id : filters.carBrand === node.id;
 
   const selectNode = () => {
     if (isPart) {
@@ -220,9 +214,7 @@ export function ProductsFilterSidebar({
 
         <div className="space-y-3">
           <Label className="text-sm font-semibold">کتابخانه‌ها</Label>
-          <p className="text-muted-foreground text-xs">
-            گروه و زیرگروه — دسته قطعات و برند خودرو
-          </p>
+          <p className="text-muted-foreground text-xs">گروه و زیرگروه — دسته قطعات و برند خودرو</p>
           <ScrollArea className="h-56 pr-3">
             <div className="space-y-3">
               {libraries.map((library) => (

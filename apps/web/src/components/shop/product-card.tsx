@@ -1,18 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { formatPrice, timeAgo } from '@offroad/shared';
-import { Clock, MapPin, Shield, Package, Sparkles } from 'lucide-react';
+import { Clock, MapPin, Package, Shield, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { AuctionProductCard } from '@/components/auction/auction-product-card';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  getSituationLabel,
-  type ProductSituation,
-} from '@/lib/product-utils';
+import { getSituationLabel, type ProductSituation } from '@/lib/product-utils';
 import { isPurchasable } from '@/lib/purchasable';
-import Image from 'next/image';
 
 interface ProductCardProps {
   product: {
@@ -43,9 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const images = product.images || [];
   const firstImage = images[0];
-  const situation =
-    product.situation ??
-    (product.advertiser === 'SHOP' ? 'IN_STOCK' : null);
+  const situation = product.situation ?? (product.advertiser === 'SHOP' ? 'IN_STOCK' : null);
   const situationLabel = getSituationLabel(situation);
   const postedAt = timeAgo(new Date(product.createdAt));
   const canBuy = isPurchasable(product);
@@ -114,11 +109,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {canBuy && (
         <div className="-mb-1 border-t p-3 pt-0">
-          <AddToCartButton
-            product={product}
-            className="w-full"
-            size="sm"
-          />
+          <AddToCartButton product={product} className="w-full" size="sm" />
         </div>
       )}
     </Card>

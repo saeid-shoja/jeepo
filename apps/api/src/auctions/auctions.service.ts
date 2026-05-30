@@ -1,15 +1,7 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import {
-  getAuctionCurrentPrice,
-  getMinimumNextBid,
-  isAuctionActive,
-} from '../common/auction';
-import { PlaceBidDto } from './dto';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { getAuctionCurrentPrice, getMinimumNextBid, isAuctionActive } from '../common/auction';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { PlaceBidDto } from './dto';
 
 @Injectable()
 export class AuctionsService {
@@ -28,19 +20,15 @@ export class AuctionsService {
       },
     });
 
-    if (!product || !product.isAuction) {
+    if (!product?.isAuction) {
       throw new NotFoundException('مزایده یافت نشد');
     }
 
     const startPrice = product.auctionStartPrice ?? product.price;
-    const currentPrice = getAuctionCurrentPrice(
-      startPrice,
-      product.auctionCurrentPrice,
-    );
+    const currentPrice = getAuctionCurrentPrice(startPrice, product.auctionCurrentPrice);
     const minNextBid = getMinimumNextBid(currentPrice);
     const endsAt = product.auctionEndsAt;
-    const active =
-      endsAt != null && isAuctionActive(endsAt) && product.status === 'ACTIVE';
+    const active = endsAt != null && isAuctionActive(endsAt) && product.status === 'ACTIVE';
 
     let userHighestBid: number | null = null;
     let userWasOutbid = false;
@@ -54,10 +42,7 @@ export class AuctionsService {
         userHighestBid = userBid.amount;
         const topBid = product.auctionBids[0];
         userWasOutbid =
-          active &&
-          topBid != null &&
-          topBid.userId !== userId &&
-          userBid.amount < topBid.amount;
+          active && topBid != null && topBid.userId !== userId && userBid.amount < topBid.amount;
       }
     }
 
@@ -91,7 +76,7 @@ export class AuctionsService {
       },
     });
 
-    if (!product || !product.isAuction) {
+    if (!product?.isAuction) {
       throw new NotFoundException('مزایده یافت نشد');
     }
 
@@ -104,10 +89,7 @@ export class AuctionsService {
     }
 
     const startPrice = product.auctionStartPrice ?? product.price;
-    const currentPrice = getAuctionCurrentPrice(
-      startPrice,
-      product.auctionCurrentPrice,
-    );
+    const currentPrice = getAuctionCurrentPrice(startPrice, product.auctionCurrentPrice);
     const minNextBid = getMinimumNextBid(currentPrice);
 
     if (dto.amount < minNextBid) {
@@ -117,8 +99,7 @@ export class AuctionsService {
     }
 
     const previousTop = product.auctionBids[0];
-    const outbidUserId =
-      previousTop && previousTop.userId !== userId ? previousTop.userId : null;
+    const outbidUserId = previousTop && previousTop.userId !== userId ? previousTop.userId : null;
 
     const bid = await this.prisma.$transaction(async (tx) => {
       const created = await tx.auctionBid.create({

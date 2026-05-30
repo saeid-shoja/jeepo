@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { CarBrand } from '../prisma/generated/client';
+import type { CarBrand } from '../prisma/generated/client';
 
 export const CAR_BRAND_LABELS: Record<CarBrand, string> = {
   TOYOTA: 'تویوتا',
@@ -43,9 +43,7 @@ export function parseCarBrands(brands?: string[]): CarBrand[] {
   const unique = [...new Set(brands)];
   const invalid = unique.filter((b) => !isCarBrand(b));
   if (invalid.length > 0) {
-    throw new BadRequestException(
-      'برند خودرو نامعتبر است. فقط از لیست مجاز انتخاب کنید.',
-    );
+    throw new BadRequestException('برند خودرو نامعتبر است. فقط از لیست مجاز انتخاب کنید.');
   }
 
   return unique as CarBrand[];

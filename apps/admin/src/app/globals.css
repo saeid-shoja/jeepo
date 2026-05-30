@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Vazir', 'Tahoma', system-ui, sans-serif;
+  --font-sans: "Vazir", "Tahoma", system-ui, sans-serif;
   --color-primary: #059669;
   --color-primary-dark: #047857;
   --color-primary-light: #a7f3d0;

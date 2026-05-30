@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { formatPrice } from '@offroad/shared';
+import { useEffect, useState } from 'react';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
 
   const fetchOrders = async () => {
     const token = localStorage.getItem('token');
@@ -19,8 +15,12 @@ export default function AdminOrdersPage() {
       });
       const data = await res.json();
       setOrders(data);
-    } catch { }
+    } catch {}
   };
+
+  useEffect(() => {
+    void fetchOrders();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -45,12 +45,20 @@ export default function AdminOrdersPage() {
                 <td className="px-4 py-3">{o.items?.length || 0}</td>
                 <td className="px-4 py-3 font-medium text-primary">{formatPrice(o.total)}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${o.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                      o.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                        'bg-gray-100 text-gray-600'
-                    }`}>
-                    {o.status === 'COMPLETED' ? 'تکمیل شده' :
-                      o.status === 'PENDING' ? 'در انتظار' : o.status}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs ${
+                      o.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-700'
+                        : o.status === 'PENDING'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {o.status === 'COMPLETED'
+                      ? 'تکمیل شده'
+                      : o.status === 'PENDING'
+                        ? 'در انتظار'
+                        : o.status}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500">

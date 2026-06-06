@@ -46,7 +46,12 @@ export const DEFAULT_PART_GROUPS = [
 export const DEFAULT_PART_CHILDREN = [
   { name: 'تعلیق و زیربندی', slug: 'suspension', parentSlug: 'chassis', sortOrder: 1 },
   { name: 'رینگ و لاستیک', slug: 'tires-rims', parentSlug: 'chassis', sortOrder: 2 },
-  { name: 'پروژکتور و نور و لوازم برقی ', slug: 'lighting', parentSlug: 'electrical', sortOrder: 1 },
+  {
+    name: 'پروژکتور و نور و لوازم برقی ',
+    slug: 'lighting',
+    parentSlug: 'electrical',
+    sortOrder: 1,
+  },
   { name: 'راهنما و مسیریاب', slug: 'navigation', parentSlug: 'electrical', sortOrder: 2 },
   { name: 'اکسسوری و تزئینات', slug: 'accessories', parentSlug: 'gear-style', sortOrder: 1 },
   { name: 'لباس و تجهیزات', slug: 'clothing-gear', parentSlug: 'gear-style', sortOrder: 2 },

@@ -1,6 +1,16 @@
 'use client';
 
-import { Heart, LogOut, Mail, MapPin, PackageSearch, Phone, RefreshCw, ShoppingBag, User } from 'lucide-react';
+import {
+  Heart,
+  LogOut,
+  Mail,
+  MapPin,
+  PackageSearch,
+  Phone,
+  RefreshCw,
+  ShoppingBag,
+  User,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,7 +28,10 @@ export default function DashboardPage() {
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   const loadProducts = useCallback(() => {
-    return api.users.products().then(setProducts).catch(() => setProducts([]));
+    return api.users
+      .products()
+      .then(setProducts)
+      .catch(() => setProducts([]));
   }, []);
 
   useEffect(() => {
@@ -30,7 +43,7 @@ export default function DashboardPage() {
       api.users
         .profile()
         .then(setProfile)
-        .catch(() => { });
+        .catch(() => {});
       void loadProducts();
     }
   }, [user, authLoading, router, loadProducts]);
@@ -75,7 +88,7 @@ export default function DashboardPage() {
             )}
           </div>
           <button
-            type='button'
+            type="button"
             onClick={logout}
             className="flex items-center gap-1 rounded-sm border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
           >
@@ -138,8 +151,7 @@ export default function DashboardPage() {
                 <div className="space-y-1 px-1">
                   {product.deletionAt && (
                     <p className="text-muted-foreground text-center text-[10px]">
-                      حذف خودکار:{' '}
-                      {new Date(product.deletionAt).toLocaleDateString('fa-IR')}
+                      حذف خودکار: {new Date(product.deletionAt).toLocaleDateString('fa-IR')}
                     </p>
                   )}
                   <Button

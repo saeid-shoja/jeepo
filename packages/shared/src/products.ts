@@ -1,6 +1,4 @@
-import {
-  MOTORCYCLE_ATV_SUBCATEGORIES,
-} from './category-defaults';
+import { MOTORCYCLE_ATV_SUBCATEGORIES } from './category-defaults';
 
 export const CATEGORIES = [
   ...MOTORCYCLE_ATV_SUBCATEGORIES.map(({ name, slug }) => ({ name, slug })),

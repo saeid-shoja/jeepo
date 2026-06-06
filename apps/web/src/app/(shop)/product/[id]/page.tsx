@@ -39,7 +39,7 @@ export default function ProductDetailPage() {
     api.products
       .get(id)
       .then(setProduct)
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -90,7 +90,13 @@ export default function ProductDetailPage() {
                 onClick={() => setCurrentImage(i)}
                 className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-sm border-2 ${currentImage === i ? 'border-primary' : 'border-transparent'}`}
               >
-                <Image width={100} height={100} src={img} alt="" className="h-full w-full object-cover" />
+                <Image
+                  width={100}
+                  height={100}
+                  src={img}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               </Button>
             ))}
           </div>
@@ -138,8 +144,8 @@ export default function ProductDetailPage() {
               }
             >
               {product.situation === 'IN_STOCK' ||
-                product.type === 'SHOP' ||
-                product.situation === 'USED' ? (
+              product.type === 'SHOP' ||
+              product.situation === 'USED' ? (
                 <Package className="h-3 w-3" />
               ) : (
                 <Sparkles className="h-3 w-3" />

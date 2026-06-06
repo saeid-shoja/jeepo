@@ -73,6 +73,8 @@ export const api = {
     update: (id: string, data: any) =>
       request<any>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => request<any>(`/products/${id}`, { method: 'DELETE' }),
+    reactivate: (id: string) =>
+      request<any>(`/products/${id}/reactivate`, { method: 'POST' }),
   },
 
   categories: {

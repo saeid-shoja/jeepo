@@ -165,7 +165,7 @@ export class AuctionsService {
     for (const product of ended) {
       await this.prisma.product.update({
         where: { id: product.id },
-        data: { status: 'INACTIVE' },
+        data: { status: 'DEPRECATED', deprecatedAt: now },
       });
     }
 

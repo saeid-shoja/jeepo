@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPrice, timeAgo } from '@offroad/shared';
-import { Clock, MapPin, Package, Shield, Sparkles } from 'lucide-react';
+import { Clock, MapPin, Package, Shield, Sparkles, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AuctionProductCard } from '@/components/auction/auction-product-card';
@@ -20,17 +20,22 @@ interface ProductCardProps {
     images?: string[];
     city?: string | null;
     createdAt: string | Date;
+    listedAt?: string | Date;
     hasGuarantee?: boolean;
     situation?: ProductSituation;
     type?: string;
     advertiser?: string;
     purchasable?: boolean;
     status?: string;
+    activeUntil?: string | null;
+    deprecatedAt?: string | null;
+    deletionAt?: string | null;
     isAuction?: boolean;
     auctionCurrentPrice?: number;
     bidCount?: number;
     auctionEndsAt?: string | null;
     hideSellerPhone?: boolean;
+    isBoosted?: boolean;
   };
 }
 
@@ -43,7 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const firstImage = images[0];
   const situation = product.situation ?? (product.advertiser === 'SHOP' ? 'IN_STOCK' : null);
   const situationLabel = getSituationLabel(situation);
-  const postedAt = timeAgo(new Date(product.createdAt));
+  const postedAt = timeAgo(new Date(product.listedAt ?? product.createdAt));
   const canBuy = isPurchasable(product);
 
   return (
@@ -61,6 +66,9 @@ export function ProductCard({ product }: ProductCardProps) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 border-3 border-card rounded-sm"
           />
           <div className="absolute top-2 right-2 flex flex-col gap-1">
+            {product.status === 'DEPRECATED' && (
+              <Badge className="bg-red-600 text-white hover:bg-red-600">منقضی شده</Badge>
+            )}
             {situationLabel && (
               <Badge
                 className={
@@ -83,6 +91,12 @@ export function ProductCard({ product }: ProductCardProps) {
               <Badge className="bg-green-600 text-white hover:bg-green-600">
                 <Shield className="h-3 w-3" />
                 تضمین شده
+              </Badge>
+            )}
+            {product.isBoosted && (
+              <Badge className="bg-amber-500 text-white hover:bg-amber-500">
+                <TrendingUp className="h-3 w-3" />
+                پله شده
               </Badge>
             )}
           </div>

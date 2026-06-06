@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { PasswordInput } from '@/components/ui/password-input';
 import { adminApi } from '@/lib/api';
 
 export default function AdminLoginPage() {
@@ -42,11 +43,10 @@ export default function AdminLoginPage() {
           </div>
           <div>
             <label className="mb-1 block text-sm">رمز عبور</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-sm border px-4 py-2 outline-none focus:border-primary"
+              className="px-4"
               required
             />
           </div>

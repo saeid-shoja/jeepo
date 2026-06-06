@@ -1,18 +1,14 @@
 import {
-  MOTORCYCLE_ATV_NAME,
-  MOTORCYCLE_ATV_SLUG,
   MOTORCYCLE_ATV_SUBCATEGORIES,
 } from './category-defaults';
 
 export const CATEGORIES = [
-  { name: MOTORCYCLE_ATV_NAME, slug: MOTORCYCLE_ATV_SLUG },
   ...MOTORCYCLE_ATV_SUBCATEGORIES.map(({ name, slug }) => ({ name, slug })),
   { name: 'کمک فنر و شاسی', slug: 'suspension' },
   { name: 'لاستیک و رینگ', slug: 'tires-rims' },
   { name: 'چراغ و نور', slug: 'lighting' },
-  { name: 'دنده و انتقال قدرت', slug: 'transmission' },
+  { name: 'دنده و انتقال قدرت و دف', slug: 'transmission' },
   { name: 'اکسسوری و تزئینات', slug: 'accessories' },
-  { name: 'لوازم یدکی انجین', slug: 'engine-parts' },
   { name: 'لباس و تجهیزات', slug: 'clothing-gear' },
   { name: 'راهنما و مسیریاب', slug: 'navigation' },
   { name: 'سایر', slug: 'other' },

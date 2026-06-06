@@ -1,10 +1,12 @@
 'use client';
 
-import { Heart, LogOut, Mail, MapPin, PackageSearch, Phone, ShoppingBag, User } from 'lucide-react';
+import { Heart, LogOut, Mail, MapPin, PackageSearch, Phone, RefreshCw, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ProductCard } from '@/components/shop/product-card';
+import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
 
@@ -13,6 +15,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+
+  const loadProducts = useCallback(() => {
+    return api.users.products().then(setProducts).catch(() => setProducts([]));
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -23,13 +30,23 @@ export default function DashboardPage() {
       api.users
         .profile()
         .then(setProfile)
-        .catch(() => {});
-      api.users
-        .products()
-        .then(setProducts)
-        .catch(() => {});
+        .catch(() => { });
+      void loadProducts();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, loadProducts]);
+
+  const handleReactivate = async (productId: string) => {
+    setReactivatingId(productId);
+    try {
+      await api.products.reactivate(productId);
+      toast.success('آگهی با موفقیت فعال شد');
+      await loadProducts();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'فعال‌سازی آگهی ناموفق بود');
+    } finally {
+      setReactivatingId(null);
+    }
+  };
 
   if (authLoading) {
     return <div className="py-16 text-center text-gray-500">در حال بارگذاری...</div>;
@@ -58,6 +75,7 @@ export default function DashboardPage() {
             )}
           </div>
           <button
+            type='button'
             onClick={logout}
             className="flex items-center gap-1 rounded-sm border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
           >
@@ -114,7 +132,31 @@ export default function DashboardPage() {
       {products.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product: any) => (
-            <ProductCard key={product.id} product={product} />
+            <div key={product.id} className="flex flex-col gap-2">
+              <ProductCard product={product} />
+              {product.status === 'DEPRECATED' && (
+                <div className="space-y-1 px-1">
+                  {product.deletionAt && (
+                    <p className="text-muted-foreground text-center text-[10px]">
+                      حذف خودکار:{' '}
+                      {new Date(product.deletionAt).toLocaleDateString('fa-IR')}
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full gap-1"
+                    disabled={reactivatingId === product.id}
+                    onClick={() => handleReactivate(product.id)}
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${reactivatingId === product.id ? 'animate-spin' : ''}`}
+                    />
+                    فعال‌سازی مجدد
+                  </Button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       ) : (

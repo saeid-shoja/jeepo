@@ -10,6 +10,7 @@ import { isPurchasableProduct } from '../common/purchasable';
 import type { Advertiser, ProductSituation } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateProductDto, UpdateProductDto } from './dto';
+import { computeActiveUntil, computeDeletionAt } from './product-lifecycle.constants';
 
 const productInclude = {
   category: true,
@@ -59,6 +60,9 @@ export class ProductsService {
       realPriceMin?: number | null;
       realPriceMax?: number | null;
       auctionEndsAt?: Date | null;
+      activeUntil?: Date | null;
+      deprecatedAt?: Date | null;
+      listedAt?: Date;
       price: number;
       _count?: { auctionBids: number };
     },
@@ -89,7 +93,7 @@ export class ProductsService {
       purchasable: isPurchasableProduct({
         advertiser: product.advertiser,
         hasGuarantee: product.hasGuarantee,
-        status: product.status as 'ACTIVE' | 'INACTIVE' | 'PENDING',
+        status: product.status as 'ACTIVE' | 'DEPRECATED' | 'PENDING',
         isAuction,
         buyNowPrice: product.buyNowPrice,
         auctionEndsAt: product.auctionEndsAt,
@@ -101,6 +105,10 @@ export class ProductsService {
       realPriceMin: product.realPriceMin,
       realPriceMax: product.realPriceMax,
       auctionEndsAt: product.auctionEndsAt,
+      activeUntil: product.activeUntil,
+      deprecatedAt: product.deprecatedAt,
+      deletionAt: product.deprecatedAt ? computeDeletionAt(product.deprecatedAt) : null,
+      listedAt: product.listedAt,
       auctionActive,
       bidCount: product._count?.auctionBids ?? 0,
       displayPrice: isAuction ? currentPrice : product.price,
@@ -180,7 +188,7 @@ export class ProductsService {
     }
     if (params.postedWithin) {
       const since = this.postedSince(params.postedWithin);
-      if (since) where.createdAt = { gte: since };
+      if (since) where.listedAt = { gte: since };
     }
     if (params.situation === 'NEW') {
       if (params.advertiser === 'CLIENT') {
@@ -210,7 +218,7 @@ export class ProductsService {
       where.auctionEndsAt = { gt: new Date() };
     }
 
-    const orderBy: any = [{ isBoosted: 'desc' }, { createdAt: 'desc' }];
+    const orderBy: any = [{ listedAt: 'desc' }];
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
@@ -290,6 +298,8 @@ export class ProductsService {
         advertiser: data.advertiser ?? 'CLIENT',
         situation: data.situation,
         userId: userId || null,
+        activeUntil: (data.advertiser ?? 'CLIENT') === 'CLIENT' ? computeActiveUntil() : null,
+        listedAt: data.isBoosted ? new Date() : undefined,
         ...auctionData,
         carBrands: brands.length
           ? { create: brands.map((brandCode) => ({ brandCode })) }
@@ -330,6 +340,10 @@ export class ProductsService {
       }
     }
 
+    if (data.isBoosted === true && !product.isBoosted) {
+      updateData.listedAt = new Date();
+    }
+
     const updated = await this.prisma.product.update({
       where: { id },
       data: updateData,
@@ -347,5 +361,32 @@ export class ProductsService {
     }
 
     return this.prisma.product.delete({ where: { id } });
+  }
+
+  async reactivate(id: string, userId: string) {
+    const product = await this.prisma.product.findUnique({ where: { id } });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+
+    if (product.advertiser !== 'CLIENT' || product.userId !== userId) {
+      throw new ForbiddenException('شما اجازه فعال‌سازی این آگهی را ندارید');
+    }
+
+    if (product.status !== 'DEPRECATED') {
+      throw new BadRequestException('فقط آگهی‌های منقضی‌شده قابل فعال‌سازی مجدد هستند');
+    }
+
+    const now = new Date();
+    const updated = await this.prisma.product.update({
+      where: { id },
+      data: {
+        status: 'ACTIVE',
+        activeUntil: computeActiveUntil(now),
+        deprecatedAt: null,
+        listedAt: now,
+      },
+      include: productIncludeDetail,
+    });
+
+    return this.mapProduct(updated);
   }
 }

@@ -13,6 +13,7 @@ import {
   TrendingUp,
   User,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -38,7 +39,7 @@ export default function ProductDetailPage() {
     api.products
       .get(id)
       .then(setProduct)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -68,7 +69,9 @@ export default function ProductDetailPage() {
       <div className="space-y-3">
         <div className="overflow-hidden rounded-lg bg-gray-100">
           {images[currentImage] ? (
-            <img
+            <Image
+              width={100}
+              height={100}
               src={images[currentImage]}
               alt={product.title}
               className="h-auto w-full object-cover"
@@ -82,13 +85,13 @@ export default function ProductDetailPage() {
         {images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto">
             {images.map((img: string, i: number) => (
-              <button
+              <Button
                 key={i}
                 onClick={() => setCurrentImage(i)}
                 className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-sm border-2 ${currentImage === i ? 'border-primary' : 'border-transparent'}`}
               >
-                <img src={img} alt="" className="h-full w-full object-cover" />
-              </button>
+                <Image width={100} height={100} src={img} alt="" className="h-full w-full object-cover" />
+              </Button>
             ))}
           </div>
         )}
@@ -112,7 +115,7 @@ export default function ProductDetailPage() {
               </div>
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-400">
             {timeAgo(new Date(product.createdAt))} در {product.category?.name}
           </p>
         </div>
@@ -135,8 +138,8 @@ export default function ProductDetailPage() {
               }
             >
               {product.situation === 'IN_STOCK' ||
-              product.type === 'SHOP' ||
-              product.situation === 'USED' ? (
+                product.type === 'SHOP' ||
+                product.situation === 'USED' ? (
                 <Package className="h-3 w-3" />
               ) : (
                 <Sparkles className="h-3 w-3" />
@@ -169,7 +172,7 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-600">
+        <div className="flex items-center gap-4 text-sm text-gray-400">
           {product.city && (
             <span className="flex items-center gap-1">
               <MapPin className="h-4 w-4" />
@@ -180,7 +183,7 @@ export default function ProductDetailPage() {
 
         <div>
           <h3 className="mb-2 font-bold">توضیحات</h3>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-400">
             {product.description}
           </p>
         </div>
@@ -222,7 +225,7 @@ export default function ProductDetailPage() {
         )}
 
         {product.type === 'CLIENT' && product.user && !product.isAuction && (
-          <div className="rounded-lg border bg-gray-50 p-4">
+          <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <User className="h-5 w-5" />
@@ -246,7 +249,7 @@ export default function ProductDetailPage() {
 
         <Link
           href="/products"
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary"
+          className="flex items-center gap-1 text-sm text-gray-300 hover:text-primary"
         >
           <ArrowRight className="h-4 w-4" />
           بازگشت به لیست

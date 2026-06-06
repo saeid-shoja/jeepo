@@ -113,6 +113,24 @@ export class MessagesService {
     };
   }
 
+  async sendNotificationToUser(userId: string, title: string, body: string) {
+    const admin = await this.prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+    if (!admin) {
+      return null;
+    }
+
+    return this.sendMessage(admin.id, {
+      title,
+      body,
+      type: 'NOTIFICATION',
+      target: 'USER',
+      userId,
+    });
+  }
+
   async listBatches() {
     const batches = await this.prisma.messageBatch.findMany({
       orderBy: { createdAt: 'desc' },

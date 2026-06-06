@@ -6,7 +6,6 @@ import {
   DEFAULT_PART_GROUPS,
   LIBRARY_CAR_BRANDS_SLUG,
   LIBRARY_PARTS_SLUG,
-  MOTORCYCLE_ATV_NAME,
   MOTORCYCLE_ATV_SLUG,
   MOTORCYCLE_ATV_SUBCATEGORIES,
 } from '@offroad/shared';
@@ -67,20 +66,6 @@ export async function syncDefaultCategories(db: Db): Promise<void> {
     groupIds.set(g.slug, row.id);
   }
 
-  const motorcycleAtv = await db.category.upsert({
-    where: { slug: MOTORCYCLE_ATV_SLUG },
-    create: {
-      name: MOTORCYCLE_ATV_NAME,
-      slug: MOTORCYCLE_ATV_SLUG,
-      group: 'PART',
-      sortOrder: 0,
-      parentId: null,
-      libraryId: motorcycleLibraryId,
-      isSystem: true,
-    },
-    update: {},
-  });
-
   for (const sub of MOTORCYCLE_ATV_SUBCATEGORIES) {
     await db.category.upsert({
       where: { slug: sub.slug },
@@ -89,12 +74,40 @@ export async function syncDefaultCategories(db: Db): Promise<void> {
         slug: sub.slug,
         group: 'PART',
         sortOrder: sub.sortOrder,
-        parentId: motorcycleAtv.id,
+        parentId: null,
         libraryId: motorcycleLibraryId,
         isSystem: true,
       },
       update: {},
     });
+  }
+
+  const motorcycleSlugs = MOTORCYCLE_ATV_SUBCATEGORIES.map((s) => s.slug);
+  await db.category.updateMany({
+    where: { slug: { in: motorcycleSlugs } },
+    data: { parentId: null, libraryId: motorcycleLibraryId },
+  });
+
+  const legacyMotorcycleGroup = await db.category.findUnique({
+    where: { slug: MOTORCYCLE_ATV_SLUG },
+  });
+  if (legacyMotorcycleGroup) {
+    await db.category.updateMany({
+      where: { parentId: legacyMotorcycleGroup.id },
+      data: { parentId: null, libraryId: motorcycleLibraryId },
+    });
+
+    const fallbackSub = await db.category.findFirst({
+      where: { slug: { in: motorcycleSlugs } },
+    });
+    if (fallbackSub) {
+      await db.product.updateMany({
+        where: { categoryId: legacyMotorcycleGroup.id },
+        data: { categoryId: fallbackSub.id },
+      });
+    }
+
+    await db.category.delete({ where: { id: legacyMotorcycleGroup.id } });
   }
 
   for (const cat of DEFAULT_PART_CHILDREN) {
@@ -118,14 +131,14 @@ export async function syncDefaultCategories(db: Db): Promise<void> {
     ...DEFAULT_PART_GROUPS.map((g) => g.slug),
     ...DEFAULT_PART_CHILDREN.map((c) => c.slug),
   ];
-  const motorcycleSlugs = [MOTORCYCLE_ATV_SLUG, ...MOTORCYCLE_ATV_SUBCATEGORIES.map((s) => s.slug)];
+  const motorcycleSlugList = [...motorcycleSlugs];
 
   await db.category.updateMany({
     where: { slug: { in: partSlugs }, libraryId: null },
     data: { libraryId: partsLibraryId },
   });
   await db.category.updateMany({
-    where: { slug: { in: motorcycleSlugs }, libraryId: null },
+    where: { slug: { in: motorcycleSlugList }, libraryId: null },
     data: { libraryId: motorcycleLibraryId },
   });
 

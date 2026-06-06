@@ -7,6 +7,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import type { Advertiser, ProductStatus, UserRole } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { computeActiveUntil } from '../products/product-lifecycle.constants';
 import type { CreateAdminUserDto, UpdateAdminUserDto } from './dto';
 
 @Injectable()
@@ -185,7 +186,7 @@ export class AdminService {
         include: { category: true, user: { select: { name: true, phone: true } } },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { listedAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
     ]);
@@ -202,9 +203,31 @@ export class AdminService {
   }
 
   async updateProductStatus(id: string, status: ProductStatus) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      select: { advertiser: true, status: true },
+    });
+
+    const data: {
+      status: ProductStatus;
+      activeUntil?: Date;
+      deprecatedAt?: Date | null;
+      listedAt?: Date;
+    } = { status };
+
+    if (status === 'ACTIVE' && product?.advertiser === 'CLIENT') {
+      data.activeUntil = computeActiveUntil();
+      data.deprecatedAt = null;
+      if (product.status === 'DEPRECATED') {
+        data.listedAt = new Date();
+      }
+    } else if (status === 'DEPRECATED') {
+      data.deprecatedAt = new Date();
+    }
+
     return this.prisma.product.update({
       where: { id },
-      data: { status },
+      data,
     });
   }
 }

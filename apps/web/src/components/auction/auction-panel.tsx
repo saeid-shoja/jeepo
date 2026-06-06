@@ -267,7 +267,6 @@ export function AuctionPanel({ product }: AuctionPanelProps) {
               </Button>
             )}
           </div>
-
         </CardContent>
       </Card>
 

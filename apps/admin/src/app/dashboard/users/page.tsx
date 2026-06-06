@@ -3,6 +3,7 @@
 import { Calendar, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { PasswordInput } from '@/components/ui/password-input';
 import { adminApi } from '@/lib/api';
 
 type UserRow = {
@@ -169,12 +170,10 @@ export default function AdminUsersPage() {
               <span className="mb-1 block text-gray-600">
                 رمز عبور {editingId ? '(خالی = بدون تغییر)' : ''}
               </span>
-              <input
-                type="password"
+              <PasswordInput
                 required={!editingId}
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                className="w-full rounded-sm border px-3 py-2"
                 minLength={6}
               />
             </label>

@@ -55,6 +55,11 @@ export class ProductsController {
     return this.productsService.update(id, body, req.user.userId, req.user.role);
   }
 
+  @Post(':id/reactivate')
+  reactivate(@Param('id') id: string, @Request() req: { user: { userId: string } }) {
+    return this.productsService.reactivate(id, req.user.userId);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req: { user: { userId: string; role: string } }) {
     return this.productsService.remove(id, req.user.userId, req.user.role);

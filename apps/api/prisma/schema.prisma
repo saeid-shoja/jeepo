@@ -19,7 +19,7 @@ enum Advertiser {
 
 enum ProductStatus {
   ACTIVE
-  INACTIVE
+  DEPRECATED
   PENDING
 }
 
@@ -146,6 +146,9 @@ model Product {
   realPriceMin       Float?
   realPriceMax       Float?
   auctionEndsAt      DateTime?
+  activeUntil        DateTime?
+  deprecatedAt       DateTime?
+  listedAt           DateTime           @default(now())
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   orderItems         OrderItem[]

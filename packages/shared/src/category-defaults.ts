@@ -23,7 +23,7 @@ export type DefaultLibrary = {
 };
 
 export const DEFAULT_LIBRARIES: DefaultLibrary[] = [
-  { slug: LIBRARY_PARTS_SLUG, name: 'قطعات', kind: 'PART_TREE', sortOrder: 1 },
+  { slug: LIBRARY_PARTS_SLUG, name: 'قطعات و یدکی خودرو', kind: 'PART_TREE', sortOrder: 1 },
   {
     slug: MOTORCYCLE_ATV_SLUG,
     name: MOTORCYCLE_ATV_NAME,
@@ -35,34 +35,21 @@ export const DEFAULT_LIBRARIES: DefaultLibrary[] = [
 
 /** Top-level part groups (قطعات library). */
 export const DEFAULT_PART_GROUPS = [
-  { name: 'موتور و انتقال', slug: 'engine-drivetrain', sortOrder: 1 },
-  { name: 'شاسی و تعلیق', slug: 'chassis', sortOrder: 2 },
-  { name: 'برق و روشنایی', slug: 'electrical', sortOrder: 3 },
-  { name: 'ظاهر و تجهیزات', slug: 'gear-style', sortOrder: 4 },
+  { name: 'موتور و انتقال قدرت و دف', slug: 'engine-drivetrain', sortOrder: 1 },
+  { name: 'شاسی و سیستم تعلیق و چرخ ها ', slug: 'chassis', sortOrder: 2 },
+  { name: 'برق و روشنایی خودرو', slug: 'electrical', sortOrder: 3 },
+  { name: 'ظاهر و تجهیزات بدنه', slug: 'gear-style', sortOrder: 4 },
   { name: 'سایر', slug: 'misc-group', sortOrder: 5 },
 ] as const;
 
 /** Subcategories under part groups. */
 export const DEFAULT_PART_CHILDREN = [
-  {
-    name: 'دنده و انتقال قدرت',
-    slug: 'transmission',
-    parentSlug: 'engine-drivetrain',
-    sortOrder: 1,
-  },
-  {
-    name: 'لوازم یدکی انجین',
-    slug: 'engine-parts',
-    parentSlug: 'engine-drivetrain',
-    sortOrder: 2,
-  },
   { name: 'تعلیق و زیربندی', slug: 'suspension', parentSlug: 'chassis', sortOrder: 1 },
-  { name: 'لاستیک و رینگ', slug: 'tires-rims', parentSlug: 'chassis', sortOrder: 2 },
-  { name: 'چراغ و نور', slug: 'lighting', parentSlug: 'electrical', sortOrder: 1 },
+  { name: 'رینگ و لاستیک', slug: 'tires-rims', parentSlug: 'chassis', sortOrder: 2 },
+  { name: 'پروژکتور و نور و لوازم برقی ', slug: 'lighting', parentSlug: 'electrical', sortOrder: 1 },
   { name: 'راهنما و مسیریاب', slug: 'navigation', parentSlug: 'electrical', sortOrder: 2 },
   { name: 'اکسسوری و تزئینات', slug: 'accessories', parentSlug: 'gear-style', sortOrder: 1 },
   { name: 'لباس و تجهیزات', slug: 'clothing-gear', parentSlug: 'gear-style', sortOrder: 2 },
-  { name: 'لوازم کمپی', slug: 'camping-gear', parentSlug: 'gear-style', sortOrder: 3 },
 ] as const;
 
 /** Subgroups under the car-brands library (e.g. camper vehicles). */

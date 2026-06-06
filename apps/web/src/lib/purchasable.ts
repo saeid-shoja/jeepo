@@ -15,7 +15,7 @@ export function isPurchasable(product: PurchasableProduct): boolean {
     return Boolean(product.auctionActive && product.buyNowPrice && product.buyNowPrice > 0);
   }
   return (
-    product.status !== 'INACTIVE' && (product.type === 'SHOP' || Boolean(product.hasGuarantee))
+    product.status !== 'DEPRECATED' && (product.type === 'SHOP' || Boolean(product.hasGuarantee))
   );
 }
 

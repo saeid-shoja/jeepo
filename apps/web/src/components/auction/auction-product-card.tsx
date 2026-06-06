@@ -20,6 +20,7 @@ type AuctionProductCardProps = {
     auctionEndsAt?: string | null;
     bidCount?: number;
     auctionActive?: boolean;
+    status?: string;
   };
 };
 
@@ -57,7 +58,10 @@ export function AuctionProductCard({ product }: AuctionProductCardProps) {
               بدون تصویر
             </div>
           )}
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2 flex flex-col gap-1">
+            {product.status === 'DEPRECATED' && (
+              <Badge className="bg-red-600 text-white hover:bg-red-600">منقضی شده</Badge>
+            )}
             <Badge className="bg-violet-600 text-white hover:bg-violet-600">
               <Gavel className="h-3 w-3" />
               مزایده

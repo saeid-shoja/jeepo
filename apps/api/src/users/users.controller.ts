@@ -49,7 +49,9 @@ export class UsersController {
 
   @Get('favorites/ids')
   getFavoriteIds(@Request() req: { user: { userId: string } }) {
-    return this.favoritesService.getProductIds(req.user.userId).then((productIds) => ({ productIds }));
+    return this.favoritesService
+      .getProductIds(req.user.userId)
+      .then((productIds) => ({ productIds }));
   }
 
   @Get('favorites')

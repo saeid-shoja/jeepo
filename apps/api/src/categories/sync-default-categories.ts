@@ -15,6 +15,17 @@ import type { CategoryGroup, LibraryKind, PrismaClient } from '../prisma/generat
 // pick just needed models
 type Db = Pick<PrismaClient, 'library' | 'category' | 'product'>;
 
+/**
+ * Seed-only sync — runs on API startup and `prisma seed`.
+ *
+ * - **Database is the runtime source of truth.** Shop, admin, and filters all read from DB.
+ * - **category-defaults.ts** is a template for first install and new built-in slugs in deploys.
+ * - Every upsert uses `update: {}` so existing rows are never overwritten (names, order, parents
+ *   changed in admin stay as saved).
+ * - Admin-created rows (`isSystem: false`) are never touched by this file.
+ * - If a system default is deleted, it is re-created on next boot (by slug). Custom admin rows
+ *   with new slugs are unaffected.
+ */
 export async function syncDefaultCategories(db: Db): Promise<void> {
   const libraryIds = new Map<string, string>();
 

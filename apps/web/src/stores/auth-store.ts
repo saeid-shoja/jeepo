@@ -18,7 +18,13 @@ type AuthState = {
   hydrated: boolean;
   hydrate: () => Promise<void>;
   login: (phone: string, password: string) => Promise<void>;
-  register: (phone: string, name: string, password: string, email: string, city?: string) => Promise<void>;
+  register: (
+    phone: string,
+    name: string,
+    password: string,
+    email: string,
+    city?: string,
+  ) => Promise<void>;
   logout: () => void;
 };
 

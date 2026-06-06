@@ -30,7 +30,7 @@ export class ProductsService {
   constructor(
     private prisma: PrismaService,
     private categoriesService: CategoriesService,
-  ) { }
+  ) {}
 
   private postedSince(postedWithin: string): Date | null {
     const now = Date.now();

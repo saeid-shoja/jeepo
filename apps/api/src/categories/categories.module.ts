@@ -8,4 +8,4 @@ import { CategoriesBootstrapService } from './categories-bootstrap.service';
   providers: [CategoriesService, CategoriesBootstrapService],
   exports: [CategoriesService],
 })
-export class CategoriesModule { }
+export class CategoriesModule {}

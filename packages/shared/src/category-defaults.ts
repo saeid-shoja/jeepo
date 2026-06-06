@@ -1,3 +1,5 @@
+/** Seed templates only — runtime data lives in the database; admin edits are not overwritten on sync. */
+
 export const MOTORCYCLE_ATV_SLUG = 'motorcycle-atv';
 
 export const MOTORCYCLE_ATV_NAME = 'چهارچرخ و موتورسیکلت';
@@ -7,7 +9,6 @@ export const MOTORCYCLE_ATV_SUBCATEGORIES = [
   { name: 'چهارچرخ ها', slug: 'atvs', sortOrder: 2 },
   { name: 'ادونچر و سفری', slug: 'adventure-touring', sortOrder: 3 },
 ] as const;
-
 
 export const LIBRARY_PARTS_SLUG = 'parts';
 export const LIBRARY_CAR_BRANDS_SLUG = 'car-brands';
@@ -71,7 +72,13 @@ export const DEFAULT_CAR_BRAND_SUBGROUPS = [
 
 /** Default car brand entries (slug = URL id, code = product filter code). */
 export const DEFAULT_CAR_BRANDS = [
-  { name: 'تویوتا', slug: 'toyota', code: 'TOYOTA', parentSlug: null as string | null, sortOrder: 1 },
+  {
+    name: 'تویوتا',
+    slug: 'toyota',
+    code: 'TOYOTA',
+    parentSlug: null as string | null,
+    sortOrder: 1,
+  },
   { name: 'نیسان', slug: 'nissan', code: 'NISSAN', parentSlug: null, sortOrder: 2 },
   { name: 'میتسوبیشی', slug: 'mitsubishi', code: 'MITSUBISHI', parentSlug: null, sortOrder: 3 },
   { name: 'مرسدس‌بنز', slug: 'mercedes', code: 'MERCEDES', parentSlug: null, sortOrder: 4 },

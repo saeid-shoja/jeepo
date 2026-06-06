@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { MessageTarget, UserMessageType } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateMessageDto } from './dto';

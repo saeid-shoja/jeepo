@@ -16,7 +16,7 @@ export class AdminController {
   constructor(
     private adminService: AdminService,
     private messagesService: MessagesService,
-  ) { }
+  ) {}
 
   @Get('dashboard')
   getDashboard() {

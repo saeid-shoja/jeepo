@@ -112,20 +112,12 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   deleteCategory: (id: string) => request<any>(`/categories/${id}`, { method: 'DELETE' }),
-  createLibrary: (data: {
-    name: string;
-    slug: string;
-    kind: string;
-    sortOrder?: number;
-  }) =>
+  createLibrary: (data: { name: string; slug: string; kind: string; sortOrder?: number }) =>
     request<any>('/libraries', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateLibrary: (
-    id: string,
-    data: { name?: string; slug?: string; sortOrder?: number },
-  ) =>
+  updateLibrary: (id: string, data: { name?: string; slug?: string; sortOrder?: number }) =>
     request<any>(`/libraries/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

@@ -8,7 +8,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private productsService: ProductsService,
-  ) { }
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({

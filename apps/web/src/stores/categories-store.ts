@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 
 export type PartCategory = {
@@ -53,9 +54,7 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'خطا در بارگذاری دسته‌بندی‌ها';
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[categories]', message);
-      }
+      toast.error(message);
       set({
         parts: [],
         carBrands: [],

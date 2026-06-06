@@ -1,16 +1,20 @@
-import { cn } from '@/lib/utils';
+'use client';
 
-export function FormError({ message, className }: { message?: string; className?: string }) {
-  if (!message) return null;
-  return (
-    <div
-      role="alert"
-      className={cn(
-        'rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive',
-        className,
-      )}
-    >
-      {message}
-    </div>
-  );
+import { useEffect } from 'react';
+import { toast } from 'sonner';
+
+/** Fires a colorful error toast when `message` is set. */
+export function FormError({ message }: { message?: string; className?: string }) {
+  useEffect(() => {
+    if (message) toast.error(message);
+  }, [message]);
+  return null;
+}
+
+/** Fires a colorful success toast when `message` is set. */
+export function FormSuccess({ message }: { message?: string }) {
+  useEffect(() => {
+    if (message) toast.success(message);
+  }, [message]);
+  return null;
 }

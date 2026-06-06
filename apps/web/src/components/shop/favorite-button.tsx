@@ -3,6 +3,7 @@
 import { Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/stores/auth-store';
 import { useFavoritesStore } from '@/stores/favorites-store';
@@ -32,9 +33,10 @@ export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
 
     setPending(true);
     try {
-      await toggle(productId);
-    } catch {
-      // optimistic rollback handled in store
+      const added = await toggle(productId);
+      toast.success(added ? 'به علاقه‌مندی‌ها اضافه شد' : 'از علاقه‌مندی‌ها حذف شد');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی علاقه‌مندی‌ها');
     } finally {
       setPending(false);
     }

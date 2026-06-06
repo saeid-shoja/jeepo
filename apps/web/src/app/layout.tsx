@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { SiteFooter } from '@/components/layout/footer';
 import { Navbar } from '@/components/layout/navbar';
+import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 import { FavoritesSync } from '@/providers/favorites-sync';
 import { StoreInitializer } from '@/providers/store-initializer';
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main className="mx-auto min-h-[calc(100vh-5rem)] w-full flex-1 py-6">{children}</main>
           <SiteFooter />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

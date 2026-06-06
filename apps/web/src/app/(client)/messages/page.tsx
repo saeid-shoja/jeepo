@@ -3,6 +3,7 @@
 import { Bell, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +51,7 @@ export default function MessagesPage() {
       }
     } catch {
       setMessages([]);
+      toast.error('بارگذاری پیام‌ها ناموفق بود');
     } finally {
       setLoading(false);
     }
@@ -79,8 +81,9 @@ export default function MessagesPage() {
         })),
       );
       await refreshUnreadCount();
+      toast.success('همه پیام‌ها خوانده شد');
     } catch {
-      // Ignore
+      toast.error('خطا در به‌روزرسانی پیام‌ها');
     }
   };
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { FormError } from '@/components/form/form-message';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,21 +11,17 @@ import { api } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setLoading(true);
     try {
       const res = await api.auth.forgotPassword({ email });
-      setSuccess(res.message);
+      toast.success(res.message);
       setEmail('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ارسال درخواست');
+      toast.error(err instanceof Error ? err.message : 'خطا در ارسال درخواست');
     } finally {
       setLoading(false);
     }
@@ -42,15 +38,6 @@ export default function ForgotPasswordPage() {
             ایمیل ثبت‌نام‌شده خود را وارد کنید. رمز عبور جدید به ایمیل شما ارسال می‌شود.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FormError message={error} />
-            {success && (
-              <div
-                role="status"
-                className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400"
-              >
-                {success}
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">ایمیل</Label>
               <Input

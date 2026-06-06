@@ -2,6 +2,7 @@
 
 import { Calendar, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 
 type UserRow = {
@@ -26,7 +27,6 @@ const emptyForm = {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -36,7 +36,7 @@ export default function AdminUsersPage() {
     adminApi
       .users()
       .then(setUsers)
-      .catch((e) => setError(e instanceof Error ? e.message : 'خطا در بارگذاری'))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'خطا در بارگذاری'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    const wasEditing = Boolean(editingId);
     try {
       if (editingId) {
         const payload: Record<string, string | null> = {
@@ -90,20 +90,21 @@ export default function AdminUsersPage() {
       setShowForm(false);
       setForm(emptyForm);
       setEditingId(null);
+      toast.success(wasEditing ? 'کاربر به‌روزرسانی شد' : 'کاربر ایجاد شد');
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در ذخیره');
+      toast.error(err instanceof Error ? err.message : 'خطا در ذخیره');
     }
   };
 
   const handleDelete = async (user: UserRow) => {
     if (!confirm(`حذف کاربر «${user.name}»؟`)) return;
-    setError('');
     try {
       await adminApi.deleteUser(user.id);
+      toast.success('کاربر حذف شد');
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در حذف');
+      toast.error(err instanceof Error ? err.message : 'خطا در حذف');
     }
   };
 
@@ -120,8 +121,6 @@ export default function AdminUsersPage() {
           کاربر جدید
         </button>
       </div>
-
-      {error && <p className="rounded-sm bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-4">

@@ -4,6 +4,7 @@ import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
@@ -27,7 +28,10 @@ export default function FavoritesPage() {
     api.users
       .favorites()
       .then(setProducts)
-      .catch(() => setProducts([]))
+      .catch(() => {
+        setProducts([]);
+        toast.error('بارگذاری علاقه‌مندی‌ها ناموفق بود');
+      })
       .finally(() => setLoading(false));
   }, [user, authLoading, router]);
 

@@ -3,6 +3,7 @@
 import { formatPrice } from '@offroad/shared';
 import { CheckCircle, Shield, TrendingUp, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 
 export default function AdminProductsPage() {
@@ -22,7 +23,7 @@ export default function AdminProductsPage() {
         setProducts(res.products);
         setTotalPages(res.totalPages);
       })
-      .catch(() => {});
+      .catch(() => toast.error('بارگذاری محصولات ناموفق بود'));
   };
 
   useEffect(() => {
@@ -32,8 +33,11 @@ export default function AdminProductsPage() {
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await adminApi.updateProductStatus(id, newStatus);
+      toast.success('وضعیت محصول به‌روزرسانی شد');
       fetchProducts();
-    } catch {}
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی وضعیت');
+    }
   };
 
   return (

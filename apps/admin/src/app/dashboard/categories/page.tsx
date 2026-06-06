@@ -2,6 +2,7 @@
 
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 
 type CategoryRow = {
@@ -66,7 +67,6 @@ export default function AdminCategoriesPage() {
   const [parts, setParts] = useState<CategoryRow[]>([]);
   const [carBrandCategories, setCarBrandCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [formMode, setFormMode] = useState<FormMode>('part');
   const [partForm, setPartForm] = useState(emptyPartForm);
   const [carSubgroupForm, setCarSubgroupForm] = useState(emptyCarSubgroupForm);
@@ -78,7 +78,6 @@ export default function AdminCategoriesPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    setError('');
     adminApi
       .categories()
       .then((res) => {
@@ -86,7 +85,7 @@ export default function AdminCategoriesPage() {
         setParts(res.parts ?? []);
         setCarBrandCategories(res.carBrandCategories ?? []);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'خطا در بارگذاری'))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'خطا در بارگذاری'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -192,7 +191,6 @@ export default function AdminCategoriesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     try {
       if (formMode === 'part') {
         const payload = {
@@ -259,31 +257,32 @@ export default function AdminCategoriesPage() {
       setShowForm(false);
       setEditingId(null);
       setEditingLibraryId(null);
+      toast.success('با موفقیت ذخیره شد');
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در ذخیره');
+      toast.error(err instanceof Error ? err.message : 'خطا در ذخیره');
     }
   };
 
   const handleDeleteCategory = async (cat: CategoryRow) => {
     if (!confirm(`حذف «${cat.name}»؟`)) return;
-    setError('');
     try {
       await adminApi.deleteCategory(cat.id);
+      toast.success('با موفقیت حذف شد');
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در حذف');
+      toast.error(err instanceof Error ? err.message : 'خطا در حذف');
     }
   };
 
   const handleDeleteLibrary = async (lib: LibraryRow) => {
     if (!confirm(`حذف کتابخانه «${lib.name}»؟`)) return;
-    setError('');
     try {
       await adminApi.deleteLibrary(lib.id);
+      toast.success('کتابخانه حذف شد');
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در حذف');
+      toast.error(err instanceof Error ? err.message : 'خطا در حذف');
     }
   };
 
@@ -326,12 +325,10 @@ export default function AdminCategoriesPage() {
       </div>
 
       <p className="text-sm text-gray-600">
-        تغییرات شما مستقیماً در پایگاه داده ذخیره می‌شود و پس از ذخیره باقی می‌ماند. فایل
-        پیش‌فرض‌ها فقط هنگام راه‌اندازی اول یا افزودن اسلاگ جدید در کد، ردیف‌های گم‌شده را
-        می‌سازد — نام، ترتیب و زیردسته‌های ویرایش‌شده در پنل بازنویسی نمی‌شوند.
+        تغییرات شما مستقیماً در پایگاه داده ذخیره می‌شود و پس از ذخیره باقی می‌ماند. فایل پیش‌فرض‌ها فقط
+        هنگام راه‌اندازی اول یا افزودن اسلاگ جدید در کد، ردیف‌های گم‌شده را می‌سازد — نام، ترتیب و
+        زیردسته‌های ویرایش‌شده در پنل بازنویسی نمی‌شوند.
       </p>
-
-      {error && <p className="rounded-sm bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-4">

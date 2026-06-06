@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { FormError } from '@/components/form/form-message';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,18 +15,17 @@ export default function LoginPage() {
   const router = useRouter();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     try {
       await login(phone, password);
+      toast.success('ورود موفقیت‌آمیز بود');
       router.push('/');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ورود');
+      toast.error(err instanceof Error ? err.message : 'خطا در ورود');
     } finally {
       setLoading(false);
     }
@@ -40,7 +39,6 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FormError message={error} />
             <div className="space-y-2">
               <Label htmlFor="phone">شماره موبایل</Label>
               <Input

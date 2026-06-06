@@ -2,9 +2,9 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { BoostPaymentDialog } from '@/components/form/boost-payment-dialog';
 import { CitySelect } from '@/components/form/city-select';
-import { FormError } from '@/components/form/form-message';
 import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
@@ -43,7 +43,6 @@ export default function EditProductPage() {
   const [isBoosted, setIsBoosted] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [situation, setSituation] = useState<ProductSituation>('NEW');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [boostPaymentOpen, setBoostPaymentOpen] = useState(false);
@@ -71,7 +70,10 @@ export default function EditProductPage() {
           setSituation(product.situation);
         }
       })
-      .catch(() => router.push('/dashboard'))
+      .catch(() => {
+        toast.error('بارگذاری آگهی ناموفق بود');
+        router.push('/dashboard');
+      })
       .finally(() => setFetching(false));
   }, [id, user, authLoading, router]);
 
@@ -80,7 +82,6 @@ export default function EditProductPage() {
   }, [price, hasGuarantee]);
 
   const saveProduct = async () => {
-    setError('');
     setLoading(true);
     try {
       await api.products.update(id, {
@@ -96,9 +97,10 @@ export default function EditProductPage() {
         situation,
         images,
       });
+      toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ذخیره');
+      toast.error(err instanceof Error ? err.message : 'خطا در ذخیره');
     } finally {
       setLoading(false);
       setBoostPaymentOpen(false);
@@ -107,10 +109,9 @@ export default function EditProductPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (price <= 0) {
-      setError('قیمت محصول را وارد کنید');
+      toast.error('قیمت محصول را وارد کنید');
       return;
     }
 
@@ -132,8 +133,6 @@ export default function EditProductPage() {
       <h1 className="mb-8 text-2xl font-bold">ویرایش آگهی</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <FormError message={error} />
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>

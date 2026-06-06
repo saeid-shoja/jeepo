@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import {
   type AuctionListingFields,
   AuctionListingOptions,
@@ -10,7 +11,6 @@ import {
 import { BoostPaymentDialog } from '@/components/form/boost-payment-dialog';
 import { CitySelect } from '@/components/form/city-select';
 import { dateTimeLocalToIso, defaultMinDateTimeLocal } from '@/components/form/datetime-picker';
-import { FormError } from '@/components/form/form-message';
 import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
@@ -47,7 +47,6 @@ export default function NewProductPage() {
   const [isBoosted, setIsBoosted] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [situation, setSituation] = useState<ProductSituation>('NEW');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [boostPaymentOpen, setBoostPaymentOpen] = useState(false);
   const [auctionFields, setAuctionFields] = useState<AuctionListingFields>({
@@ -71,7 +70,6 @@ export default function NewProductPage() {
   }, [price, hasGuarantee]);
 
   const submitListing = async () => {
-    setError('');
     setLoading(true);
     try {
       await api.products.createPublic({
@@ -97,9 +95,10 @@ export default function NewProductPage() {
             }
           : {}),
       });
+      toast.success('آگهی با موفقیت ثبت شد');
       router.push('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ثبت آگهی');
+      toast.error(err instanceof Error ? err.message : 'خطا در ثبت آگهی');
     } finally {
       setLoading(false);
       setBoostPaymentOpen(false);
@@ -108,16 +107,15 @@ export default function NewProductPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (auctionFields.isAuction) {
       const auctionErr = validateAuctionListing(auctionFields);
       if (auctionErr) {
-        setError(auctionErr);
+        toast.error(auctionErr);
         return;
       }
     } else if (price <= 0) {
-      setError('قیمت محصول را وارد کنید');
+      toast.error('قیمت محصول را وارد کنید');
       return;
     }
 
@@ -136,8 +134,6 @@ export default function NewProductPage() {
       <h1 className="mb-8 text-2xl font-bold">ثبت آگهی جدید</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <FormError message={error} />
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>

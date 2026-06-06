@@ -5,9 +5,9 @@ import { CreditCard, Loader2, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { CartLineItem } from '@/components/cart/cart-line-item';
-import { FormError } from '@/components/form/form-message';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,7 +50,6 @@ export default function CheckoutPage() {
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('ONLINE');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [previewTotal, setPreviewTotal] = useState<number | null>(null);
 
   useEffect(() => {
@@ -78,7 +77,6 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setSubmitting(true);
 
     try {
@@ -90,9 +88,10 @@ export default function CheckoutPage() {
         paymentMethod,
       });
       clearCart();
+      toast.success('سفارش با موفقیت ثبت شد');
       router.push(`/checkout/success?orderId=${order.id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
+      toast.error(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
     } finally {
       setSubmitting(false);
     }
@@ -114,8 +113,6 @@ export default function CheckoutPage() {
 
       <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <FormError message={error} />
-
           <Card>
             <CardHeader>
               <CardTitle className="text-base">اطلاعات تحویل</CardTitle>

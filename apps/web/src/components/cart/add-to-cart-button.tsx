@@ -1,7 +1,7 @@
 'use client';
 
 import { ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { isPurchasable, type PurchasableProduct } from '@/lib/purchasable';
@@ -31,7 +31,6 @@ export function AddToCartButton({
   showLabel = true,
 }: AddToCartButtonProps) {
   const { addItem } = useCart();
-  const [added, setAdded] = useState(false);
 
   if (!isPurchasable(product)) return null;
 
@@ -46,8 +45,7 @@ export function AddToCartButton({
       image: product.images?.[0] ?? null,
       quantity,
     });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    toast.success('به سبد خرید اضافه شد');
   };
 
   return (
@@ -59,7 +57,7 @@ export function AddToCartButton({
       onClick={handleClick}
     >
       <ShoppingCart className="size-3.5" />
-      {showLabel && (added ? 'اضافه شد' : 'افزودن به سبد')}
+      {showLabel && 'افزودن به سبد'}
     </Button>
   );
 }

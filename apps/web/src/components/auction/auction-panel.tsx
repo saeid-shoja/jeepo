@@ -9,7 +9,7 @@ import {
 import { AlertTriangle, Clock, Gavel, TrendingUp, Users, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { FormError } from '@/components/form/form-message';
+import { toast } from 'sonner';
 import { PriceInput } from '@/components/form/price-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -61,8 +61,6 @@ export function AuctionPanel({ product }: AuctionPanelProps) {
   const [bidderPhone, setBidderPhone] = useState('');
   const [bidderAddress, setBidderAddress] = useState('');
   const [bidderCity, setBidderCity] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [outbidNotice, setOutbidNotice] = useState(false);
   const [endedNotice, setEndedNotice] = useState(false);
@@ -122,13 +120,10 @@ export function AuctionPanel({ product }: AuctionPanelProps) {
       return;
     }
     setBidOpen(true);
-    setError('');
-    setSuccess('');
   };
 
   const submitBid = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setSubmitting(true);
     try {
       const res = await api.auctions.placeBid(product.id, {
@@ -138,12 +133,12 @@ export function AuctionPanel({ product }: AuctionPanelProps) {
         bidderAddress,
         bidderCity: bidderCity || undefined,
       });
-      setSuccess(res.message || 'پیشنهاد ثبت شد');
+      toast.success(res.message || 'پیشنهاد ثبت شد');
       setOutbidNotice(false);
       setBidOpen(false);
       loadSummary();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ثبت پیشنهاد');
+      toast.error(err instanceof Error ? err.message : 'خطا در ثبت پیشنهاد');
     } finally {
       setSubmitting(false);
     }
@@ -273,7 +268,6 @@ export function AuctionPanel({ product }: AuctionPanelProps) {
             )}
           </div>
 
-          {success && <p className="text-sm text-green-600">{success}</p>}
         </CardContent>
       </Card>
 
@@ -287,7 +281,6 @@ export function AuctionPanel({ product }: AuctionPanelProps) {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={submitBid} className="space-y-4">
-            <FormError message={error} />
             <div className="space-y-2">
               <Label>مبلغ پیشنهاد (تومان)</Label>
               <PriceInput value={bidAmount} onChange={setBidAmount} required />

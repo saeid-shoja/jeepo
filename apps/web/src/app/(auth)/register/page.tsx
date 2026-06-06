@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
-import { FormError } from '@/components/form/form-message';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,18 +19,17 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [city, setCity] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     try {
       await register(phone, name, password, email, city);
+      toast.success('ثبت‌نام با موفقیت انجام شد');
       router.push('/');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ثبت نام');
+      toast.error(err instanceof Error ? err.message : 'خطا در ثبت نام');
     } finally {
       setLoading(false);
     }
@@ -44,7 +43,6 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FormError message={error} />
             <div className="space-y-2">
               <Label htmlFor="name">نام و نام خانوادگی</Label>
               <Input

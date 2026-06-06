@@ -2,6 +2,7 @@
 
 import { Calendar, Megaphone, Send, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 
 const TYPE_OPTIONS = [
@@ -24,18 +25,21 @@ export default function AdminMessagesPage() {
   const [target, setTarget] = useState('ALL');
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
   const loadData = () => {
     adminApi
       .messages()
       .then(setBatches)
-      .catch(() => setBatches([]));
+      .catch(() => {
+        setBatches([]);
+        toast.error('بارگذاری پیام‌ها ناموفق بود');
+      });
     adminApi
       .users()
       .then(setUsers)
-      .catch(() => setUsers([]));
+      .catch(() => {
+        setUsers([]);
+        toast.error('بارگذاری کاربران ناموفق بود');
+      });
   };
 
   useEffect(() => {
@@ -44,8 +48,6 @@ export default function AdminMessagesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setLoading(true);
     try {
       const res = await adminApi.sendMessage({
@@ -55,13 +57,13 @@ export default function AdminMessagesPage() {
         target,
         userId: target === 'USER' ? userId : undefined,
       });
-      setSuccess(`${res.message} (${res.recipientCount.toLocaleString('fa-IR')} گیرنده)`);
+      toast.success(`${res.message} (${res.recipientCount.toLocaleString('fa-IR')} گیرنده)`);
       setTitle('');
       setBody('');
       setUserId('');
       loadData();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'خطا در ارسال پیام');
+      toast.error(err instanceof Error ? err.message : 'خطا در ارسال پیام');
     } finally {
       setLoading(false);
     }
@@ -81,17 +83,6 @@ export default function AdminMessagesPage() {
           <Send className="h-5 w-5 text-primary" />
           ارسال پیام جدید
         </h2>
-
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {success}
-          </div>
-        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>

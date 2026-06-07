@@ -24,7 +24,7 @@ async function main() {
     await prisma.user.create({
       data: {
         phone: '09333092013',
-        email: 'admin@charkham.ir',
+        email: 'admin@jeepo.ir',
         name: 'مدیر فروشگاه',
         password: hashed,
         role: 'ADMIN',

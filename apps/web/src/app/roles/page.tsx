@@ -1,10 +1,13 @@
 import { SITE_NAME_FA, WEBSITE_BUSINESS_RULES } from '@offroad/shared';
 import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: `قوانین وب‌سایت و کسب‌وکار | ${SITE_NAME_FA}`,
+export const metadata: Metadata = buildMetadata({
+  title: 'قوانین وب‌سایت و کسب‌وکار',
   description: `آشنایی با قوانین انتشار آگهی، معامله و چارچوب کسب‌وکار در ${SITE_NAME_FA}.`,
-};
+  path: '/roles',
+  keywords: ['قوانین جیپو', 'قوانین ثبت آگهی', 'معامله امن'],
+});
 
 export default function RolesPage() {
   return (

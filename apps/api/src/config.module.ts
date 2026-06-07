@@ -17,9 +17,9 @@ import { Global, Module } from '@nestjs/common';
     },
     {
       provide: 'MAIL_FROM',
-      useValue: process.env.MAIL_FROM || 'Charkham <onboarding@resend.dev>',
+      useValue: process.env.MAIL_FROM || 'jeepo <onboarding@resend.dev>',
     },
   ],
   exports: ['JWT_SECRET', 'JWT_EXPIRES_IN', 'RESEND_API_KEY', 'MAIL_FROM'],
 })
-export class ConfigModule {}
+export class ConfigModule { }

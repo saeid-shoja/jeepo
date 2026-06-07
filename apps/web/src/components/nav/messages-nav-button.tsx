@@ -26,7 +26,7 @@ export function MessagesNavButton() {
 
   return (
     <Button variant="outline" asChild className="relative">
-      <Link href="/messages" aria-label="پیام‌ها">
+      <Link href="/dashboard?tab=messages" aria-label="پیام‌ها">
         <Mail className="h-5 w-5" />
         {unreadCount > 0 && (
           <Badge className="absolute -top-2 -left-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px]">
@@ -56,7 +56,7 @@ export function MessagesMobileLink({ onNavigate }: { onNavigate?: () => void }) 
 
   return (
     <Link
-      href="/messages"
+      href="/dashboard?tab=messages"
       onClick={onNavigate}
       className="hover:bg-accent flex items-center justify-between rounded-sm px-3 py-2 text-sm"
     >

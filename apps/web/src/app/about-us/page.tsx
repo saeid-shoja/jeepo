@@ -1,10 +1,13 @@
 import { ABOUT_US_BLOCKS, SITE_NAME_FA, type SiteContentBlock } from '@offroad/shared';
 import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: `درباره ما | ${SITE_NAME_FA}`,
-  description: `آشنایی با ${SITE_NAME_FA}، ماموریت، ارزش‌ها و مسیر رشد پلتفرم.`,
-};
+export const metadata: Metadata = buildMetadata({
+  title: 'درباره ما',
+  description: `آشنایی با ${SITE_NAME_FA}، ماموریت، ارزش‌ها و مسیر رشد پلتفرم خرید و فروش لوازم آفرود.`,
+  path: '/about-us',
+  keywords: ['درباره جیپو', 'پلتفرم آفرود', 'بازار لوازم آفرود'],
+});
 
 export default function AboutUsPage() {
   return (

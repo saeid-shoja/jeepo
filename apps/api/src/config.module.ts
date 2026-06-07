@@ -22,4 +22,4 @@ import { Global, Module } from '@nestjs/common';
   ],
   exports: ['JWT_SECRET', 'JWT_EXPIRES_IN', 'RESEND_API_KEY', 'MAIL_FROM'],
 })
-export class ConfigModule { }
+export class ConfigModule {}

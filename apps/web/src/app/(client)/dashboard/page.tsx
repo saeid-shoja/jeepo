@@ -41,7 +41,7 @@ function DashboardContent() {
       api.users
         .profile()
         .then(setProfile)
-        .catch(() => { });
+        .catch(() => {});
       void refreshUnreadCount();
     }
   }, [user, authLoading, router, refreshUnreadCount]);
@@ -84,11 +84,7 @@ function DashboardContent() {
               </p>
             )}
           </div>
-          <Button
-            onClick={logout}
-            variant="destructive"
-            size="sm"
-          >
+          <Button onClick={logout} variant="destructive" size="sm">
             <LogOut className="h-4 w-4" />
             خروج
           </Button>

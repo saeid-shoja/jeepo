@@ -1,12 +1,12 @@
 import './globals.css';
-import { SITE_DESCRIPTION, SITE_NAME_EN, SITE_NAME_FA, SITE_KEYWORDS } from '@offroad/shared';
+import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME_EN, SITE_NAME_FA } from '@offroad/shared';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { JsonLd } from '@/components/seo/json-ld';
 import { SiteFooter } from '@/components/layout/footer';
 import { Navbar } from '@/components/layout/navbar';
+import { JsonLd } from '@/components/seo/json-ld';
 import { Toaster } from '@/components/ui/sonner';
-import { buildOrganizationJsonLd, getSiteUrl, toAbsoluteUrl, DEFAULT_OG_IMAGE } from '@/lib/seo';
+import { buildOrganizationJsonLd, DEFAULT_OG_IMAGE, getSiteUrl, toAbsoluteUrl } from '@/lib/seo';
 import { cn } from '@/lib/utils';
 import { FavoritesSync } from '@/providers/favorites-sync';
 import { StoreInitializer } from '@/providers/store-initializer';

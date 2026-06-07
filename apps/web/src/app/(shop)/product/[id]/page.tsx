@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { JsonLd } from '@/components/seo/json-ld';
-import { fetchProduct } from '@/lib/server-api';
 import { buildProductJsonLd, buildProductMetadata } from '@/lib/seo';
+import { fetchProduct } from '@/lib/server-api';
 import { ProductDetailClient } from './product-detail-client';
 
 type Props = { params: Promise<{ id: string }> };

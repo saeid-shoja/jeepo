@@ -17,8 +17,10 @@ export class CategoriesBootstrapService implements OnApplicationBootstrap {
       });
       this.logger.log('Default libraries and categories are ready');
     } catch (err) {
-      this.logger.error('Failed to sync default categories', err);
-      throw err;
+      this.logger.error(
+        'Failed to sync default categories — run `pnpm db:deploy` against this DATABASE_URL if tables are missing',
+        err,
+      );
     }
   }
 }

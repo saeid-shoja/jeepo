@@ -18,7 +18,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   try {
     res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
   } catch {
-    throw new Error('اتصال به API برقرار نشد. سرور را روی http://localhost:4000 اجرا کنید.');
+    throw new Error('اتصال با سرور برقرار نشد.');
   }
 
   if (!res.ok) {

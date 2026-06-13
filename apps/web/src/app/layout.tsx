@@ -10,7 +10,7 @@ import {
   buildOrganizationJsonLd,
   DEFAULT_OG_IMAGE,
   getSiteUrl,
-  SITE_LOGO,
+  SITE_ICONS,
   toAbsoluteUrl,
 } from '@/lib/seo';
 import { cn } from '@/lib/utils';
@@ -20,10 +20,6 @@ import { ThemeProvider } from '@/providers/theme-provider';
 
 const yekanFont = localFont({
   src: '../../public/fonts/yekan/yekan.ttf',
-});
-
-const _nazaninFont = localFont({
-  src: '../../public/fonts/nazanin/nazanin.ttf',
 });
 
 const siteUrl = getSiteUrl();
@@ -50,7 +46,14 @@ export const metadata: Metadata = {
     siteName: SITE_NAME_FA,
     title: defaultTitle,
     description: SITE_DESCRIPTION,
-    images: [{ url: toAbsoluteUrl(DEFAULT_OG_IMAGE)!, alt: SITE_NAME_FA }],
+    images: [
+      {
+        url: toAbsoluteUrl(DEFAULT_OG_IMAGE)!,
+        alt: SITE_NAME_FA,
+        width: 1200,
+        height: 630,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -58,11 +61,21 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [toAbsoluteUrl(DEFAULT_OG_IMAGE)!],
   },
-  robots: { index: true, follow: true },
-  icons: {
-    icon: SITE_LOGO,
-    apple: SITE_LOGO,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
   },
+  icons: SITE_ICONS,
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

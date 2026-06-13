@@ -1,7 +1,8 @@
 import { ABOUT_US_BLOCKS, SITE_NAME_FA, type SiteContentBlock } from '@offroad/shared';
 import type { Metadata } from 'next';
 import { SiteLogo } from '@/components/layout/site-logo';
-import { buildMetadata } from '@/lib/seo';
+import { JsonLd } from '@/components/seo/json-ld';
+import { buildAboutPageJsonLd, buildMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildMetadata({
   title: 'درباره ما',
@@ -12,7 +13,9 @@ export const metadata: Metadata = buildMetadata({
 
 export default function AboutUsPage() {
   return (
-    <div className="container space-y-6">
+    <>
+      <JsonLd data={buildAboutPageJsonLd()} />
+      <div className="container space-y-6">
       <div className="rounded-xl border bg-card p-6">
         <h1 className="text-2xl font-bold">درباره ما</h1>
         <p className="text-muted-foreground mt-2 text-sm leading-7">
@@ -33,5 +36,6 @@ export default function AboutUsPage() {
         <SiteLogo size="lg" imageClassName="w-full h-120 lg:min-w-md" />
       </div>
     </div>
+    </>
   );
 }

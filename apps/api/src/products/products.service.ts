@@ -125,7 +125,8 @@ export class ProductsService {
       displayPrice: isAuction ? currentPrice : product.price,
       hideSellerPhone: isAuction,
       listingFeePaid: (product as { listingFeePaid?: boolean }).listingFeePaid ?? true,
-      listingPaymentDueAt: (product as { listingPaymentDueAt?: Date | null }).listingPaymentDueAt ?? null,
+      listingPaymentDueAt:
+        (product as { listingPaymentDueAt?: Date | null }).listingPaymentDueAt ?? null,
       awaitingListingPayment:
         product.status === 'PENDING' &&
         (product as { listingFeePaid?: boolean }).listingFeePaid === false,
@@ -188,11 +189,15 @@ export class ProductsService {
     };
   }
 
-  private async buildCreateData(data: CreateProductDto, userId: string, options: {
-    status: 'ACTIVE' | 'PENDING';
-    listingFeePaid: boolean;
-    listingPaymentDueAt: Date | null;
-  }) {
+  private async buildCreateData(
+    data: CreateProductDto,
+    userId: string,
+    options: {
+      status: 'ACTIVE' | 'PENDING';
+      listingFeePaid: boolean;
+      listingPaymentDueAt: Date | null;
+    },
+  ) {
     const brands = await this.categoriesService.parseCarBrandCodes(data.carBrands);
     const auctionData = this.buildAuctionCreateData(data);
     const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
@@ -219,9 +224,7 @@ export class ProductsService {
       activeUntil: isClient && options.status === 'ACTIVE' ? computeActiveUntil(now) : null,
       listedAt: data.isBoosted || options.status === 'ACTIVE' ? now : undefined,
       ...auctionData,
-      carBrands: brands.length
-        ? { create: brands.map((brandCode) => ({ brandCode })) }
-        : undefined,
+      carBrands: brands.length ? { create: brands.map((brandCode) => ({ brandCode })) } : undefined,
     };
   }
 

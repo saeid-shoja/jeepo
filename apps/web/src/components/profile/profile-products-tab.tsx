@@ -121,8 +121,7 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
                 </p>
                 {product.listingPaymentDueAt && (
                   <p className="text-muted-foreground text-center text-[10px]">
-                    مهلت:{' '}
-                    {new Date(product.listingPaymentDueAt).toLocaleDateString('fa-IR')}
+                    مهلت: {new Date(product.listingPaymentDueAt).toLocaleDateString('fa-IR')}
                   </p>
                 )}
                 <Button

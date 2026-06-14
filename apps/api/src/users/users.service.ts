@@ -31,7 +31,7 @@ export class UsersService {
     const products = await this.prisma.product.findMany({
       where: { userId, advertiser: 'CLIENT' },
       include: { category: true, carBrands: true },
-      orderBy: { listedAt: 'desc' },
+      orderBy: [{ listedAt: 'desc' }, { createdAt: 'desc' }],
     });
     return Promise.all(products.map((product) => this.productsService.mapProduct(product)));
   }

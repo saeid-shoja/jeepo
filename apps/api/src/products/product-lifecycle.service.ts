@@ -21,14 +21,29 @@ export class ProductLifecycleService implements OnModuleInit {
 
   async runScheduledLifecycle() {
     try {
+      const purged = await this.purgeExpiredListingPaymentDrafts();
       const deprecated = await this.deprecateExpiredAds();
       const deleted = await this.deleteExpiredDeprecatedAds();
-      if (deprecated > 0 || deleted > 0) {
-        this.logger.log(`Lifecycle: deprecated ${deprecated}, deleted ${deleted}`);
+      if (purged > 0 || deprecated > 0 || deleted > 0) {
+        this.logger.log(
+          `Lifecycle: purged unpaid drafts ${purged}, deprecated ${deprecated}, deleted ${deleted}`,
+        );
       }
     } catch (error) {
       this.logger.error('Product lifecycle job failed', error);
     }
+  }
+
+  async purgeExpiredListingPaymentDrafts(): Promise<number> {
+    const result = await this.prisma.product.deleteMany({
+      where: {
+        advertiser: 'CLIENT',
+        status: 'PENDING',
+        listingFeePaid: false,
+        listingPaymentDueAt: { lte: new Date() },
+      },
+    });
+    return result.count;
   }
 
   async deprecateExpiredAds(): Promise<number> {

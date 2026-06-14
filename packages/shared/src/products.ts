@@ -27,6 +27,13 @@ export const PERSIAN_MONTHS = [
   'اسفند',
 ] as const;
 
+/** Free active client listings per user; each additional listing requires a fee. */
+export const FREE_CLIENT_LISTING_LIMIT = 5;
+/** Fee per listing beyond the free quota (Toman). */
+export const EXTRA_LISTING_FEE = 30_000;
+/** Days to pay for a pending listing draft before it is removed. */
+export const LISTING_PAYMENT_GRACE_DAYS = 3;
+
 /** Listing premium fees (Toman) */
 export const GUARANTEE_FEE_RATE = 0.05;
 /** پله شده — one-time bump to top (updates listedAt) */
@@ -44,6 +51,12 @@ export function strengthenedEndsAt(from = new Date()): Date {
   const ends = new Date(from);
   ends.setDate(ends.getDate() + STRENGTHENED_DURATION_DAYS);
   return ends;
+}
+
+export function listingPaymentDueAt(from = new Date()): Date {
+  const due = new Date(from);
+  due.setDate(due.getDate() + LISTING_PAYMENT_GRACE_DAYS);
+  return due;
 }
 
 export function getGuaranteeFee(productPrice: number): number {

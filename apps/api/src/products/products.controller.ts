@@ -11,6 +11,11 @@ import { ProductsService } from './products.service';
 export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
+  @Get('listing-quota')
+  getListingQuota(@Request() req: { user: { userId: string } }) {
+    return this.productsService.getListingQuota(req.user.userId);
+  }
+
   @Public()
   @Get()
   findAll(@Query() query: FindProductsQueryDto) {
@@ -47,7 +52,12 @@ export class ProductsController {
 
   @Post('public')
   createPublic(@Body() body: CreateProductDto, @Request() req: { user: { userId: string } }) {
-    return this.productsService.create({ ...body, advertiser: 'CLIENT' }, req.user.userId);
+    return this.productsService.createPublicListing(body, req.user.userId);
+  }
+
+  @Post(':id/pay-listing-fee')
+  payListingFee(@Param('id') id: string, @Request() req: { user: { userId: string } }) {
+    return this.productsService.payListingFee(id, req.user.userId);
   }
 
   @Patch(':id')

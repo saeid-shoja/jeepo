@@ -1,9 +1,15 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { STRENGTHENED_DURATION_DAYS, STRENGTHENED_LISTING_FEE } from '@offroad/shared';
+import {
+  EXTRA_LISTING_FEE,
+  FREE_CLIENT_LISTING_LIMIT,
+  LISTING_PAYMENT_GRACE_DAYS,
+  STRENGTHENED_DURATION_DAYS,
+  STRENGTHENED_LISTING_FEE,
+} from '@offroad/shared';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { AuctionListingOptions } from '@/components/form/auction-listing-options';
@@ -31,6 +37,12 @@ export default function NewProductPage() {
   const router = useRouter();
   const { carBrands: carBrandOptions } = useCategories();
   const [strengthenedPaymentOpen, setStrengthenedPaymentOpen] = useState(false);
+  const [listingPaymentOpen, setListingPaymentOpen] = useState(false);
+  const [pendingListingId, setPendingListingId] = useState<string | null>(null);
+  const [listingFee, setListingFee] = useState(EXTRA_LISTING_FEE);
+  const [listingPaymentDueAt, setListingPaymentDueAt] = useState<string | null>(null);
+  const [payingListingFee, setPayingListingFee] = useState(false);
+  const listingPaymentResolvedRef = useRef(false);
 
   const {
     register,
@@ -81,7 +93,7 @@ export default function NewProductPage() {
 
   const submitListing = async (data: NewProductFormValues) => {
     try {
-      await api.products.createPublic({
+      const result = await api.products.createPublic({
         title: data.title,
         description: data.description,
         price: data.isAuction ? data.auctionStartPrice : data.price,
@@ -104,6 +116,19 @@ export default function NewProductPage() {
             }
           : {}),
       });
+
+      if (result.requiresListingFee) {
+        listingPaymentResolvedRef.current = false;
+        setPendingListingId(result.product.id);
+        setListingFee(result.listingFee);
+        setListingPaymentDueAt(result.paymentDueAt);
+        setListingPaymentOpen(true);
+        toast.info(
+          `شما ${FREE_CLIENT_LISTING_LIMIT} آگهی فعال دارید. برای انتشار آگهی جدید باید ${EXTRA_LISTING_FEE.toLocaleString('fa-IR')} تومان بپردازید. تا ${LISTING_PAYMENT_GRACE_DAYS} روز فرصت دارید.`,
+        );
+        return;
+      }
+
       toast.success('آگهی با موفقیت ثبت شد');
       router.push('/dashboard');
     } catch (err: unknown) {
@@ -111,6 +136,31 @@ export default function NewProductPage() {
     } finally {
       setStrengthenedPaymentOpen(false);
     }
+  };
+
+  const handlePayListingFee = async () => {
+    if (!pendingListingId) return;
+    setPayingListingFee(true);
+    try {
+      await api.products.payListingFee(pendingListingId);
+      listingPaymentResolvedRef.current = true;
+      toast.success('پرداخت انجام شد و آگهی منتشر شد');
+      setListingPaymentOpen(false);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'پرداخت ناموفق بود');
+    } finally {
+      setPayingListingFee(false);
+    }
+  };
+
+  const handleListingPaymentDismiss = () => {
+    if (listingPaymentResolvedRef.current) return;
+    setListingPaymentOpen(false);
+    toast.info(
+      `آگهی در پیش‌نویس‌های شما ذخیره شد. تا ${LISTING_PAYMENT_GRACE_DAYS} روز برای پرداخت فرصت دارید.`,
+    );
+    router.push('/dashboard');
   };
 
   const onValidSubmit = (data: NewProductFormValues) => {
@@ -306,6 +356,24 @@ export default function NewProductPage() {
         description={`آگهی شما به مدت ${STRENGTHENED_DURATION_DAYS} روز در بالای لیست‌ها نمایش داده می‌شود.`}
         fee={STRENGTHENED_LISTING_FEE}
         onConfirm={() => void submitListing(getValues())}
+      />
+
+      <ListingPremiumPaymentDialog
+        open={listingPaymentOpen}
+        onOpenChange={(open) => {
+          if (!open && !payingListingFee) {
+            handleListingPaymentDismiss();
+          }
+        }}
+        loading={payingListingFee}
+        title="پرداخت هزینه ثبت آگهی"
+        description={`بیش از ${FREE_CLIENT_LISTING_LIMIT} آگهی فعال دارید. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
+          listingPaymentDueAt
+            ? ` تا ${new Date(listingPaymentDueAt).toLocaleDateString('fa-IR')} (${LISTING_PAYMENT_GRACE_DAYS} روز) فرصت دارید.`
+            : ''
+        }`}
+        fee={listingFee}
+        onConfirm={() => void handlePayListingFee()}
       />
     </div>
   );

@@ -68,14 +68,36 @@ export const api = {
       );
     },
     get: (id: string) => request<any>(`/products/${id}`),
+    listingQuota: () =>
+      request<{
+        activeCount: number;
+        freeLimit: number;
+        remainingFree: number;
+        requiresListingFee: boolean;
+        listingFee: number;
+        paymentGraceDays: number;
+      }>('/products/listing-quota'),
     create: (data: any) =>
       request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
     createPublic: (data: any) =>
-      request<any>('/products/public', { method: 'POST', body: JSON.stringify(data) }),
+      request<{
+        product: any;
+        requiresListingFee: boolean;
+        listingFee: number;
+        paymentDueAt: string | null;
+      }>('/products/public', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) =>
       request<any>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => request<any>(`/products/${id}`, { method: 'DELETE' }),
-    reactivate: (id: string) => request<any>(`/products/${id}/reactivate`, { method: 'POST' }),
+    payListingFee: (id: string) =>
+      request<any>(`/products/${id}/pay-listing-fee`, { method: 'POST' }),
+    reactivate: (id: string) =>
+      request<{
+        product: any;
+        requiresListingFee: boolean;
+        listingFee: number;
+        paymentDueAt: string | null;
+      }>(`/products/${id}/reactivate`, { method: 'POST' }),
     applyStrengthened: (id: string) =>
       request<any>(`/products/${id}/apply-strengthened`, { method: 'POST' }),
     applyBoost: (id: string) => request<any>(`/products/${id}/apply-boost`, { method: 'POST' }),

@@ -149,6 +149,8 @@ model Product {
   auctionEndsAt      DateTime?
   activeUntil        DateTime?
   deprecatedAt       DateTime?
+  listingFeePaid     Boolean            @default(true)
+  listingPaymentDueAt DateTime?
   listedAt           DateTime           @default(now())
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

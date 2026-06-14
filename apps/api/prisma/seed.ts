@@ -54,21 +54,6 @@ async function main() {
           carBrands: { create: [{ brandCode: 'TOYOTA' }] },
         },
       });
-      await prisma.product.create({
-        data: {
-          title: 'کمک فنر آفرود بیلشتاین',
-          description: 'کمک فنر مخصوص آفرود برند بیلشتاین، اکبند و گارانتی',
-          price: 28500000,
-          images: '[]',
-          categoryId: cat.id,
-          advertiser: 'SHOP',
-          hasGuarantee: true,
-          isBoosted: true,
-          status: 'ACTIVE',
-          city: 'تهران',
-          userId: admin?.id,
-        },
-      });
       console.log('Sample products created');
     }
   }

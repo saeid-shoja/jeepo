@@ -23,16 +23,7 @@
     "turbo": "^2.5.0",
     "typescript": "^5.7.0"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "@nestjs/core",
-      "sharp"
-    ]
-  },
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@11.6.0",
   "engines": {
     "node": ">=22"
   }

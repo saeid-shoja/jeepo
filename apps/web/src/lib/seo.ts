@@ -22,7 +22,19 @@ export function toAbsoluteUrl(path: string | undefined | null): string | undefin
 }
 
 export const SITE_LOGO = '/logo.png';
+export const FAVICON = '/favicon.ico';
+export const APPLE_TOUCH_ICON = '/apple-touch-icon.png';
 export const DEFAULT_OG_IMAGE = '/images/hero/s1.webp';
+
+/** Shared icon metadata for root layout and web manifest. */
+export const SITE_ICONS = {
+  icon: [
+    { url: FAVICON, sizes: 'any' },
+    { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+  ],
+  apple: [{ url: APPLE_TOUCH_ICON, sizes: '180x180', type: 'image/png' }],
+  shortcut: FAVICON,
+};
 
 type BuildMetadataOptions = {
   title: string;
@@ -60,7 +72,7 @@ export function buildMetadata({
       siteName: SITE_NAME_FA,
       title,
       description,
-      images: image ? [{ url: image, alt: title }] : undefined,
+      images: image ? [{ url: image, alt: title, width: 1200, height: 630 }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -127,19 +139,31 @@ export function buildProductsListMetadata(options: {
 
   if (tab === 'SHOP') {
     return buildMetadata({
-      title: 'فروشگاه لوازم آفرود',
-      description: `خرید آنلاین لوازم آفرود با تضمین فروشگاه — ${SITE_DESCRIPTION}`,
+      title: 'فروشگاه و آگهی های لوازم آفرودی دست دوم',
+      description: `خرید آنلاین لوازم آفرودی دست دوم با قیمت پایین و تضمین فروشگاه — ${SITE_DESCRIPTION}`,
       path: '/products?advertiserType=SHOP',
-      keywords: ['فروشگاه آفرود', 'خرید آنلاین لوازم آفرود'],
+      keywords: [
+        'فروشگاه لوازم آفرودی',
+        'خرید آنلاین لوازم آفرودی دست دوم',
+        'آگهی لوازم آفرودی دست دوم',
+        'تجهیزات دست دوم موتورسیکلت',
+        'بی سیم و تجهیزات مسیریابی',
+        'سایه بان آفرودی',
+        'رینگ و لاستیک آفرودی نو و دست دوم',
+        'چادرسقفی و لوازم کمپی دست دوم',
+        'کیت زیربندی',
+        'سوپرلیپ',
+        'سپر آفرودی',
+      ],
     });
   }
 
   if (tab === 'AUCTION') {
     return buildMetadata({
-      title: 'مزایده‌های لوازم آفرود',
-      description: `شرکت در مزایده و خرید فوری لوازم آفرود — ${SITE_NAME_FA}.`,
+      title: 'مزایده‌ لوازم آفرودی دست دوم',
+      description: `شرکت در مزایده و برگزاری مزایده لوازم آفرود دست دوم با قیمت رقابتی — ${SITE_NAME_FA}.`,
       path: '/products?advertiserType=AUCTION',
-      keywords: ['مزایده آفرود', 'مزایده لوازم آفرود'],
+      keywords: ['مزایده آفرودی', ' مزایده لوازم آفرود دست دوم'],
     });
   }
 
@@ -155,12 +179,27 @@ export function buildProductsListMetadata(options: {
     title: `بازارچه ${SITE_NAME_FA}`,
     description: SITE_DESCRIPTION,
     path: '/products',
+    keywords: [
+      'فروشگاه لوازم آفرودی',
+      'خرید آنلاین لوازم آفرودی دست دوم',
+      'آگهی لوازم آفرودی دست دوم',
+      'تجهیزات دست دوم موتورسیکلت',
+      'بی سیم و تجهیزات مسیریابی',
+      'سایه بان آفرودی',
+      'رینگ و لاستیک آفرودی نو و دست دوم',
+      'چادرسقفی و لوازم کمپی دست دوم',
+      'کیت زیربندی',
+      'سوپرلیپ',
+      'سپر آفرودی',
+    ],
   });
 }
 
 /** Schema.org Organization + WebSite with SearchAction (Google sitelinks search). */
 export function buildOrganizationJsonLd() {
   const siteUrl = getSiteUrl();
+  const logoUrl = toAbsoluteUrl(APPLE_TOUCH_ICON) ?? toAbsoluteUrl(SITE_LOGO);
+
   return [
     {
       '@context': 'https://schema.org',
@@ -170,7 +209,12 @@ export function buildOrganizationJsonLd() {
       url: siteUrl,
       email: SITE_EMAIL,
       description: SITE_DESCRIPTION,
-      logo: toAbsoluteUrl(SITE_LOGO),
+      logo: {
+        '@type': 'ImageObject',
+        url: logoUrl,
+        width: 180,
+        height: 180,
+      },
     },
     {
       '@context': 'https://schema.org',
@@ -252,6 +296,34 @@ export function buildProductJsonLd(product: ServerProduct) {
       itemListElement: breadcrumbs,
     },
   ];
+}
+
+/** Schema.org WebPage for the home page. */
+export function buildHomePageJsonLd() {
+  const siteUrl = getSiteUrl();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `${SITE_NAME_FA} | خرید و فروش تجهیزات استوک آفرودی`,
+    url: siteUrl,
+    description: SITE_DESCRIPTION,
+    inLanguage: 'fa-IR',
+    isPartOf: { '@type': 'WebSite', url: siteUrl, name: SITE_NAME_FA },
+  };
+}
+
+/** Schema.org AboutPage for the about-us route. */
+export function buildAboutPageJsonLd() {
+  const siteUrl = getSiteUrl();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: `درباره ${SITE_NAME_FA}`,
+    url: `${siteUrl}/about-us`,
+    description: `آشنایی با ${SITE_NAME_FA}، ماموریت و ارزش‌های پلتفرم خرید و فروش لوازم آفرود.`,
+    inLanguage: 'fa-IR',
+    isPartOf: { '@type': 'WebSite', url: siteUrl, name: SITE_NAME_FA },
+  };
 }
 
 /** Schema.org FAQPage for rich results. */

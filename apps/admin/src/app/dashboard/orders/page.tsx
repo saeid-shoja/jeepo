@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice } from '@offroad/shared';
+import { formatPrice, resolveApiBaseUrl } from '@offroad/shared';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function AdminOrdersPage() {
@@ -8,7 +8,7 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = useCallback(async () => {
     const token = localStorage.getItem('token');
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+    const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
     try {
       const res = await fetch(`${API_URL}/orders`, {
         headers: { Authorization: `Bearer ${token}` },

@@ -1,3 +1,4 @@
+export * from './api-config';
 export * from './auction';
 export * from './car-brands';
 export * from './category-defaults';

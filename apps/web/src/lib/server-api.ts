@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+import { resolveApiBaseUrl } from '@offroad/shared';
+
+const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 /** Server-side fetch for SEO, sitemap, and generateMetadata (no auth). */
 export async function serverFetch<T>(

@@ -27,7 +27,7 @@ const productInclude = {
 
 const productIncludeDetail = {
   category: true,
-  user: { select: { id: true, name: true, phone: true, city: true } },
+  user: { select: { id: true, name: true } },
   carBrands: true,
   _count: { select: { auctionBids: true } },
 };
@@ -73,7 +73,7 @@ export class ProductsService {
       price: number;
       _count?: { auctionBids: number };
     },
-  >(product: T) {
+  >(product: T, options?: { viewerUserId?: string | null }) {
     const strengthenedActive =
       product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
     const brandLabels = await this.categoriesService.getCarBrandLabelMap();
@@ -134,6 +134,10 @@ export class ProductsService {
 
     if (isAuction) {
       mapped.price = currentPrice;
+    }
+
+    if (product.advertiser === 'CLIENT' && !product.isAuction && !options?.viewerUserId) {
+      mapped.phone = null;
     }
 
     delete mapped._count;
@@ -412,20 +416,20 @@ export class ProductsService {
     ]);
 
     return {
-      products: await Promise.all(products.map((p) => this.mapProduct(p))),
+      products: await Promise.all(products.map((p) => this.mapProduct(p, { viewerUserId: null }))),
       total,
       page,
       totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, viewerUserId?: string | null) {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: productIncludeDetail,
     });
     if (!product) throw new NotFoundException('محصول یافت نشد');
-    return this.mapProduct(product);
+    return this.mapProduct(product, { viewerUserId });
   }
 
   private buildAuctionCreateData(data: CreateProductDto) {

@@ -7,7 +7,6 @@ import { Separator } from '@/components/ui/separator';
 const shopLinks = [
   { href: '/', label: 'صفحه اصلی' },
   { href: '/products?advertiserType=SHOP', label: 'فروشگاه' },
-  { href: '/products?advertiserType=CLIENT', label: 'بازارچه آگهی‌ها' },
   { href: '/products?advertiserType=AUCTION', label: 'مزایده‌ها' },
   { href: '/categories', label: 'دسته‌بندی‌ها' },
 ];
@@ -23,7 +22,6 @@ const infoLinks = [
   { href: '/about-us', label: 'درباره ما' },
   { href: '/roles', label: 'قوانین وب‌سایت و کسب‌وکار' },
   { href: '/faq', label: 'سوالات پرتکرار' },
-  { href: '/products', label: 'جستجوی محصول' },
 ];
 
 function FooterColumn({
@@ -41,7 +39,7 @@ function FooterColumn({
           <li key={link.href + link.label}>
             <Link
               href={link.href}
-              className="text-muted-foreground hover:text-secondary text-sm transition-colors"
+              className="text-muted-foreground hover:text-primary text-sm transition-colors"
             >
               {link.label}
             </Link>

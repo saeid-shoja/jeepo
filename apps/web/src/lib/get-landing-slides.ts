@@ -1,5 +1,4 @@
 import { SITE_NAME_FA } from '@offroad/shared';
-import { api } from '@/lib/api';
 
 export type Slide = {
   id: string;
@@ -58,10 +57,6 @@ export const MOCK_SLIDES: Slide[] = [
 ];
 
 export async function fetchSlides(): Promise<Slide[]> {
-  try {
-    return await api.slides.list();
-  } catch {
-    // Fallback to mock until API is available
-    return MOCK_SLIDES;
-  }
+  // Static slides until a CMS /slides API is implemented on the backend.
+  return MOCK_SLIDES;
 }

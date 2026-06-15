@@ -19,6 +19,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AuctionPanel } from '@/components/auction/auction-panel';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
+import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
@@ -28,20 +29,22 @@ import { useAuth } from '@/stores/auth-store';
 
 export function ProductDetailClient() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || authLoading) return;
+    setLoading(true);
     api.products
       .get(id)
       .then(setProduct)
-      .catch(() => {})
+      .catch(() => setProduct(null))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, authLoading, user?.id]);
 
   if (loading) {
     return (
@@ -238,24 +241,30 @@ export function ProductDetailClient() {
 
         {product.type === 'CLIENT' && product.user && !product.isAuction && (
           <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <User className="h-5 w-5" />
-              </div>
-              <div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <User className="h-5 w-5" />
+                </div>
                 <p className="font-medium">{product.user.name || 'کاربر'}</p>
-                <p className="text-xs text-gray-500">{product.user.city || 'موقعیت نامشخص'}</p>
               </div>
-            </div>
-            {product.phone && (
-              <a
-                href={`tel:${product.phone}`}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-2 text-sm text-white hover:bg-primary-dark"
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="shrink-0 rounded-full"
+                aria-label="مشاهده شماره تماس آگهی‌دهنده"
+                onClick={() => setContactOpen(true)}
               >
                 <Phone className="h-4 w-4" />
-                {product.phone}
-              </a>
-            )}
+              </Button>
+            </div>
+            <AdvertiserContactDialog
+              open={contactOpen}
+              onOpenChange={setContactOpen}
+              phone={product.phone}
+              isAuthenticated={Boolean(user)}
+            />
           </div>
         )}
 

@@ -24,7 +24,7 @@ export function Navbar() {
 
   return (
     <nav className="bg-background/85 sticky top-0 z-50 border-b backdrop-blur supports-backdrop-filter:bg-background/80">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-5">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-4">
             <SiteLogo priority size="lg" />

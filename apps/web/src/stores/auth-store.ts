@@ -26,6 +26,7 @@ type AuthState = {
     city?: string,
   ) => Promise<void>;
   logout: () => void;
+  patchUser: (data: Partial<Pick<User, 'name' | 'city'>>) => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -64,6 +65,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('token');
     set({ user: null });
   },
+
+  patchUser: (data) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, ...data } : null,
+    }));
+  },
 }));
 
 /** Convenience hook matching previous context API */
@@ -73,5 +80,6 @@ export function useAuth() {
   const login = useAuthStore((s) => s.login);
   const register = useAuthStore((s) => s.register);
   const logout = useAuthStore((s) => s.logout);
-  return { user, loading, login, register, logout };
+  const patchUser = useAuthStore((s) => s.patchUser);
+  return { user, loading, login, register, logout, patchUser };
 }

@@ -33,9 +33,13 @@ export class FavoritesService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return favorites
-      .filter((row) => row.product.status === 'ACTIVE')
-      .map((row) => this.productsService.mapProduct(row.product));
+    const active = favorites.filter((row) => row.product.status === 'ACTIVE');
+
+    return Promise.all(
+      active.map((row) =>
+        this.productsService.mapProduct(row.product, { viewerUserId: userId }),
+      ),
+    );
   }
 
   async add(userId: string, productId: string) {

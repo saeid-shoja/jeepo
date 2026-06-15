@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronDown, MapPin, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ function provinceSelectionState(provinceCities: string[], selectedCities: string
 }
 
 export function LocationPicker() {
+  const router = useRouter();
   const { selectedCities, toggleCity, toggleProvinceCities, clearCities, hasFilter } =
     useLocationFilter();
   const [open, setOpen] = useState(false);
@@ -139,7 +141,16 @@ export function LocationPicker() {
         </ScrollArea>
 
         <div className="border-t p-3">
-          <Button className="w-full" size="sm" onClick={() => setOpen(false)}>
+          <Button
+            className="w-full"
+            size="sm"
+            onClick={() => {
+              setOpen(false);
+              if (hasFilter) {
+                router.push('/products');
+              }
+            }}
+          >
             اعمال
           </Button>
         </div>

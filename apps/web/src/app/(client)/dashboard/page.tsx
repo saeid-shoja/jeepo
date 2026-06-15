@@ -4,6 +4,7 @@ import { Heart, LogOut, Mail, MapPin, PackageSearch, Phone, ShoppingBag, User } 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
 import { ProfileMessagesTab } from '@/components/profile/profile-messages-tab';
 import { ProfileProductsTab } from '@/components/profile/profile-products-tab';
@@ -84,10 +85,16 @@ function DashboardContent() {
               </p>
             )}
           </div>
-          <Button onClick={logout} variant="destructive" size="sm">
-            <LogOut className="h-4 w-4" />
-            خروج
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <ProfileEditDialog
+              profile={profile}
+              onUpdated={(updated) => setProfile((prev: any) => ({ ...prev, ...updated }))}
+            />
+            <Button onClick={logout} variant="destructive" size="sm">
+              <LogOut className="h-4 w-4" />
+              خروج
+            </Button>
+          </div>
         </div>
         {profile && (
           <div className="mt-4 flex items-center justify-between border-t pt-4 text-center">

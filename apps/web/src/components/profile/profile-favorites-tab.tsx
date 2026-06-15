@@ -2,7 +2,7 @@
 
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
@@ -14,22 +14,29 @@ type ProfileFavoritesTabProps = {
 
 export function ProfileFavoritesTab({ enabled }: ProfileFavoritesTabProps) {
   const favoriteIds = useFavoritesStore((s) => s.ids);
+  const refreshFavoriteIds = useFavoritesStore((s) => s.refresh);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!enabled) return;
-
+  const loadFavorites = useCallback(async () => {
     setLoading(true);
-    api.users
-      .favorites()
-      .then(setProducts)
-      .catch(() => {
-        setProducts([]);
-        toast.error('بارگذاری علاقه‌مندی‌ها ناموفق بود');
-      })
-      .finally(() => setLoading(false));
-  }, [enabled]);
+    try {
+      await refreshFavoriteIds();
+      const list = await api.users.favorites();
+      setProducts(list);
+    } catch {
+      setProducts([]);
+      toast.error('بارگذاری علاقه‌مندی‌ها ناموفق بود');
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshFavoriteIds]);
+
+  useEffect(() => {
+    if (enabled) {
+      void loadFavorites();
+    }
+  }, [enabled, loadFavorites]);
 
   if (loading) {
     return (

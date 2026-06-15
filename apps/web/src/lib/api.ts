@@ -125,10 +125,6 @@ export const api = {
     seed: () => request<any>('/categories/seed', { method: 'POST' }),
   },
 
-  slides: {
-    list: () => request<import('@/lib/get-landing-slides').Slide[]>('/slides'),
-  },
-
   orders: {
     my: () => request<any[]>('/orders/my'),
     preview: (data: { items: { productId: string; quantity: number }[] }) =>

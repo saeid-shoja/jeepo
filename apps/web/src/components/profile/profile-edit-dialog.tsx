@@ -62,7 +62,13 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="gap-1"
+        onClick={() => setOpen(true)}
+      >
         <Pencil className="h-3.5 w-3.5" />
         ویرایش پروفایل
       </Button>
@@ -85,7 +91,12 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
             <CitySelect value={city} onChange={setCity} label="شهر" />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => setOpen(false)}
+            >
               انصراف
             </Button>
             <Button type="button" disabled={saving} onClick={() => void handleSave()}>

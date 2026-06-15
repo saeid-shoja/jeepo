@@ -136,11 +136,7 @@ export class ProductsService {
       mapped.price = currentPrice;
     }
 
-    if (
-      product.advertiser === 'CLIENT' &&
-      !product.isAuction &&
-      !options?.viewerUserId
-    ) {
+    if (product.advertiser === 'CLIENT' && !product.isAuction && !options?.viewerUserId) {
       mapped.phone = null;
     }
 
@@ -420,9 +416,7 @@ export class ProductsService {
     ]);
 
     return {
-      products: await Promise.all(
-        products.map((p) => this.mapProduct(p, { viewerUserId: null })),
-      ),
+      products: await Promise.all(products.map((p) => this.mapProduct(p, { viewerUserId: null }))),
       total,
       page,
       totalPages: Math.ceil(total / limit),

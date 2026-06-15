@@ -62,7 +62,7 @@ export function LocationPicker() {
               <Badge
                 key={city}
                 variant="secondary"
-                className="cursor-pointer gap-1"
+                className="cursor-pointer gap-1 text-background"
                 onClick={() => toggleCity(city)}
               >
                 {city}

@@ -83,54 +83,98 @@ function MobileHeroSlide({ slide, priority }: { slide: Slide; priority?: boolean
   );
 }
 
-/** Desktop — one card; edge images fade to transparent toward the center. */
-function DesktopHeroSlide({ slide, priority }: { slide: Slide; priority?: boolean }) {
+/** Desktop — one card; image on one side (alternating), content on the other. */
+function DesktopHeroSlide({
+  slide,
+  priority,
+  index,
+}: {
+  slide: Slide;
+  priority?: boolean;
+  index: number;
+}) {
+  const imageOnRight = index % 2 === 0;
+
   return (
     <div className="hidden w-full py-4 lg:block">
       <div
         className={cn(
-          'bg-card relative mx-auto flex w-full items-center overflow-hidden border shadow-md',
+          'bg-card relative mx-auto flex w-full overflow-hidden border shadow-md',
           DESKTOP_HERO_HEIGHT,
         )}
       >
-        {/* RTL: first in DOM = visual right */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%]">
-          <Image
-            src={slide.imageUrl}
-            alt=""
-            fill
-            priority={priority}
-            className="object-cover mask-[linear-gradient(to_left,black_25%,transparent_93%)] [-webkit-mask-image:linear-gradient(to_left,black_25%,transparent_92%)]"
-            sizes="50vw"
-            aria-hidden
-          />
-        </div>
-
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-[42%]">
-          <Image
-            src={slide.imageUrl}
-            alt=""
-            fill
-            className="object-cover mask-[linear-gradient(to_right,black_25%,transparent_93%)] [-webkit-mask-image:linear-gradient(to_right,black_25%,transparent_92%)]"
-            sizes="50vw"
-            aria-hidden
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center justify-center gap-3 px-6 py-8 text-center">
-          <h2 className="text-xl font-bold leading-snug md:text-2xl lg:text-3xl">{slide.title}</h2>
-          {slide.description && (
-            <p className="text-muted-foreground line-clamp-4 text-sm leading-relaxed md:text-base">
-              {slide.description}
-            </p>
-          )}
-          {slide.link && (
-            <Button asChild size="lg" className="mt-1">
-              <Link href={slide.link}>{slide.linkLabel ?? 'مشاهده بیشتر'}</Link>
-            </Button>
-          )}
-        </div>
+        {/* RTL flex: first child = visual right */}
+        {imageOnRight ? (
+          <>
+            <HeroImageHalf
+              slide={slide}
+              priority={priority}
+              fadeDirection="left"
+              className="w-[58%]"
+            />
+            <HeroContentHalf slide={slide} />
+          </>
+        ) : (
+          <>
+            <HeroContentHalf slide={slide} />
+            <HeroImageHalf
+              slide={slide}
+              priority={priority}
+              fadeDirection="right"
+              className="w-[58%]"
+            />
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function HeroImageHalf({
+  slide,
+  priority,
+  fadeDirection,
+  className,
+}: {
+  slide: Slide;
+  priority?: boolean;
+  fadeDirection: 'left' | 'right';
+  className?: string;
+}) {
+  const mask =
+    fadeDirection === 'left'
+      ? 'mask-[linear-gradient(to_left,black_40%,transparent_85%)] [-webkit-mask-image:linear-gradient(to_left,black_60%,transparent_100%)]'
+      : 'mask-[linear-gradient(to_right,black_40%,transparent_85%)] [-webkit-mask-image:linear-gradient(to_right,black_60%,transparent_100%)]';
+
+  return (
+    <div className={cn('relative h-full shrink-0', className)}>
+      <Image
+        src={slide.imageUrl}
+        alt=""
+        fill
+        priority={priority}
+        className={cn('object-cover', mask)}
+        sizes="50vw"
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+function HeroContentHalf({ slide }: { slide: Slide }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+      <h2 className="text-xl font-bold leading-snug md:text-2xl lg:text-3xl">{slide.title}</h2>
+      {slide.description && (
+        <p className="text-muted-foreground line-clamp-4 text-sm leading-relaxed md:text-base">
+          {slide.description}
+        </p>
+      )}
+      {slide.link && (
+        <Button asChild size="lg" className="mt-1">
+          <Link href={slide.link}>{slide.linkLabel ?? 'مشاهده بیشتر'}</Link>
+        </Button>
+      )}
     </div>
   );
 }
@@ -202,7 +246,7 @@ export function HeroSlider() {
           {slides.map((slide, index) => (
             <CarouselItem key={slide.id} className="ps-0">
               <MobileHeroSlide slide={slide} priority={index === 0} />
-              <DesktopHeroSlide slide={slide} priority={index === 0} />
+              <DesktopHeroSlide slide={slide} priority={index === 0} index={index} />
             </CarouselItem>
           ))}
         </CarouselContent>

@@ -5,6 +5,7 @@ type PurchasableProduct = {
   advertiser: Advertiser;
   hasGuarantee: boolean;
   status: ProductStatus;
+  stockQuantity?: number;
   isAuction?: boolean;
   buyNowPrice?: number | null;
   auctionEndsAt?: Date | null;
@@ -19,6 +20,7 @@ export function getProductSalePrice(product: PurchasableProduct & { price: numbe
 
 export function isPurchasableProduct(product: PurchasableProduct): boolean {
   if (product.status !== 'ACTIVE') return false;
+  if ((product.stockQuantity ?? 1) < 1) return false;
 
   if (product.isAuction) {
     if (product.buyNowPrice == null || product.buyNowPrice <= 0) return false;

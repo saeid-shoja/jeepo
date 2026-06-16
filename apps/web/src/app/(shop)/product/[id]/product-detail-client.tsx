@@ -46,6 +46,10 @@ export function ProductDetailClient() {
       .finally(() => setLoading(false));
   }, [id, authLoading, user?.id]);
 
+  useEffect(() => {
+    if (product?.id) setQuantity(1);
+  }, [product?.id]);
+
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -66,6 +70,8 @@ export function ProductDetailClient() {
     product.situation ?? (product.type === 'SHOP' ? 'IN_STOCK' : null),
   );
   const canBuy = isPurchasable(product);
+  const stockQuantity = product.stockQuantity ?? 1;
+  const showStock = !product.isAuction;
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 container">
@@ -194,6 +200,12 @@ export function ProductDetailClient() {
               {product.city}
             </span>
           )}
+          {showStock && (
+            <span className="flex items-center gap-1">
+              <Package className="h-4 w-4" />
+              {stockQuantity > 0 ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود` : 'ناموجود'}
+            </span>
+          )}
         </div>
 
         <div>
@@ -205,34 +217,47 @@ export function ProductDetailClient() {
 
         {product.isAuction && <AuctionPanel product={product} />}
 
-        {canBuy && !product.isAuction && (
+        {canBuy && !product.isAuction && stockQuantity > 0 && (
           <div className="rounded-lg border bg-card p-4 space-y-4">
             <h3 className="font-bold">خرید از فروشگاه</h3>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">تعداد:</span>
-              <div className="flex items-center gap-2 rounded-lg border">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                >
-                  −
-                </Button>
-                <span className="min-w-8 text-center font-medium">{quantity}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => setQuantity((q) => q + 1)}
-                >
-                  +
-                </Button>
+            {stockQuantity > 1 ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">تعداد:</span>
+                <div className="flex items-center gap-2 rounded-lg border">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  >
+                    −
+                  </Button>
+                  <span className="min-w-8 text-center font-medium">{quantity}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => setQuantity((q) => Math.min(stockQuantity, q + 1))}
+                    disabled={quantity >= stockQuantity}
+                  >
+                    +
+                  </Button>
+                </div>
+                <span className="text-muted-foreground text-xs">
+                  حداکثر {stockQuantity.toLocaleString('fa-IR')} عدد
+                </span>
               </div>
-            </div>
-            <AddToCartButton product={product} quantity={quantity} className="w-full" />
+            ) : (
+              <p className="text-muted-foreground text-sm">۱ عدد موجود برای خرید</p>
+            )}
+            <AddToCartButton
+              product={product}
+              quantity={quantity}
+              maxQuantity={stockQuantity}
+              className="w-full"
+            />
             <Button variant="outline" className="w-full" asChild>
               <Link href="/cart">رفتن به سبد خرید</Link>
             </Button>

@@ -103,6 +103,7 @@ export class ProductsService {
         advertiser: product.advertiser,
         hasGuarantee: product.hasGuarantee,
         status: product.status as 'ACTIVE' | 'DEPRECATED' | 'PENDING',
+        stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
         isAuction,
         buyNowPrice: product.buyNowPrice,
         auctionEndsAt: product.auctionEndsAt,
@@ -130,6 +131,7 @@ export class ProductsService {
       awaitingListingPayment:
         product.status === 'PENDING' &&
         (product as { listingFeePaid?: boolean }).listingFeePaid === false,
+      stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
     };
 
     if (isAuction) {
@@ -225,6 +227,7 @@ export class ProductsService {
       status: options.status,
       listingFeePaid: options.listingFeePaid,
       listingPaymentDueAt: options.listingPaymentDueAt,
+      stockQuantity: data.isAuction ? 1 : (data.stockQuantity ?? 1),
       activeUntil: isClient && options.status === 'ACTIVE' ? computeActiveUntil(now) : null,
       listedAt: data.isBoosted || options.status === 'ACTIVE' ? now : undefined,
       ...auctionData,

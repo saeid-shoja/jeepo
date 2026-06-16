@@ -101,4 +101,11 @@ export class CreateProductDto {
   @IsNumber()
   @Min(1)
   buyNowPrice?: number;
+
+  /** How many units are available for sale (default 1). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1, { message: 'حداقل موجودی ۱ عدد است' })
+  stockQuantity?: number;
 }

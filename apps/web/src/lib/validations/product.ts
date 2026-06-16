@@ -19,6 +19,11 @@ const sharedProductFields = {
   images: z.array(z.string()),
   hasGuarantee: z.boolean(),
   applyStrengthened: z.boolean(),
+  stockQuantity: z
+    .number()
+    .int('تعداد باید عدد صحیح باشد')
+    .min(1, 'حداقل ۱ عدد')
+    .max(9999, 'حداکثر ۹۹۹۹ عدد'),
 };
 
 export const newProductSchema = z
@@ -106,6 +111,11 @@ const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedPr
 export const editProductSchema = z.object({
   ...editProductFields,
   price: z.number().positive('قیمت محصول را وارد کنید'),
+  stockQuantity: z
+    .number()
+    .int('تعداد باید عدد صحیح باشد')
+    .min(1, 'حداقل ۱ عدد')
+    .max(9999, 'حداکثر ۹۹۹۹ عدد'),
 });
 
 export type NewProductFormValues = z.infer<typeof newProductSchema>;

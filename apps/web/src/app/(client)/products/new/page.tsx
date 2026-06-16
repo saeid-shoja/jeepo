@@ -72,6 +72,7 @@ export default function NewProductPage() {
       realPriceMin: 0,
       realPriceMax: 0,
       buyNowPrice: 0,
+      stockQuantity: 1,
     },
   });
 
@@ -105,6 +106,7 @@ export default function NewProductPage() {
         applyStrengthened: data.applyStrengthened,
         situation: data.situation,
         images: data.images,
+        stockQuantity: data.isAuction ? 1 : data.stockQuantity,
         isAuction: data.isAuction,
         ...(data.isAuction
           ? {
@@ -211,6 +213,25 @@ export default function NewProductPage() {
               />
               <FieldError message={errors.price?.message} />
             </div>
+
+            {!isAuction && (
+              <div className="space-y-2">
+                <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
+                <Input
+                  id="stockQuantity"
+                  type="number"
+                  min={1}
+                  max={9999}
+                  dir="ltr"
+                  className="text-end"
+                  {...register('stockQuantity', { valueAsNumber: true })}
+                />
+                <p className="text-muted-foreground text-xs">
+                  پیش‌فرض ۱ عدد است. اگر بیش از یک عدد دارید، تعداد را افزایش دهید.
+                </p>
+                <FieldError message={errors.stockQuantity?.message} />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>دسته‌بندی</Label>

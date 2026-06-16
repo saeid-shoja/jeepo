@@ -10,6 +10,7 @@ type AddToCartInput = {
   price: number;
   image?: string | null;
   quantity?: number;
+  maxQuantity?: number;
 };
 
 /** Supports legacy `{ items: [] }` localStorage shape */
@@ -46,16 +47,23 @@ export const useCartStore = create<CartState>()(
       items: [],
 
       addItem: (input) => {
-        const qty = input.quantity ?? 1;
+        const maxQty = input.maxQuantity;
+        const qty = Math.max(1, input.quantity ?? 1);
         set((state) => {
           const existing = state.items.find((i) => i.productId === input.productId);
           if (existing) {
+            const cap = maxQty ?? existing.maxQuantity;
+            const nextQty = existing.quantity + qty;
+            const capped = cap != null ? Math.min(nextQty, cap) : nextQty;
             return {
               items: state.items.map((i) =>
-                i.productId === input.productId ? { ...i, quantity: i.quantity + qty } : i,
+                i.productId === input.productId
+                  ? { ...i, quantity: capped, maxQuantity: cap ?? i.maxQuantity }
+                  : i,
               ),
             };
           }
+          const capped = maxQty != null ? Math.min(qty, maxQty) : qty;
           return {
             items: [
               ...state.items,
@@ -64,7 +72,8 @@ export const useCartStore = create<CartState>()(
                 title: input.title,
                 price: input.price,
                 image: input.image ?? null,
-                quantity: qty,
+                quantity: capped,
+                maxQuantity: maxQty,
               },
             ],
           };
@@ -84,7 +93,12 @@ export const useCartStore = create<CartState>()(
           return;
         }
         set((state) => ({
-          items: state.items.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
+          items: state.items.map((i) => {
+            if (i.productId !== productId) return i;
+            const cap = i.maxQuantity;
+            const capped = cap != null ? Math.min(quantity, cap) : quantity;
+            return { ...i, quantity: capped };
+          }),
         }));
       },
 

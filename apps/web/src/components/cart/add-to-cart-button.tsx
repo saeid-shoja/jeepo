@@ -14,8 +14,10 @@ type AddToCartButtonProps = {
     title: string;
     price: number;
     images?: string[];
+    stockQuantity?: number;
   };
   quantity?: number;
+  maxQuantity?: number;
   className?: string;
   size?: 'default' | 'sm' | 'lg' | 'icon';
   variant?: 'default' | 'outline' | 'secondary' | 'destructive';
@@ -25,6 +27,7 @@ type AddToCartButtonProps = {
 export function AddToCartButton({
   product,
   quantity = 1,
+  maxQuantity,
   className,
   size = 'default',
   variant = 'default',
@@ -34,16 +37,21 @@ export function AddToCartButton({
 
   if (!isPurchasable(product)) return null;
 
+  const stockCap = maxQuantity ?? product.stockQuantity ?? 1;
+  if (stockCap < 1) return null;
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
+    const qty = Math.min(quantity, stockCap);
     addItem({
       productId: product.id,
       title: product.title,
       price: product.price,
       image: product.images?.[0] ?? null,
-      quantity,
+      quantity: qty,
+      maxQuantity: stockCap,
     });
     toast.success('به سبد خرید اضافه شد');
   };

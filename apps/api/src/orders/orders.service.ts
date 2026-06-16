@@ -47,6 +47,16 @@ export class OrdersService {
         throw new BadRequestException(`محصول «${product.title}» قابل خرید آنلاین نیست`);
       }
 
+      const available = product.stockQuantity ?? 1;
+      if (item.quantity > available) {
+        throw new BadRequestException(
+          `موجودی «${product.title}» کافی نیست (حداکثر ${available} عدد)`,
+        );
+      }
+      if (item.quantity < 1) {
+        throw new BadRequestException('تعداد باید حداقل ۱ باشد');
+      }
+
       const images: string[] = JSON.parse(product.images || '[]');
       lines.push({
         productId: product.id,
@@ -126,25 +136,37 @@ export class OrdersService {
     const lines = await this.resolveItems(data.items);
     const total = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
 
-    return this.prisma.order.create({
-      data: {
-        userId,
-        total,
-        address: data.address,
-        phone: data.phone ?? user.phone,
-        note: data.note,
-        paymentMethod: data.paymentMethod,
-        items: {
-          create: lines.map((line) => ({
-            productId: line.productId,
-            quantity: line.quantity,
-            price: line.price,
-          })),
+    return this.prisma.$transaction(async (tx) => {
+      for (const line of lines) {
+        const updated = await tx.product.updateMany({
+          where: { id: line.productId, stockQuantity: { gte: line.quantity } },
+          data: { stockQuantity: { decrement: line.quantity } },
+        });
+        if (updated.count === 0) {
+          throw new BadRequestException('موجودی یکی از محصولات کافی نیست');
+        }
+      }
+
+      return tx.order.create({
+        data: {
+          userId,
+          total,
+          address: data.address,
+          phone: data.phone ?? user.phone,
+          note: data.note,
+          paymentMethod: data.paymentMethod,
+          items: {
+            create: lines.map((line) => ({
+              productId: line.productId,
+              quantity: line.quantity,
+              price: line.price,
+            })),
+          },
         },
-      },
-      include: {
-        items: { include: { product: true } },
-      },
+        include: {
+          items: { include: { product: true } },
+        },
+      });
     });
   }
 

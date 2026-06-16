@@ -98,4 +98,10 @@ export class UpdateProductDto {
   @IsNumber()
   @Min(1)
   buyNowPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1, { message: 'حداقل موجودی ۱ عدد است' })
+  stockQuantity?: number;
 }

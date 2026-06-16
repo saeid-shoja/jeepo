@@ -72,6 +72,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
               size="icon"
               className="size-8"
               onClick={() => setQuantity(item.productId, item.quantity + 1)}
+              disabled={item.maxQuantity != null && item.quantity >= item.maxQuantity}
               aria-label="زیاد کردن"
             >
               <Plus className="size-4" />

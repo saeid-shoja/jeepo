@@ -3,6 +3,7 @@ export type PurchasableProduct = {
   hasGuarantee?: boolean;
   purchasable?: boolean;
   status?: string;
+  stockQuantity?: number;
   isAuction?: boolean;
   buyNowPrice?: number | null;
   auctionEndsAt?: string | Date | null;
@@ -11,6 +12,7 @@ export type PurchasableProduct = {
 
 export function isPurchasable(product: PurchasableProduct): boolean {
   if (product.purchasable != null) return product.purchasable;
+  if ((product.stockQuantity ?? 1) < 1) return false;
   if (product.isAuction) {
     return Boolean(product.auctionActive && product.buyNowPrice && product.buyNowPrice > 0);
   }

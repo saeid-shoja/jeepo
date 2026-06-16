@@ -50,6 +50,7 @@ export default function EditProductPage() {
       carBrands: [],
       images: [],
       hasGuarantee: false,
+      stockQuantity: 1,
     },
   });
 
@@ -76,6 +77,7 @@ export default function EditProductPage() {
           hasGuarantee: product.hasGuarantee,
           situation: product.situation === 'USED' ? 'USED' : 'NEW',
           images: product.images || [],
+          stockQuantity: product.stockQuantity ?? 1,
         });
       })
       .catch(() => {
@@ -102,6 +104,7 @@ export default function EditProductPage() {
         hasGuarantee: data.hasGuarantee,
         situation: data.situation,
         images: data.images,
+        stockQuantity: data.stockQuantity,
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -146,6 +149,20 @@ export default function EditProductPage() {
                 )}
               />
               <FieldError message={errors.price?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
+              <Input
+                id="stockQuantity"
+                type="number"
+                min={1}
+                max={9999}
+                dir="ltr"
+                className="text-end"
+                {...register('stockQuantity', { valueAsNumber: true })}
+              />
+              <FieldError message={errors.stockQuantity?.message} />
             </div>
 
             <div className="space-y-2">

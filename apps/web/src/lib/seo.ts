@@ -40,6 +40,7 @@ type BuildMetadataOptions = {
   title: string;
   description: string;
   path?: string;
+  canonicalPath?: string;
   keywords?: string[];
   ogImage?: string;
   ogType?: 'website' | 'article' | 'product';
@@ -51,13 +52,15 @@ export function buildMetadata({
   title,
   description,
   path = '',
+  canonicalPath,
   keywords,
   ogImage,
   ogType = 'website',
   noIndex = false,
 }: BuildMetadataOptions): Metadata {
   const siteUrl = getSiteUrl();
-  const canonical = `${siteUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  const canonicalSource = canonicalPath ?? path;
+  const canonical = `${siteUrl}${canonicalSource.startsWith('/') ? canonicalSource : `/${canonicalSource}`}`;
   const image = toAbsoluteUrl(ogImage || DEFAULT_OG_IMAGE);
 
   return {
@@ -133,6 +136,8 @@ export function buildProductsListMetadata(options: {
       title: `جستجو: ${search}`,
       description: `نتایج جستجو برای «${search}» — لوازم و تجهیزات آفرود در ${SITE_NAME_FA}.`,
       path: `/products?search=${encodeURIComponent(search)}`,
+      canonicalPath: '/products',
+      noIndex: true,
       keywords: [search, 'جستجوی لوازم آفرود'],
     });
   }
@@ -154,6 +159,9 @@ export function buildProductsListMetadata(options: {
         'کیت زیربندی',
         'سوپرلیپ',
         'سپر آفرودی',
+        'جایگزین دیوار برای آگهی آفرود',
+        'جایگزین شیپور برای آگهی تجهیزات آفرود',
+        'مقایسه قیمت لوازم آفرود با ترب',
       ],
     });
   }
@@ -163,7 +171,7 @@ export function buildProductsListMetadata(options: {
       title: 'مزایده‌ لوازم آفرودی دست دوم',
       description: `شرکت در مزایده و برگزاری مزایده لوازم آفرود دست دوم با قیمت رقابتی — ${SITE_NAME_FA}.`,
       path: '/products?advertiserType=AUCTION',
-      keywords: ['مزایده آفرودی', ' مزایده لوازم آفرود دست دوم'],
+      keywords: ['مزایده آفرودی', 'مزایده لوازم آفرود دست دوم', 'مزایده تخصصی مثل دیوار و شیپور'],
     });
   }
 

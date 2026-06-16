@@ -1,5 +1,6 @@
 import { SITE_DESCRIPTION } from '@offroad/shared';
 import type { Metadata } from 'next';
+import Head from 'next/head';
 import { HeroSlider } from '@/components/home/hero';
 import MainSection from '@/components/home/main-section';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -14,6 +15,9 @@ export const metadata: Metadata = buildMetadata({
 export default function HomePage() {
   return (
     <>
+      <Head>
+        <meta name="enamad" content="71068254" />
+      </Head>
       <JsonLd data={buildHomePageJsonLd()} />
       <section className="sr-only">
         <h1>خرید و فروش لوازم آفرود نو و دست دوم در جیپو</h1>

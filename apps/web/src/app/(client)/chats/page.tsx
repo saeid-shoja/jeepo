@@ -30,17 +30,16 @@ function ChatsPageContent() {
           پیام‌های شما با خریداران و فروشندگان آگهی‌ها
         </p>
       </div>
-      <ProductChatsPanel
-        initialConversationId={conversationId}
-        productIdHint={productId}
-      />
+      <ProductChatsPanel initialConversationId={conversationId} productIdHint={productId} />
     </div>
   );
 }
 
 export default function ChatsPage() {
   return (
-    <Suspense fallback={<div className="py-16 text-center text-muted-foreground">در حال بارگذاری...</div>}>
+    <Suspense
+      fallback={<div className="py-16 text-center text-muted-foreground">در حال بارگذاری...</div>}
+    >
       <ChatsPageContent />
     </Suspense>
   );

@@ -55,7 +55,7 @@ function DashboardContent() {
       api.users
         .profile()
         .then(setProfile)
-        .catch(() => { });
+        .catch(() => {});
       void refreshUnreadCount();
       void refreshChatsUnread();
     }

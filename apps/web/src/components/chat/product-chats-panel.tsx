@@ -133,25 +133,8 @@ export function ProductChatsPanel({
       setThread((prev) =>
         prev
           ? {
-            ...prev,
-            messages: [...prev.messages, message],
-            lastMessage: {
-              id: message.id,
-              body: message.body,
-              senderId: message.senderId,
-              isMine: message.isMine,
-              readAt: message.readAt,
-              createdAt: message.createdAt,
-            },
-          }
-          : prev,
-      );
-      setConversations((prev) =>
-        prev.map((item) =>
-          item.id === selectedId
-            ? {
-              ...item,
-              lastMessageAt: message.createdAt,
+              ...prev,
+              messages: [...prev.messages, message],
               lastMessage: {
                 id: message.id,
                 body: message.body,
@@ -161,6 +144,23 @@ export function ProductChatsPanel({
                 createdAt: message.createdAt,
               },
             }
+          : prev,
+      );
+      setConversations((prev) =>
+        prev.map((item) =>
+          item.id === selectedId
+            ? {
+                ...item,
+                lastMessageAt: message.createdAt,
+                lastMessage: {
+                  id: message.id,
+                  body: message.body,
+                  senderId: message.senderId,
+                  isMine: message.isMine,
+                  readAt: message.readAt,
+                  createdAt: message.createdAt,
+                },
+              }
             : item,
         ),
       );

@@ -15,9 +15,6 @@ export const metadata: Metadata = buildMetadata({
 export default function HomePage() {
   return (
     <>
-      <Head>
-        <meta name="enamad" content="71068254" />
-      </Head>
       <JsonLd data={buildHomePageJsonLd()} />
       <section className="sr-only">
         <h1>خرید و فروش لوازم آفرود نو و دست دوم در جیپو</h1>

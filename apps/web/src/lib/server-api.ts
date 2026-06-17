@@ -26,11 +26,15 @@ export type ServerProduct = {
   images: string[];
   status: string;
   type: string;
+  situation?: string | null;
   isAuction?: boolean;
+  hasGuarantee?: boolean;
+  purchasable?: boolean;
   city?: string;
   updatedAt: string;
   createdAt: string;
   category?: { id: string; name: string; slug: string };
+  carBrands?: { value: string; label: string }[];
 };
 
 export type ServerCategory = {

@@ -10,6 +10,7 @@ import { ConfigModule } from './config.module';
 import { MailModule } from './mail/mail.module';
 import { OrdersModule } from './orders/orders.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProductChatsModule } from './product-chats/product-chats.module';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
 
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     CategoriesModule,
     OrdersModule,
+    ProductChatsModule,
     AdminModule,
     AuctionsModule,
   ],

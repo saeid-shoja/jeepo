@@ -60,6 +60,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.favorite;
   }
 
+  get productConversation(): PrismaClient['productConversation'] {
+    return this.client.productConversation;
+  }
+
+  get productChatMessage(): PrismaClient['productChatMessage'] {
+    return this.client.productChatMessage;
+  }
+
   $transaction<T>(
     fn: (
       tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>,

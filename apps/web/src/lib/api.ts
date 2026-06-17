@@ -34,6 +34,47 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return res.json();
 }
 
+export type ProductChatMessage = {
+  id: string;
+  body: string;
+  senderId: string;
+  senderName: string;
+  isMine: boolean;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type ProductConversationSummary = {
+  id: string;
+  productId: string;
+  buyerId: string;
+  sellerId: string;
+  role: 'buyer' | 'seller';
+  lastMessageAt: string;
+  createdAt: string;
+  unreadCount: number;
+  otherParty: { id: string; name: string };
+  product: {
+    id: string;
+    title: string;
+    price: number;
+    status: string;
+    image: string | null;
+  };
+  lastMessage: {
+    id: string;
+    body: string;
+    senderId: string;
+    isMine: boolean;
+    readAt: string | null;
+    createdAt: string;
+  } | null;
+};
+
+export type ProductConversationDetail = ProductConversationSummary & {
+  messages: ProductChatMessage[];
+};
+
 export const api = {
   auth: {
     register: (data: {
@@ -149,6 +190,24 @@ export const api = {
       paymentMethod: 'ONLINE' | 'COD';
     }) => request<any>('/orders', { method: 'POST', body: JSON.stringify(data) }),
     get: (id: string) => request<any>(`/orders/${id}`),
+  },
+
+  productChats: {
+    list: () => request<ProductConversationSummary[]>('/product-chats'),
+    unreadCount: () => request<{ count: number }>('/product-chats/unread-count'),
+    start: (productId: string) =>
+      request<ProductConversationSummary>('/product-chats', {
+        method: 'POST',
+        body: JSON.stringify({ productId }),
+      }),
+    get: (id: string) => request<ProductConversationDetail>(`/product-chats/${id}`),
+    send: (id: string, body: string) =>
+      request<ProductChatMessage>(`/product-chats/${id}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      }),
+    markRead: (id: string) =>
+      request<{ updated: number }>(`/product-chats/${id}/read`, { method: 'PATCH' }),
   },
 
   users: {

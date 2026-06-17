@@ -19,6 +19,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AuctionPanel } from '@/components/auction/auction-panel';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
+import { StartProductChatButton } from '@/components/chat/start-product-chat-button';
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ export function ProductDetailClient() {
   const canBuy = isPurchasable(product);
   const stockQuantity = product.stockQuantity ?? 1;
   const showStock = !product.isAuction;
+  const canChat = !product.isAuction && product.userId && product.status === 'ACTIVE' && !isOwner;
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 container">
@@ -265,7 +267,7 @@ export function ProductDetailClient() {
         )}
 
         {product.type === 'CLIENT' && product.user && !product.isAuction && (
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-lg border bg-card p-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -284,6 +286,9 @@ export function ProductDetailClient() {
                 <Phone className="h-4 w-4" />
               </Button>
             </div>
+            {canChat && (
+              <StartProductChatButton productId={product.id} className="w-full" variant="outline" />
+            )}
             <AdvertiserContactDialog
               open={contactOpen}
               onOpenChange={setContactOpen}
@@ -291,6 +296,10 @@ export function ProductDetailClient() {
               isAuthenticated={Boolean(user)}
             />
           </div>
+        )}
+
+        {canChat && product.type !== 'CLIENT' && (
+          <StartProductChatButton productId={product.id} className="w-full" />
         )}
 
         <Link

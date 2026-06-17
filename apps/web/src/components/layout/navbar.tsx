@@ -9,6 +9,7 @@ import {
   CategoriesNavDropdown,
   CategoriesNavLinks,
 } from '@/components/nav/categories-nav-dropdown';
+import { ChatsMobileLink, ChatsNavButton } from '@/components/nav/chats-nav-button';
 import { LocationPicker } from '@/components/nav/location-picker';
 import { MessagesMobileLink, MessagesNavButton } from '@/components/nav/messages-nav-button';
 import { NavbarSearch } from '@/components/nav/navbar-search';
@@ -60,6 +61,7 @@ export function Navbar() {
               <div className="bg-muted h-8 w-20 animate-pulse rounded" />
             ) : user ? (
               <>
+                <ChatsNavButton />
                 <MessagesNavButton />
                 <Button variant="card" asChild className="h-10 w-10">
                   <Link href="/dashboard">
@@ -140,6 +142,7 @@ export function Navbar() {
                   پنل کاربری
                 </Link>
                 <MessagesMobileLink onNavigate={closeMenu} />
+                <ChatsMobileLink onNavigate={closeMenu} />
                 <button
                   type="button"
                   onClick={() => {

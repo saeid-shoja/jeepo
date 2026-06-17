@@ -7,6 +7,7 @@ export {
   useCategories,
   useCategoriesStore,
 } from './categories-store';
+export { useChatsUnreadStore } from './chats-unread-store';
 export { useFavoritesStore } from './favorites-store';
 export { useLocationFilter, useLocationStore } from './location-store';
 export { useMessagesUnreadStore } from './messages-unread-store';

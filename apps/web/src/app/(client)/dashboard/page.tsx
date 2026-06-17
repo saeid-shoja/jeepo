@@ -1,6 +1,16 @@
 'use client';
 
-import { Heart, LogOut, Mail, MapPin, PackageSearch, Phone, ShoppingBag, User } from 'lucide-react';
+import {
+  Heart,
+  LogOut,
+  Mail,
+  MapPin,
+  MessageCircle,
+  PackageSearch,
+  Phone,
+  ShoppingBag,
+  User,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
@@ -13,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
+import { useChatsUnreadStore } from '@/stores/chats-unread-store';
 import { useMessagesUnreadStore } from '@/stores/messages-unread-store';
 
 const PROFILE_TABS = ['products', 'favorites', 'messages'] as const;
@@ -27,7 +38,9 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useMessagesUnreadStore((s) => s.count);
+  const chatsUnreadCount = useChatsUnreadStore((s) => s.count);
   const refreshUnreadCount = useMessagesUnreadStore((s) => s.refresh);
+  const refreshChatsUnread = useChatsUnreadStore((s) => s.refresh);
   const [profile, setProfile] = useState<any>(null);
 
   const tabParam = searchParams.get('tab');
@@ -44,8 +57,9 @@ function DashboardContent() {
         .then(setProfile)
         .catch(() => {});
       void refreshUnreadCount();
+      void refreshChatsUnread();
     }
-  }, [user, authLoading, router, refreshUnreadCount]);
+  }, [user, authLoading, router, refreshUnreadCount, refreshChatsUnread]);
 
   const handleTabChange = (value: string) => {
     if (!isProfileTab(value)) return;
@@ -103,6 +117,18 @@ function DashboardContent() {
               <p className="text-xs text-gray-500">آگهی‌ها</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link
+                href="/chats"
+                className="flex items-center gap-1 rounded-sm border px-4 py-2 text-sm hover:bg-primary"
+              >
+                <MessageCircle className="h-4 w-4" />
+                گفتگوها
+                {chatsUnreadCount > 0 && (
+                  <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1 text-[10px]">
+                    {chatsUnreadCount > 99 ? '99+' : chatsUnreadCount.toLocaleString('fa-IR')}
+                  </Badge>
+                )}
+              </Link>
               <Link
                 href="/orders"
                 className="flex items-center gap-1 rounded-sm border px-4 py-2 text-sm hover:bg-primary"

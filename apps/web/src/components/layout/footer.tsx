@@ -24,6 +24,10 @@ const infoLinks = [
   { href: '/faq', label: 'سوالات پرتکرار' },
 ];
 
+/** Exact snippet from enamad.ir — must not be altered for verification. */
+const ENAMAD_TRUST_SEAL_HTML =
+  "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=745923&Code=UUqyBD9oyXBa0odv13CCIZrvb5uBn2Fq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=745923&Code=UUqyBD9oyXBa0odv13CCIZrvb5uBn2Fq' alt='' style='cursor:pointer' code='UUqyBD9oyXBa0odv13CCIZrvb5uBn2Fq'></a>";
+
 function FooterColumn({
   title,
   links,
@@ -78,12 +82,17 @@ export function SiteFooter() {
 
           <FooterColumn title="فروشگاه" links={shopLinks} />
           <FooterColumn title="حساب کاربری" links={accountLinks} />
-          <FooterColumn title="راهنما" links={infoLinks} />
+          <div>
+            <FooterColumn title="راهنما" links={infoLinks} />
+            <div
+              className="flex justify-center"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: enamad.ir requires unmodified embed HTML
+              dangerouslySetInnerHTML={{ __html: ENAMAD_TRUST_SEAL_HTML }}
+            />
+          </div>
         </div>
-
         <Separator className="my-8" />
-
-        <div className="text-muted-foreground flex flex-col items-center justify-between gap-2 text-center text-xs sm:flex-row sm:text-sm">
+        <div className="text-muted-foreground flex w-full flex-col items-center justify-between gap-2 text-center text-xs sm:flex-row sm:text-sm">
           <p>
             © {new Date().getFullYear()} {SITE_NAME_FA} — تمامی حقوق محفوظ است.
           </p>

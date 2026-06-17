@@ -73,9 +73,6 @@ export const metadata: Metadata = {
     },
   },
   icons: SITE_ICONS,
-  other: {
-    enamad: '71068254',
-  },
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
     ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
     : undefined,

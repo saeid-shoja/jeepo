@@ -16,9 +16,69 @@ export function getSiteUrl(): string {
 
 export function toAbsoluteUrl(path: string | undefined | null): string | undefined {
   if (!path) return undefined;
+  if (path.startsWith('data:') || path.startsWith('blob:')) return undefined;
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   const base = getSiteUrl();
   return path.startsWith('/') ? `${base}${path}` : `${base}/${path}`;
+}
+
+/** Google Merchant / Product schema requires crawlable http(s) image URLs — not data: URIs. */
+export function isValidStructuredDataImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+export function resolveProductImageUrls(images: string[] | undefined): string[] {
+  const resolved = (images ?? [])
+    .map((img) => toAbsoluteUrl(img))
+    .filter((url): url is string => !!url && isValidStructuredDataImageUrl(url));
+
+  if (resolved.length > 0) return resolved;
+
+  const fallback = toAbsoluteUrl(DEFAULT_OG_IMAGE);
+  return fallback && isValidStructuredDataImageUrl(fallback) ? [fallback] : [];
+}
+
+function merchantOfferExtras(siteUrl: string) {
+  return {
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'IR',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+      merchantReturnLink: `${siteUrl}/roles`,
+    },
+    shippingDetails: {
+      '@type': 'OfferShippingDetails',
+      shippingRate: {
+        '@type': 'MonetaryAmount',
+        value: '0',
+        currency: 'IRR',
+      },
+      shippingDestination: {
+        '@type': 'DefinedRegion',
+        addressCountry: 'IR',
+      },
+      deliveryTime: {
+        '@type': 'ShippingDeliveryTime',
+        handlingTime: {
+          '@type': 'QuantitativeValue',
+          minValue: 1,
+          maxValue: 3,
+          unitCode: 'DAY',
+        },
+        transitTime: {
+          '@type': 'QuantitativeValue',
+          minValue: 1,
+          maxValue: 7,
+          unitCode: 'DAY',
+        },
+      },
+    },
+  };
 }
 
 export const SITE_LOGO = '/logo.png';
@@ -110,7 +170,7 @@ export function buildProductMetadata(product: ServerProduct): Metadata {
     description,
     path: `/product/${product.id}`,
     keywords,
-    ogImage: product.images?.[0] || DEFAULT_OG_IMAGE,
+    ogImage: resolveProductImageUrls(product.images)[0] ?? DEFAULT_OG_IMAGE,
     ogType: 'product',
   });
 }
@@ -245,27 +305,53 @@ export function buildOrganizationJsonLd() {
 /** Schema.org Product (Shopify / WooCommerce pattern). */
 export function buildProductJsonLd(product: ServerProduct) {
   const siteUrl = getSiteUrl();
+  const productUrl = `${siteUrl}/product/${product.id}`;
   const availability =
     product.status === 'ACTIVE' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+  const imageUrls = resolveProductImageUrls(product.images);
+
+  const brandName =
+    product.carBrands?.[0]?.label ??
+    product.carBrands?.[0]?.value ??
+    product.category?.name ??
+    SITE_NAME_FA;
 
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
+    '@id': productUrl,
     name: product.title,
     description: product.description,
-    image: product.images?.map((img) => toAbsoluteUrl(img)).filter(Boolean),
-    url: `${siteUrl}/product/${product.id}`,
+    image: imageUrls,
+    url: productUrl,
+    sku: product.id,
     category: product.category?.name,
+    brand: {
+      '@type': 'Brand',
+      name: brandName,
+    },
   };
 
-  if (product.price > 0 && !product.isAuction) {
+  const hasMerchantOffer =
+    product.price > 0 &&
+    !product.isAuction &&
+    (product.purchasable ?? (product.type === 'SHOP' || Boolean(product.hasGuarantee)));
+
+  if (hasMerchantOffer) {
     jsonLd.offers = {
       '@type': 'Offer',
+      '@id': `${productUrl}#offer`,
       price: product.price,
       priceCurrency: 'IRR',
       availability,
-      url: `${siteUrl}/product/${product.id}`,
-      seller: { '@type': 'Organization', name: SITE_NAME_FA },
+      url: productUrl,
+      itemCondition:
+        product.situation === 'USED'
+          ? 'https://schema.org/UsedCondition'
+          : 'https://schema.org/NewCondition',
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      seller: { '@type': 'Organization', name: SITE_NAME_FA, url: siteUrl },
+      ...merchantOfferExtras(siteUrl),
     };
   }
 

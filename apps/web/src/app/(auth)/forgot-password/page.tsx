@@ -34,8 +34,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-16">
-      <Card>
+    <Card>
         <CardHeader>
           <CardTitle className="text-center text-2xl">فراموشی رمز عبور</CardTitle>
         </CardHeader>
@@ -67,6 +66,5 @@ export default function ForgotPasswordPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
   );
 }

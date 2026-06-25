@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { AuthService } from './auth.service';
 import { Public } from './custom.decorator';
-import { ForgotPasswordDto, LoginDto, RegisterDto } from './dto';
+import { ForgotPasswordDto, LoginDto, RegisterDto, ResendVerificationDto, VerifyEmailDto } from './dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -20,6 +20,18 @@ export class AuthController {
   @Post('login')
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Public()
+  @Post('verify-email')
+  verifyEmail(@Body() body: VerifyEmailDto) {
+    return this.authService.verifyEmail(body);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  resendVerification(@Body() body: ResendVerificationDto) {
+    return this.authService.resendVerification(body);
   }
 
   @Public()

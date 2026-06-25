@@ -1,21 +1,14 @@
 import type { Metadata } from 'next';
-import { SiteLogo } from '@/components/layout/site-logo';
+import { AuthPageShell } from '@/components/auth/auth-page-shell';
 import { buildMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildMetadata({
   title: 'ورود',
-  description: 'ورود به حساب کاربری جیپو',
+  description: 'ورود و ثبت‌نام در جیپو',
   path: '/login',
   noIndex: true,
 });
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <div className="mb-6 flex justify-center">
-        <SiteLogo href="/" size="lg" />
-      </div>
-      {children}
-    </>
-  );
+  return <AuthPageShell>{children}</AuthPageShell>;
 }

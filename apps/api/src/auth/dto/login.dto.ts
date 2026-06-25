@@ -1,9 +1,10 @@
-import { IsString, Matches, MinLength } from 'class-validator';
+import { IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
+  /** Iranian mobile (09xxxxxxxxx) or email address. */
   @IsString()
-  @Matches(/^09\d{9}$/, { message: 'شماره موبایل معتبر نیست' })
-  phone!: string;
+  @MinLength(1, { message: 'شماره موبایل یا ایمیل را وارد کنید' })
+  identifier!: string;
 
   @IsString()
   @MinLength(6, { message: 'رمز عبور باید حداقل ۶ کاراکتر باشد' })

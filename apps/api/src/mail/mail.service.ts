@@ -14,10 +14,10 @@ export class MailService {
     this.resend = this.apiKey ? new Resend(this.apiKey) : null;
   }
 
-  private async send(to: string, subject: string, html: string): Promise<void> {
+  private async send(to: string, subject: string, html: string): Promise<boolean> {
     if (!this.resend) {
       this.logger.warn(`Mail skipped (RESEND_API_KEY missing). To: ${to}, subject: ${subject}`);
-      return;
+      return false;
     }
 
     const { error } = await this.resend.emails.send({
@@ -29,8 +29,14 @@ export class MailService {
 
     if (error) {
       this.logger.error(`Resend error: ${error.message}`);
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.warn(`Dev fallback: email not sent. To: ${to}, subject: ${subject}`);
+        return false;
+      }
       throw new Error('ارسال ایمیل با خطا مواجه شد');
     }
+
+    return true;
   }
 
   async sendWelcome(to: string, name: string): Promise<void> {
@@ -45,6 +51,28 @@ export class MailService {
     `;
 
     await this.send(to, `خوش آمدید به ${SITE_NAME_FA}`, html);
+  }
+
+  async sendVerificationCode(to: string, name: string, code: string): Promise<void> {
+    const logCode = () => this.logger.warn(`Verification code for ${to}: ${code}`);
+
+    if (!this.resend) {
+      logCode();
+      return;
+    }
+
+    const html = `
+      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111">
+        <h2>تأیید ایمیل</h2>
+        <p>سلام ${name}،</p>
+        <p>برای تکمیل ثبت‌نام در ${SITE_NAME_FA}، کد زیر را در سایت وارد کنید:</p>
+        <p style="font-size:28px;font-weight:bold;letter-spacing:4px;direction:ltr;text-align:center">${code}</p>
+        <p style="color:#666;font-size:14px">این کد تا ۱۵ دقیقه معتبر است.</p>
+      </div>
+    `;
+
+    const sent = await this.send(to, `کد تأیید ایمیل ${SITE_NAME_FA}`, html);
+    if (!sent) logCode();
   }
 
   async sendNewPassword(to: string, name: string, password: string): Promise<void> {

@@ -9,12 +9,12 @@ import { adminApi } from '@/lib/api';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await adminApi.login(phone, password);
+      const res = await adminApi.login(identifier, password);
       localStorage.setItem('token', res.token);
       if (res.user.role !== 'ADMIN') {
         toast.error('شما دسترسی مدیر ندارید');
@@ -36,15 +36,17 @@ export default function AdminLoginPage() {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="admin-phone" className="mb-1 block text-sm">
-              شماره موبایل
+            <label htmlFor="admin-identifier" className="mb-1 block text-sm">
+              شماره موبایل یا ایمیل
             </label>
             <input
-              id="admin-phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-sm border px-4 py-2 outline-none focus:border-primary"
+              id="admin-identifier"
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="0912xxxxxxx یا admin@jeepo.ir"
+              dir="ltr"
+              className="w-full rounded-sm border px-4 py-2 text-end outline-none focus:border-primary"
               required
             />
           </div>

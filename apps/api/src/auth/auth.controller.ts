@@ -3,7 +3,13 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { AuthService } from './auth.service';
 import { Public } from './custom.decorator';
-import { ForgotPasswordDto, LoginDto, RegisterDto, ResendVerificationDto, VerifyEmailDto } from './dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResendVerificationDto,
+  VerifyEmailDto,
+} from './dto';
 
 @ApiTags('Auth')
 @Controller('auth')

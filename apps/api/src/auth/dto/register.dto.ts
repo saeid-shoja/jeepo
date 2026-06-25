@@ -1,8 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
 
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 export class RegisterDto {
   @Transform(trim)

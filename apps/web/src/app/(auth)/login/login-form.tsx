@@ -73,7 +73,11 @@ export function LoginForm() {
                 فراموشی رمز عبور
               </Link>
             </div>
-            <PasswordInput id="password" autoComplete="current-password" {...register('password')} />
+            <PasswordInput
+              id="password"
+              autoComplete="current-password"
+              {...register('password')}
+            />
             <FieldError message={errors.password?.message} />
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>

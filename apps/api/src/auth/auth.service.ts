@@ -12,7 +12,13 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
-import type { ForgotPasswordDto, LoginDto, RegisterDto, ResendVerificationDto, VerifyEmailDto } from './dto';
+import type {
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResendVerificationDto,
+  VerifyEmailDto,
+} from './dto';
 
 const FORGOT_PASSWORD_MESSAGE =
   'اگر ایمیل شما در سیستم ثبت شده باشد، رمز عبور جدید به آن ارسال می‌شود';
@@ -237,9 +243,7 @@ export class AuthService {
       return { message: 'اگر ثبت‌نامی با این ایمیل وجود داشته باشد، کد تأیید ارسال می‌شود' };
     }
 
-    if (
-      pending.lastCodeSentAt.getTime() + RESEND_COOLDOWN_MS > Date.now()
-    ) {
+    if (pending.lastCodeSentAt.getTime() + RESEND_COOLDOWN_MS > Date.now()) {
       throw new BadRequestException('لطفاً یک دقیقه صبر کنید و دوباره درخواست دهید');
     }
 

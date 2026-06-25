@@ -1,8 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsString, Length, Matches } from 'class-validator';
 
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 export class VerifyEmailDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))

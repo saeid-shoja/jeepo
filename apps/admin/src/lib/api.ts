@@ -31,10 +31,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const adminApi = {
-  login: (phone: string, password: string) =>
+  login: (identifier: string, password: string) =>
     request<{ token: string; user: any }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ phone, password }),
+      body: JSON.stringify({ identifier, password }),
     }),
   dashboard: () => request<any>('/admin/dashboard'),
   users: () => request<any[]>('/admin/users'),

@@ -70,6 +70,10 @@ model User {
   password  String
   role      UserRole  @default(CLIENT)
   city      String?
+  emailVerified              Boolean   @default(false)
+  emailVerifiedAt            DateTime?
+  emailVerificationCode      String?
+  emailVerificationExpiresAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]
@@ -82,6 +86,21 @@ model User {
   buyerConversations ProductConversation[] @relation("ConversationBuyer")
   sellerConversations ProductConversation[] @relation("ConversationSeller")
   productChatMessages ProductChatMessage[]
+}
+
+/** Signup draft — promoted to User only after email verification succeeds. */
+model PendingRegistration {
+  id                    String   @id @default(cuid())
+  phone                 String   @unique
+  email                 String   @unique
+  name                  String
+  password              String
+  city                  String
+  verificationCode      String
+  verificationExpiresAt DateTime
+  lastCodeSentAt        DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model Library {

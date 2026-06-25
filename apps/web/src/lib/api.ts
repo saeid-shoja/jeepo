@@ -84,11 +84,26 @@ export const api = {
       password: string;
       city?: string;
     }) =>
-      request<{ token: string; user: any }>('/auth/register', {
+      request<{
+        requiresVerification: boolean;
+        email: string;
+        maskedEmail: string;
+        message: string;
+      }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    login: (data: { phone: string; password: string }) =>
+    verifyEmail: (data: { email: string; code: string }) =>
+      request<{ token: string; user: any }>('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    resendVerification: (data: { email: string }) =>
+      request<{ message: string; maskedEmail?: string }>('/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    login: (data: { identifier: string; password: string }) =>
       request<{ token: string; user: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),

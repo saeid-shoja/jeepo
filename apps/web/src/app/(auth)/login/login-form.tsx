@@ -26,16 +26,23 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { phone: '', password: '' },
+    defaultValues: { identifier: '', password: '' },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await login(data.phone, data.password);
+      await login(data.identifier, data.password);
       toast.success('ورود موفقیت‌آمیز بود');
-      router.push(callbackUrl?.startsWith('/') ? callbackUrl : '/');
+      router.push(callbackUrl?.startsWith('/') ? callbackUrl : '/dashboard');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'خطا در ورود');
+      const message = err instanceof Error ? err.message : 'خطا در ورود';
+      toast.error(message);
+      if (
+        message.includes('تأیید نشده') &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.identifier.trim())
+      ) {
+        router.push(`/register?email=${encodeURIComponent(data.identifier.trim().toLowerCase())}`);
+      }
     }
   };
 
@@ -47,16 +54,17 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="phone">شماره موبایل</Label>
+            <Label htmlFor="identifier">شماره موبایل یا ایمیل</Label>
             <Input
-              id="phone"
-              type="tel"
-              placeholder="0912xxxxxxx"
+              id="identifier"
+              type="text"
+              placeholder="0912xxxxxxx یا you@example.com"
               dir="ltr"
               className="text-end"
-              {...register('phone')}
+              autoComplete="username"
+              {...register('identifier')}
             />
-            <FieldError message={errors.phone?.message} />
+            <FieldError message={errors.identifier?.message} />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -65,7 +73,11 @@ export function LoginForm() {
                 فراموشی رمز عبور
               </Link>
             </div>
-            <PasswordInput id="password" {...register('password')} />
+            <PasswordInput
+              id="password"
+              autoComplete="current-password"
+              {...register('password')}
+            />
             <FieldError message={errors.password?.message} />
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>

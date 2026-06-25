@@ -29,6 +29,8 @@ async function main() {
         password: hashed,
         role: 'ADMIN',
         city: 'تهران',
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
       },
     });
   }

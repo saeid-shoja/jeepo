@@ -85,6 +85,8 @@ export class AdminService {
         password: hashedPassword,
         city: data.city,
         role: data.role ?? 'CLIENT',
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
       },
       select: {
         id: true,

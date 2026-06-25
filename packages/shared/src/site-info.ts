@@ -4,7 +4,7 @@ export const SITE_NAME_FA = 'جیپو';
 /** English / slug name */
 export const SITE_NAME_EN = 'jeepo';
 
-export const SITE_EMAIL = `info@${SITE_NAME_EN}.ir`;
+export const SITE_EMAIL = `jeepoinfo@gmail.com`;
 
 /** Default public site URL (override with NEXT_PUBLIC_SITE_URL in production). */
 export const SITE_URL = 'https://jeepo.ir';

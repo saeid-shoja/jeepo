@@ -68,6 +68,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.productChatMessage;
   }
 
+  get pendingRegistration(): PrismaClient['pendingRegistration'] {
+    return this.client.pendingRegistration;
+  }
+
   $transaction<T>(
     fn: (
       tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>,

@@ -10,6 +10,7 @@ export type User = {
   name: string;
   role: string;
   city?: string;
+  emailVerified?: boolean;
 };
 
 type AuthState = {
@@ -17,14 +18,16 @@ type AuthState = {
   loading: boolean;
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (
     phone: string,
     name: string,
     password: string,
     email: string,
     city?: string,
-  ) => Promise<void>;
+  ) => Promise<{ email: string; maskedEmail: string; message: string }>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<string>;
   logout: () => void;
   patchUser: (data: Partial<Pick<User, 'name' | 'city'>>) => void;
 };
@@ -49,16 +52,36 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  login: async (phone, password) => {
-    const res = await api.auth.login({ phone, password });
+  login: async (identifier, password) => {
+    const res = await api.auth.login({ identifier: identifier.trim(), password });
     localStorage.setItem('token', res.token);
     set({ user: res.user });
   },
 
   register: async (phone, name, password, email, city) => {
-    const res = await api.auth.register({ phone, name, password, email, city });
+    const res = await api.auth.register({
+      phone: phone.trim(),
+      name: name.trim(),
+      password,
+      email: email.trim().toLowerCase(),
+      city: city?.trim() ?? '',
+    });
+    return {
+      email: res.email,
+      maskedEmail: res.maskedEmail,
+      message: res.message,
+    };
+  },
+
+  verifyEmail: async (email, code) => {
+    const res = await api.auth.verifyEmail({ email, code });
     localStorage.setItem('token', res.token);
     set({ user: res.user });
+  },
+
+  resendVerification: async (email) => {
+    const res = await api.auth.resendVerification({ email });
+    return res.message;
   },
 
   logout: () => {
@@ -79,7 +102,9 @@ export function useAuth() {
   const loading = useAuthStore((s) => s.loading);
   const login = useAuthStore((s) => s.login);
   const register = useAuthStore((s) => s.register);
+  const verifyEmail = useAuthStore((s) => s.verifyEmail);
+  const resendVerification = useAuthStore((s) => s.resendVerification);
   const logout = useAuthStore((s) => s.logout);
   const patchUser = useAuthStore((s) => s.patchUser);
-  return { user, loading, login, register, logout, patchUser };
+  return { user, loading, login, register, verifyEmail, resendVerification, logout, patchUser };
 }

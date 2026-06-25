@@ -2,8 +2,7 @@ import './globals.css';
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME_EN, SITE_NAME_FA } from '@offroad/shared';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { SiteFooter } from '@/components/layout/footer';
-import { Navbar } from '@/components/layout/navbar';
+import { AppShell } from '@/components/layout/app-shell';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Toaster } from '@/components/ui/sonner';
 import {
@@ -89,11 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <StoreInitializer />
           <FavoritesSync />
-          <Navbar />
-          <main className="mx-auto min-h-[calc(100vh-5rem)] w-full flex-1 overflow-x-hidden px-4 py-6">
-            {children}
-          </main>
-          <SiteFooter />
+          <AppShell>{children}</AppShell>
           <Toaster />
         </ThemeProvider>
       </body>

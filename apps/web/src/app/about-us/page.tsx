@@ -29,7 +29,9 @@ export default function AboutUsPage() {
       <div className="container space-y-8 pb-8">
         <div className="rounded-xl border bg-card p-6 md:p-8">
           <h1 className="text-2xl font-bold md:text-3xl">درباره {SITE_NAME_FA}</h1>
-          <p className="text-muted-foreground mt-4 text-sm leading-8 md:text-base">{ABOUT_US_INTRO}</p>
+          <p className="text-muted-foreground mt-4 text-sm leading-8 md:text-base">
+            {ABOUT_US_INTRO}
+          </p>
           <p className="text-muted-foreground mt-3 text-sm leading-8">
             وب‌سایت رسمی:{' '}
             <Link href="https://jeepo.ir" className="text-primary hover:underline" dir="ltr">

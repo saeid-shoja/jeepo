@@ -24,7 +24,7 @@ const conversationInclude = {
 
 @Injectable()
 export class ProductChatsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private parseImages(images: string): string[] {
     try {
@@ -88,13 +88,13 @@ export class ProductChatsService {
       },
       lastMessage: lastMessage
         ? {
-          id: lastMessage.id,
-          body: lastMessage.body,
-          senderId: lastMessage.senderId,
-          isMine: lastMessage.senderId === viewerUserId,
-          readAt: lastMessage.readAt,
-          createdAt: lastMessage.createdAt,
-        }
+            id: lastMessage.id,
+            body: lastMessage.body,
+            senderId: lastMessage.senderId,
+            isMine: lastMessage.senderId === viewerUserId,
+            readAt: lastMessage.readAt,
+            createdAt: lastMessage.createdAt,
+          }
         : null,
     };
   }

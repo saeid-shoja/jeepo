@@ -44,7 +44,9 @@ export class ZibalService {
     return `${ZIBAL_BASE}/start/${trackId}`;
   }
 
-  async requestPayment(payload: Omit<ZibalRequestPayload, 'merchant'>): Promise<ZibalRequestResponse> {
+  async requestPayment(
+    payload: Omit<ZibalRequestPayload, 'merchant'>,
+  ): Promise<ZibalRequestResponse> {
     const body: ZibalRequestPayload = {
       merchant: this.merchant,
       ...payload,

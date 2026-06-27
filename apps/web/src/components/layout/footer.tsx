@@ -1,9 +1,4 @@
-import {
-  SITE_EMAIL,
-  SITE_NAME_FA,
-  SITE_TELEGRAM_HANDLE,
-  SITE_TELEGRAM_URL,
-} from '@offroad/shared';
+import { SITE_EMAIL, SITE_NAME_FA, SITE_TELEGRAM_HANDLE, SITE_TELEGRAM_URL } from '@offroad/shared';
 import { Mail, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
 import { EnamadTrustSeal } from '@/components/layout/enamad-trust-seal';
@@ -64,7 +59,8 @@ export function SiteFooter() {
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <SiteLogo size="lg" />
             <p className="text-muted-foreground text-sm leading-relaxed">
-              جیپو یک بستر خرید و فروش و ثبت آگهی و برگزاری مزایده برای فروش لوازم دست دوم آفرودی و موتورسیکلت های سفری و آفرودی است.
+              جیپو یک بستر خرید و فروش و ثبت آگهی و برگزاری مزایده برای فروش لوازم دست دوم آفرودی و
+              موتورسیکلت های سفری و آفرودی است.
             </p>
             <div className="text-muted-foreground space-y-2 text-sm">
               <p className="flex items-center gap-2">

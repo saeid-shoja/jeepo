@@ -21,7 +21,8 @@ function FailedContent() {
   const orderId = searchParams.get('orderId');
   const reason = searchParams.get('reason');
   const message =
-    (reason && REASON_MESSAGES[reason]) || 'پرداخت انجام نشد. در صورت کسر وجه، با پشتیبانی تماس بگیرید.';
+    (reason && REASON_MESSAGES[reason]) ||
+    'پرداخت انجام نشد. در صورت کسر وجه، با پشتیبانی تماس بگیرید.';
 
   return (
     <div className="mx-auto max-w-lg py-16 text-center">

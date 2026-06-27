@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SITE_NAME_FA } from '@offroad/shared';
 import { OrdersService } from '../orders/orders.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,7 +18,10 @@ export class PaymentsService {
     @Inject('ZIBAL_CALLBACK_URL') private readonly callbackUrl: string,
   ) {}
 
-  async initiateForOrder(orderId: string, userId: string): Promise<{ paymentUrl: string; trackId: string }> {
+  async initiateForOrder(
+    orderId: string,
+    userId: string,
+  ): Promise<{ paymentUrl: string; trackId: string }> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { user: { select: { phone: true } } },
@@ -85,7 +82,11 @@ export class PaymentsService {
       return { ok: false, orderId, reason: 'order_not_found' };
     }
 
-    if (order.status === 'CONFIRMED' || order.status === 'SHIPPED' || order.status === 'DELIVERED') {
+    if (
+      order.status === 'CONFIRMED' ||
+      order.status === 'SHIPPED' ||
+      order.status === 'DELIVERED'
+    ) {
       return { ok: true, orderId };
     }
 
@@ -96,7 +97,9 @@ export class PaymentsService {
     const verify = await this.zibal.verifyPayment(trackId);
 
     if (verify.result !== ZIBAL_SUCCESS && verify.result !== ZIBAL_ALREADY_VERIFIED) {
-      this.logger.warn(`Zibal verify failed for order ${orderId}: ${verify.result} ${verify.message}`);
+      this.logger.warn(
+        `Zibal verify failed for order ${orderId}: ${verify.result} ${verify.message}`,
+      );
       return { ok: false, orderId, reason: 'verify_failed' };
     }
 

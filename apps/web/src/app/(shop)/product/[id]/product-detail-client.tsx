@@ -156,8 +156,8 @@ export function ProductDetailClient() {
               }
             >
               {product.situation === 'IN_STOCK' ||
-                product.type === 'SHOP' ||
-                product.situation === 'USED' ? (
+              product.type === 'SHOP' ||
+              product.situation === 'USED' ? (
                 <Package className="h-3 w-3" />
               ) : (
                 <Sparkles className="h-3 w-3" />

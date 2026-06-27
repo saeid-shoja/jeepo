@@ -1,7 +1,7 @@
 import { PackageSearch, Shield, Sparkles, TrendingUp } from 'lucide-react';
 
 const OPTION_CARD_STYLE = 'bg-card flex items-start rounded-md border p-3 lg:p-6';
-const OPTIONS_CARD_ICON = 'text-primary h-5 w-5 lg:h-7 lg:w-7 shrink-0';
+const OPTIONS_CARD_ICON = 'text-primary h-5 w-5 lg:h-7 lg:w-7 shrink-0 ml-1';
 const OPTIONS_CARD_TITLE = 'text-sm lg:text-base font-bold';
 const OPTIONS_CARD_DESC = 'text-muted-foreground mt-1 text-xs lg:text-sm';
 

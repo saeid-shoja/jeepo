@@ -22,3 +22,21 @@ export function isClientProduct(product: {
 }): boolean {
   return getProductAdvertiser(product) === 'CLIENT';
 }
+
+/** In-app chat is only for active user listings — not shop inventory or auctions. */
+export function canStartProductChat(
+  product: {
+    advertiser?: string | null;
+    type?: string | null;
+    isAuction?: boolean;
+    userId?: string | null;
+    status?: string;
+  },
+  viewerUserId?: string | null,
+): boolean {
+  if (!isClientProduct(product)) return false;
+  if (product.isAuction) return false;
+  if (!product.userId || product.status !== 'ACTIVE') return false;
+  if (viewerUserId && product.userId === viewerUserId) return false;
+  return true;
+}

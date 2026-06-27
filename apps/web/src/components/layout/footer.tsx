@@ -1,6 +1,12 @@
-import { SITE_EMAIL, SITE_NAME_FA } from '@offroad/shared';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import {
+  SITE_EMAIL,
+  SITE_NAME_FA,
+  SITE_TELEGRAM_HANDLE,
+  SITE_TELEGRAM_URL,
+} from '@offroad/shared';
+import { Mail, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
+import { EnamadTrustSeal } from '@/components/layout/enamad-trust-seal';
 import { SiteLogo } from '@/components/layout/site-logo';
 import { Separator } from '@/components/ui/separator';
 
@@ -23,10 +29,6 @@ const infoLinks = [
   { href: '/roles', label: 'قوانین وب‌سایت و کسب‌وکار' },
   { href: '/faq', label: 'سوالات پرتکرار' },
 ];
-
-/** Exact snippet from enamad.ir — must not be altered for verification. */
-const ENAMAD_TRUST_SEAL_HTML =
-  "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=745923&Code=UUqyBD9oyXBa0odv13CCIZrvb5uBn2Fq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=745923&Code=UUqyBD9oyXBa0odv13CCIZrvb5uBn2Fq' alt='' style='cursor:pointer' code='UUqyBD9oyXBa0odv13CCIZrvb5uBn2Fq'></a>";
 
 function FooterColumn({
   title,
@@ -62,12 +64,20 @@ export function SiteFooter() {
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <SiteLogo size="lg" />
             <p className="text-muted-foreground text-sm leading-relaxed">
-              خرید و فروش لوازم آفرود، قطعات یدکی و تجهیزات آفرودی دست دوم و مزایده ای.
+              جیپو یک بستر خرید و فروش و ثبت آگهی و برگزاری مزایده برای فروش لوازم دست دوم آفرودی و موتورسیکلت های سفری و آفرودی است.
             </p>
             <div className="text-muted-foreground space-y-2 text-sm">
               <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0" />
-                09333092013
+                <Send className="h-4 w-4 shrink-0" />
+                <a
+                  href={SITE_TELEGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                  dir="ltr"
+                >
+                  {SITE_TELEGRAM_HANDLE}
+                </a>
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0" />
@@ -82,21 +92,15 @@ export function SiteFooter() {
 
           <FooterColumn title="فروشگاه" links={shopLinks} />
           <FooterColumn title="حساب کاربری" links={accountLinks} />
-          <div>
-            <FooterColumn title="راهنما" links={infoLinks} />
-            <div
-              className="flex justify-center"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: enamad.ir requires unmodified embed HTML
-              dangerouslySetInnerHTML={{ __html: ENAMAD_TRUST_SEAL_HTML }}
-            />
-          </div>
+          <FooterColumn title="راهنما" links={infoLinks} />
         </div>
         <Separator className="my-8" />
-        <div className="text-muted-foreground flex w-full flex-col items-center justify-between gap-2 text-center text-xs sm:flex-row sm:text-sm">
-          <p>
+        <div className="text-muted-foreground flex w-full flex-col items-center justify-between gap-6 text-center text-xs sm:flex-row sm:text-sm">
+          <p className="sm:text-start">
             © {new Date().getFullYear()} {SITE_NAME_FA} — تمامی حقوق محفوظ است.
           </p>
-          <p>طراحی شده برای علاقه‌مندان آفرود و آفرودی‌ها</p>
+          <EnamadTrustSeal />
+          <p className="sm:text-end">طراحی شده برای علاقه‌مندان آفرود و آفرودی‌ها</p>
         </div>
       </div>
     </footer>

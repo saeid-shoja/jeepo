@@ -110,12 +110,12 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -388,11 +388,10 @@ export default function NewProductPage() {
         }}
         loading={payingListingFee}
         title="پرداخت هزینه ثبت آگهی"
-        description={`بیش از ${FREE_CLIENT_LISTING_LIMIT} آگهی فعال دارید. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
-          listingPaymentDueAt
+        description={`بیش از ${FREE_CLIENT_LISTING_LIMIT} آگهی فعال دارید. برای انتشار این آگهی باید هزینه ثبت بپردازید.${listingPaymentDueAt
             ? ` تا ${new Date(listingPaymentDueAt).toLocaleDateString('fa-IR')} (${LISTING_PAYMENT_GRACE_DAYS} روز) فرصت دارید.`
             : ''
-        }`}
+          }`}
         fee={listingFee}
         onConfirm={() => void handlePayListingFee()}
       />

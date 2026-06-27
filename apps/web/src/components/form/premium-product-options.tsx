@@ -3,6 +3,7 @@
 import {
   BOOST_LISTING_FEE,
   formatPrice,
+  GUARANTEE_FEE_LABEL,
   getGuaranteeFee,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
@@ -86,11 +87,14 @@ export function PremiumProductOptions({
               ) : hasGuarantee ? (
                 <p className="text-xs font-medium text-green-700">
                   هزینه پس از فروش: {formatPrice(guaranteeFee)} تومان
-                  <span className="text-muted-foreground font-normal"> (۵٪ قیمت محصول)</span>
+                  <span className="text-muted-foreground font-normal">
+                    {' '}
+                    ({GUARANTEE_FEE_LABEL})
+                  </span>
                 </p>
               ) : (
                 <p className="text-muted-foreground text-xs">
-                  پس از فروش در سایت: {formatPrice(guaranteeFee)} تومان (۵٪ قیمت)
+                  پس از فروش در سایت: {formatPrice(guaranteeFee)} تومان ({GUARANTEE_FEE_LABEL})
                 </p>
               )}
               <ReadMoreButton />
@@ -109,11 +113,11 @@ export function PremiumProductOptions({
                     خواهد شد.
                   </p>
                   <p>
-                    <strong>هزینه:</strong> معادل <strong>۵٪ قیمت فروش محصول</strong>
+                    <strong>هزینه:</strong> <strong>{GUARANTEE_FEE_LABEL}</strong>
                     {hasValidPrice && (
                       <>
                         {' '}
-                        (برای این آگهی: <strong>{formatPrice(guaranteeFee)} تومان</strong>)
+                        (سهم ۲٪ برای این آگهی: <strong>{formatPrice(guaranteeFee)} تومان</strong>)
                       </>
                     )}
                   </p>

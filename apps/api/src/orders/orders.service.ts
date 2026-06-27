@@ -335,18 +335,58 @@ export class OrdersService {
     const lines = await this.resolveItems(data.items, userId);
     const total = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
 
+    const order = await this.prisma.order.create({
+      data: {
+        userId,
+        total,
+        status: 'PENDING',
+        address: data.address,
+        phone: data.phone ?? user.phone,
+        note: data.note,
+        paymentMethod: data.paymentMethod,
+        items: {
+          create: lines.map((line) => ({
+            productId: line.productId,
+            quantity: line.quantity,
+            price: line.price,
+          })),
+        },
+      },
+      include: orderInclude,
+    });
+
+    return order;
+  }
+
+  async fulfillAfterPayment(
+    orderId: string,
+    payment: { trackId: string; refNumber: string | null; paidAt: Date },
+  ) {
+    const existing = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!existing) throw new NotFoundException('سفارش یافت نشد');
+    if (existing.status !== 'PENDING') {
+      return this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: orderInclude,
+      });
+    }
+
     const order = await this.prisma.$transaction(async (tx) => {
-      for (const line of lines) {
+      for (const item of existing.items) {
         const updated = await tx.product.updateMany({
-          where: { id: line.productId, stockQuantity: { gte: line.quantity } },
-          data: { stockQuantity: { decrement: line.quantity } },
+          where: { id: item.productId, stockQuantity: { gte: item.quantity } },
+          data: { stockQuantity: { decrement: item.quantity } },
         });
         if (updated.count === 0) {
           throw new BadRequestException('موجودی یکی از محصولات کافی نیست');
         }
 
         const product = await tx.product.findUnique({
-          where: { id: line.productId },
+          where: { id: item.productId },
           select: {
             advertiser: true,
             hasGuarantee: true,
@@ -356,27 +396,19 @@ export class OrdersService {
         });
         if (product && shouldDeactivateSoldListing(product)) {
           await tx.product.update({
-            where: { id: line.productId },
+            where: { id: item.productId },
             data: { status: 'DEPRECATED', deprecatedAt: new Date() },
           });
         }
       }
 
-      return tx.order.create({
+      return tx.order.update({
+        where: { id: orderId },
         data: {
-          userId,
-          total,
-          address: data.address,
-          phone: data.phone ?? user.phone,
-          note: data.note,
-          paymentMethod: data.paymentMethod,
-          items: {
-            create: lines.map((line) => ({
-              productId: line.productId,
-              quantity: line.quantity,
-              price: line.price,
-            })),
-          },
+          status: 'CONFIRMED',
+          paymentTrackId: payment.trackId,
+          paymentRefNumber: payment.refNumber,
+          paidAt: payment.paidAt,
         },
         include: orderInclude,
       });

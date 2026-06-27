@@ -9,6 +9,10 @@ turbo/
 .env.development.local
 .env.test.local
 .env.production.local
+.mimo-api-key
+.mimo-api-key.example
+api-1.json
+mimocode.jsonc
 coverage/
 apps/api/src/prisma/generated/
 

@@ -24,6 +24,7 @@ import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-di
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { canStartProductChat, isClientProduct } from '@/lib/product-advertiser';
 import { getSituationLabel } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
@@ -73,7 +74,7 @@ export function ProductDetailClient() {
   const canBuy = canViewerPurchase(product, user?.id);
   const stockQuantity = product.stockQuantity ?? 1;
   const showStock = !product.isAuction;
-  const canChat = !product.isAuction && product.userId && product.status === 'ACTIVE' && !isOwner;
+  const canChat = canStartProductChat(product, user?.id);
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 container">
@@ -155,8 +156,8 @@ export function ProductDetailClient() {
               }
             >
               {product.situation === 'IN_STOCK' ||
-              product.type === 'SHOP' ||
-              product.situation === 'USED' ? (
+                product.type === 'SHOP' ||
+                product.situation === 'USED' ? (
                 <Package className="h-3 w-3" />
               ) : (
                 <Sparkles className="h-3 w-3" />
@@ -266,7 +267,7 @@ export function ProductDetailClient() {
           </div>
         )}
 
-        {product.type === 'CLIENT' && product.user && !product.isAuction && (
+        {isClientProduct(product) && product.user && !product.isAuction && (
           <div className="rounded-lg border bg-card p-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -300,10 +301,6 @@ export function ProductDetailClient() {
               isAuthenticated={Boolean(user)}
             />
           </div>
-        )}
-
-        {canChat && product.type !== 'CLIENT' && (
-          <StartProductChatButton productId={product.id ?? id} className="w-full" />
         )}
 
         <Link

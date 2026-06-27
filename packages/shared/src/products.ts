@@ -35,7 +35,9 @@ export const EXTRA_LISTING_FEE = 30_000;
 export const LISTING_PAYMENT_GRACE_DAYS = 3;
 
 /** Listing premium fees (Toman) */
-export const GUARANTEE_FEE_RATE = 0.05;
+export const GUARANTEE_FEE_RATE = 0.02;
+/** User-facing label for guarantee commission (percentage part; purchase fees may apply separately). */
+export const GUARANTEE_FEE_LABEL = '۲٪ قیمت فروش به‌علاوه کارمزد تراکنش';
 /** پله شده — one-time bump to top (updates listedAt) */
 export const BOOST_LISTING_FEE = 100_000;
 /** تقویت شده — pinned on top for 4 days (ignores listedAt while active) */

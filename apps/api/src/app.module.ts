@@ -9,6 +9,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ConfigModule } from './config.module';
 import { MailModule } from './mail/mail.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductChatsModule } from './product-chats/product-chats.module';
 import { ProductsModule } from './products/products.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     CategoriesModule,
     OrdersModule,
+    PaymentsModule,
     ProductChatsModule,
     AdminModule,
     AuctionsModule,

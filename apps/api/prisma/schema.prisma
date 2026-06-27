@@ -216,6 +216,9 @@ model Order {
   phone           String?
   note            String?
   paymentMethod   PaymentMethod?
+  paymentTrackId  String?        @unique
+  paymentRefNumber String?
+  paidAt          DateTime?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   items     OrderItem[]

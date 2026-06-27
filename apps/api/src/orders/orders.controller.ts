@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Public, Roles } from '../auth/custom.decorator';
+import { PaymentsService } from '../payments/payments.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { CreateOrderDto, PreviewOrderDto, UpdateOrderStatusDto } from './dto';
 import { OrdersService } from './orders.service';
@@ -9,7 +10,10 @@ import { OrdersService } from './orders.service';
 @ApiBearerAuth(SWAGGER_BEARER_KEY)
 @Controller('orders')
 export class OrdersController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(
+    private ordersService: OrdersService,
+    private paymentsService: PaymentsService,
+  ) {}
 
   @Roles('ADMIN')
   @Get()
@@ -34,8 +38,10 @@ export class OrdersController {
   }
 
   @Post()
-  create(@Request() req: { user: { userId: string } }, @Body() body: CreateOrderDto) {
-    return this.ordersService.create(req.user.userId, body);
+  async create(@Request() req: { user: { userId: string } }, @Body() body: CreateOrderDto) {
+    const order = await this.ordersService.create(req.user.userId, body);
+    const { paymentUrl } = await this.paymentsService.initiateForOrder(order.id, req.user.userId);
+    return { ...order, paymentUrl };
   }
 
   @Roles('ADMIN')

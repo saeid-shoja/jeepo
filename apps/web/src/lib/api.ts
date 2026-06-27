@@ -204,7 +204,11 @@ export const api = {
       phone?: string;
       note?: string;
       paymentMethod: 'ONLINE';
-    }) => request<any>('/orders', { method: 'POST', body: JSON.stringify(data) }),
+    }) =>
+      request<{ id: string; paymentUrl: string }>('/orders', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     get: (id: string) => request<any>(`/orders/${id}`),
   },
 

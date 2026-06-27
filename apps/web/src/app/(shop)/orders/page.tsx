@@ -12,7 +12,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'در انتظار',
+  PENDING: 'در انتظار پرداخت',
   CONFIRMED: 'تأیید شده',
   SHIPPED: 'ارسال شده',
   DELIVERED: 'تحویل شده',

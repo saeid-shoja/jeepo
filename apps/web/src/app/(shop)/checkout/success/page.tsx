@@ -14,9 +14,11 @@ function SuccessContent() {
   return (
     <div className="mx-auto max-w-lg py-16 text-center">
       <CheckCircle2 className="mx-auto size-16 text-green-600" />
-      <h1 className="mt-4 text-2xl font-bold">سفارش شما ثبت شد</h1>
+      <h1 className="mt-4 text-2xl font-bold">پرداخت با موفقیت انجام شد</h1>
       <p className="text-muted-foreground mt-2 text-sm">
-        {orderId ? `شماره سفارش: ${orderId}` : 'به زودی با شما تماس گرفته می‌شود.'}
+        {orderId
+          ? `سفارش ${orderId.slice(-8)} ثبت و پرداخت شد.`
+          : 'به زودی با شما تماس گرفته می‌شود.'}
       </p>
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Button asChild>

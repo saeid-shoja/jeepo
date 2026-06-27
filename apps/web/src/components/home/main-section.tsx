@@ -1,26 +1,17 @@
 'use client';
 
-import { AlertCircle, Gavel, PackageSearch, Store } from 'lucide-react';
+import { Gavel, PackageSearch, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AuctionProductCard } from '@/components/auction/auction-product-card';
-import { CategoryCard } from '@/components/shop/category-card';
 import { ProductCard } from '@/components/shop/product-card';
-import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
-import { useCategories } from '@/stores/categories-store';
 import BadgeInfo from './badge-info';
 
 export default function MainSection() {
   const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [clientProducts, setClientProducts] = useState<any[]>([]);
   const [auctionProducts, setAuctionProducts] = useState<any[]>([]);
-  const {
-    parts: categories,
-    loading: categoriesLoading,
-    error: categoriesError,
-    refetch,
-  } = useCategories();
 
   useEffect(() => {
     api.products
@@ -108,35 +99,6 @@ export default function MainSection() {
           </div>
         ) : (
           <p className="text-muted-foreground py-8 text-center">هنوز آگهی‌ای ثبت نشده است</p>
-        )}
-      </section>
-
-      <section className="container">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-bold">دسته‌بندی محصولات</h2>
-          <Link href="/categories" className="text-primary text-sm hover:underline">
-            همه دسته‌ها
-          </Link>
-        </div>
-        {categoriesLoading ? (
-          <p className="text-muted-foreground py-8 text-center">در حال بارگذاری دسته‌بندی‌ها...</p>
-        ) : categoriesError ? (
-          <div className="border-destructive/30 bg-destructive/5 flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
-            <AlertCircle className="text-destructive h-8 w-8" />
-            <p className="text-destructive text-sm">{categoriesError}</p>
-            <p className="text-muted-foreground text-xs">ارتباط با سرور برقرار نشد</p>
-            <Button variant="outline" size="sm" onClick={refetch}>
-              تلاش مجدد
-            </Button>
-          </div>
-        ) : categories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-            {categories.map((cat) => (
-              <CategoryCard key={cat.id} category={cat} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground py-8 text-center">دسته‌بندی‌ای یافت نشد</p>
         )}
       </section>
     </div>

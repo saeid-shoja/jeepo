@@ -66,7 +66,7 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
-      const order = await api.orders.create({
+      const { id, paymentUrl } = await api.orders.create({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         address: data.address,
         phone: data.phone || undefined,
@@ -74,8 +74,12 @@ export default function CheckoutPage() {
         paymentMethod: 'ONLINE',
       });
       clearCart();
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+        return;
+      }
       toast.success('سفارش با موفقیت ثبت شد');
-      router.push(`/checkout/success?orderId=${order.id}`);
+      router.push(`/checkout/success?orderId=${id}`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
     }
@@ -178,7 +182,7 @@ export default function CheckoutPage() {
                     در حال ثبت...
                   </>
                 ) : (
-                  'پرداخت و ثبت سفارش'
+                  'انتقال به درگاه پرداخت'
                 )}
               </Button>
 

@@ -124,9 +124,22 @@ export class ProductChatsService {
   private async getProductForChat(productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, userId: true, status: true, title: true },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        title: true,
+        advertiser: true,
+        isAuction: true,
+      },
     });
     if (!product) throw new NotFoundException('آگهی یافت نشد');
+    if (product.advertiser !== 'CLIENT') {
+      throw new BadRequestException('گفتگو فقط برای آگهی‌های کاربران امکان‌پذیر است');
+    }
+    if (product.isAuction) {
+      throw new BadRequestException('گفتگو برای مزایده‌ها فعال نیست');
+    }
     if (!product.userId) {
       throw new BadRequestException('این آگهی مالک مشخصی ندارد');
     }

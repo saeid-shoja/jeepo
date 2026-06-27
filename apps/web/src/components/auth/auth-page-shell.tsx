@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { SiteLogo } from '@/components/layout/site-logo';
 import { MOCK_SLIDES, type Slide } from '@/lib/get-landing-slides';
 
 function pickRandomSlide(): Slide {

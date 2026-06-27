@@ -34,10 +34,7 @@ export const registerSchema = z.object({
     .string()
     .trim()
     .refine(
-      (value) =>
-        !value ||
-        /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(value) ||
-        /^\d{5,15}$/.test(value),
+      (value) => !value || /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(value) || /^\d{5,15}$/.test(value),
       'آیدی تلگرام معتبر نیست (مثال: @username)',
     ),
 });

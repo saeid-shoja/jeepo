@@ -84,7 +84,7 @@ export function LoginForm() {
             {isSubmitting ? 'در حال ورود...' : 'ورود'}
           </Button>
         </form>
-        <div className='w-full flex justify-between items-center mt-4'>
+        <div className="w-full flex justify-between items-center mt-4">
           <p className="text-muted-foreground text-center text-sm">
             حساب کاربری ندارید؟{' '}
             <Link href="/register" className="text-primary hover:underline">

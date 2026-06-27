@@ -250,7 +250,7 @@ export class ProductChatsService {
   }
 
   async sendMessage(conversationId: string, userId: string, dto: SendChatMessageDto) {
-    const conversation = await this.assertParticipant(conversationId, userId);
+    await this.assertParticipant(conversationId, userId);
     const body = dto.body.trim();
     if (!body) throw new BadRequestException('متن پیام را وارد کنید');
 

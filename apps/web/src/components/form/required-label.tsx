@@ -5,7 +5,12 @@ type RequiredLabelProps = React.ComponentProps<typeof Label> & {
   required?: boolean;
 };
 
-export function RequiredLabel({ required = true, className, children, ...props }: RequiredLabelProps) {
+export function RequiredLabel({
+  required = true,
+  className,
+  children,
+  ...props
+}: RequiredLabelProps) {
   return (
     <Label className={cn(className)} {...props}>
       {children}

@@ -78,7 +78,9 @@ function buildOrderEmailHtml(
     )
     .join('');
 
-  const sellers = [...new Map(payload.items.map((item) => [item.sellerLabel, item.seller])).entries()];
+  const sellers = [
+    ...new Map(payload.items.map((item) => [item.sellerLabel, item.seller])).entries(),
+  ];
 
   return `
     <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">

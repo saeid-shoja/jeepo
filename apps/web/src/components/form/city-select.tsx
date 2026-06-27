@@ -46,7 +46,7 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
             onChange('');
           }}
         >
-          <SelectTrigger className='w-full'>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="انتخاب استان" />
           </SelectTrigger>
           <SelectContent>
@@ -63,7 +63,7 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
           {label}
         </RequiredLabel>
         <Select value={value} onValueChange={onChange} disabled={!provinceId}>
-          <SelectTrigger className='w-full'>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="انتخاب شهر" />
           </SelectTrigger>
           <SelectContent>

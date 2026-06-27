@@ -168,10 +168,7 @@ export class OrdersService {
     return order;
   }
 
-  private sellerLabel(product: {
-    advertiser: string;
-    user: { name: string } | null;
-  }): string {
+  private sellerLabel(product: { advertiser: string; user: { name: string } | null }): string {
     if (product.advertiser === 'SHOP') return `فروشگاه ${SITE_NAME_FA}`;
     return product.user?.name ? `فروشنده: ${product.user.name}` : 'فروشنده';
   }
@@ -223,17 +220,17 @@ export class OrdersService {
         const seller =
           item.product.advertiser === 'SHOP' || !item.product.user
             ? {
-              name: `فروشگاه ${SITE_NAME_FA}`,
-              phone: null,
-              email: null,
-              city: null,
-            }
+                name: `فروشگاه ${SITE_NAME_FA}`,
+                phone: null,
+                email: null,
+                city: null,
+              }
             : {
-              name: item.product.user.name,
-              phone: item.product.user.phone,
-              email: item.product.user.email,
-              city: item.product.user.city,
-            };
+                name: item.product.user.name,
+                phone: item.product.user.phone,
+                email: item.product.user.email,
+                city: item.product.user.city,
+              };
 
         return {
           title: item.product.title,
@@ -282,11 +279,11 @@ export class OrdersService {
 
     if (order.user.email) {
       mailTasks.push(
-        this.mailService.sendBuyerPurchaseSuccess(order.user.email, order.user.name, payload).catch(
-          (err) => {
+        this.mailService
+          .sendBuyerPurchaseSuccess(order.user.email, order.user.name, payload)
+          .catch((err) => {
             this.logger.warn(`Buyer email failed: ${String(err)}`);
-          },
-        ),
+          }),
       );
     }
 

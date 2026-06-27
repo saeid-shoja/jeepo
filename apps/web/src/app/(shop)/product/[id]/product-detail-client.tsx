@@ -45,7 +45,7 @@ export function ProductDetailClient() {
       .then(setProduct)
       .catch(() => setProduct(null))
       .finally(() => setLoading(false));
-  }, [id, authLoading, user?.id]);
+  }, [id, authLoading]);
 
   useEffect(() => {
     if (product?.id) setQuantity(1);
@@ -287,7 +287,11 @@ export function ProductDetailClient() {
               </Button>
             </div>
             {canChat && (
-              <StartProductChatButton productId={product.id ?? id} className="w-full" variant="outline" />
+              <StartProductChatButton
+                productId={product.id ?? id}
+                className="w-full"
+                variant="outline"
+              />
             )}
             <AdvertiserContactDialog
               open={contactOpen}

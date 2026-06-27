@@ -226,7 +226,8 @@ function RegisterPageContent() {
           />
           <div className="space-y-2">
             <RequiredLabel htmlFor="telegramId" required={false}>
-              آیدی تلگرام <span className="text-muted-foreground text-xs">(جهت دریافت اعلان های چت و خبر)</span>
+              آیدی تلگرام{' '}
+              <span className="text-muted-foreground text-xs">(جهت دریافت اعلان های چت و خبر)</span>
             </RequiredLabel>
             <Input
               id="telegramId"
@@ -243,7 +244,7 @@ function RegisterPageContent() {
             {detailsForm.formState.isSubmitting ? 'در حال ثبت نام...' : 'ادامه و دریافت کد تأیید'}
           </Button>
         </form>
-        <div className='w-full flex justify-between items-center mt-4'>
+        <div className="w-full flex justify-between items-center mt-4">
           <p className="text-muted-foreground text-center text-sm">
             قبلاً ثبت نام کرده‌اید؟{' '}
             <Link href="/login" className="text-primary hover:underline">

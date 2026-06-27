@@ -8,10 +8,10 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
 import { FieldError } from '@/components/form/field-error';
+import { RequiredLabel } from '@/components/form/required-label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
 import {
   type RegisterFormValues,
@@ -40,6 +40,7 @@ function RegisterPageContent() {
       phone: '',
       password: '',
       city: '',
+      telegramId: '',
     },
   });
 
@@ -67,6 +68,7 @@ function RegisterPageContent() {
         data.password,
         data.email,
         data.city,
+        data.telegramId,
       );
       setPendingEmail(result.email);
       setMaskedEmail(result.maskedEmail);
@@ -115,12 +117,12 @@ function RegisterPageContent() {
             <span className="text-foreground font-medium" dir="ltr">
               {maskedEmail || pendingEmail}
             </span>{' '}
-            را وارد کنید.
+            را وارد کنید. در صورت عدم دریافت پوشه اسپم ایمیل را چک کنید.
           </p>
           <form onSubmit={verifyForm.handleSubmit(onVerifySubmit)} className="space-y-4" noValidate>
             <input type="hidden" {...verifyForm.register('email')} />
             <div className="space-y-2">
-              <Label htmlFor="code">کد تأیید</Label>
+              <RequiredLabel htmlFor="code">کد تأیید</RequiredLabel>
               <Input
                 id="code"
                 inputMode="numeric"
@@ -165,22 +167,18 @@ function RegisterPageContent() {
         <CardTitle className="text-center text-2xl">ثبت نام</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground mb-4 text-center text-sm leading-relaxed">
-          شماره موبایل و ایمیلی که هنوز در سایت ثبت نشده‌اند را وارد کنید. پس از ثبت‌نام، کد تأیید به
-          ایمیل شما ارسال می‌شود.
-        </p>
         <form
           onSubmit={detailsForm.handleSubmit(onRegisterSubmit)}
           className="space-y-4"
           noValidate
         >
           <div className="space-y-2">
-            <Label htmlFor="name">نام و نام خانوادگی</Label>
+            <RequiredLabel htmlFor="name">نام و نام خانوادگی</RequiredLabel>
             <Input id="name" type="text" {...detailsForm.register('name')} />
             <FieldError message={detailsForm.formState.errors.name?.message} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">ایمیل (در دسترس و یکتا)</Label>
+            <RequiredLabel htmlFor="email">ایمیل</RequiredLabel>
             <Input
               id="email"
               type="email"
@@ -193,7 +191,7 @@ function RegisterPageContent() {
             <FieldError message={detailsForm.formState.errors.email?.message} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">شماره موبایل (در دسترس و یکتا)</Label>
+            <RequiredLabel htmlFor="phone">شماره موبایل</RequiredLabel>
             <Input
               id="phone"
               type="tel"
@@ -206,7 +204,7 @@ function RegisterPageContent() {
             <FieldError message={detailsForm.formState.errors.phone?.message} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">رمز عبور</Label>
+            <RequiredLabel htmlFor="password">رمز عبور</RequiredLabel>
             <PasswordInput
               id="password"
               autoComplete="new-password"
@@ -226,16 +224,37 @@ function RegisterPageContent() {
               />
             )}
           />
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="telegramId" required={false}>
+              آیدی تلگرام{' '}
+              <span className="text-muted-foreground text-xs">(جهت دریافت اعلان های چت و خبر)</span>
+            </RequiredLabel>
+            <Input
+              id="telegramId"
+              type="text"
+              placeholder="@username"
+              dir="ltr"
+              className="text-end"
+              autoComplete="off"
+              {...detailsForm.register('telegramId')}
+            />
+            <FieldError message={detailsForm.formState.errors.telegramId?.message} />
+          </div>
           <Button type="submit" className="w-full" disabled={detailsForm.formState.isSubmitting}>
             {detailsForm.formState.isSubmitting ? 'در حال ثبت نام...' : 'ادامه و دریافت کد تأیید'}
           </Button>
         </form>
-        <p className="text-muted-foreground mt-4 text-center text-sm">
-          قبلاً ثبت نام کرده‌اید؟{' '}
-          <Link href="/login" className="text-primary hover:underline">
-            ورود
+        <div className="w-full flex justify-between items-center mt-4">
+          <p className="text-muted-foreground text-center text-sm">
+            قبلاً ثبت نام کرده‌اید؟{' '}
+            <Link href="/login" className="text-primary hover:underline">
+              ورود
+            </Link>
+          </p>
+          <Link href="/" className="text-primary hover:underline text-sm">
+            بازگشت به صفحه اصلی
           </Link>
-        </p>
+        </div>
       </CardContent>
     </Card>
   );

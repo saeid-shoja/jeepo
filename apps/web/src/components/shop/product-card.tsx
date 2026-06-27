@@ -10,7 +10,8 @@ import { FavoriteButton } from '@/components/shop/favorite-button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { getSituationLabel, type ProductSituation } from '@/lib/product-utils';
-import { isPurchasable } from '@/lib/purchasable';
+import { canViewerPurchase } from '@/lib/purchasable';
+import { useAuth } from '@/stores/auth-store';
 
 interface ProductCardProps {
   product: {
@@ -22,6 +23,7 @@ interface ProductCardProps {
     createdAt: string | Date;
     listedAt?: string | Date;
     hasGuarantee?: boolean;
+    userId?: string | null;
     situation?: ProductSituation;
     type?: string;
     advertiser?: string;
@@ -42,6 +44,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { user } = useAuth();
+
   if (product.isAuction) {
     return <AuctionProductCard product={product} />;
   }
@@ -51,7 +55,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const situation = product.situation ?? (product.advertiser === 'SHOP' ? 'IN_STOCK' : null);
   const situationLabel = getSituationLabel(situation);
   const postedAt = timeAgo(new Date(product.listedAt ?? product.createdAt));
-  const canBuy = isPurchasable(product);
+  const canBuy = canViewerPurchase(product, user?.id);
   const strengthenedActive =
     product.isStrengthenedActive ?? isStrengthenedActive(product.strengthenedUntil);
 

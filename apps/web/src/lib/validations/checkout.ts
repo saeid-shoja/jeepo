@@ -7,7 +7,6 @@ export const checkoutSchema = z.object({
     .optional()
     .refine((v) => !v || /^09\d{9}$/.test(v), 'شماره موبایل معتبر نیست'),
   note: z.string().optional(),
-  paymentMethod: z.enum(['ONLINE', 'COD']),
 });
 
 export type CheckoutFormValues = z.infer<typeof checkoutSchema>;

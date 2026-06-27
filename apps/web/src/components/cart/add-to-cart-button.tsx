@@ -2,10 +2,10 @@
 
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
-
 import { Button } from '@/components/ui/button';
-import { isPurchasable, type PurchasableProduct } from '@/lib/purchasable';
+import { canViewerPurchase, type PurchasableProduct } from '@/lib/purchasable';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/stores/auth-store';
 import { useCart } from '@/stores/cart-store';
 
 type AddToCartButtonProps = {
@@ -33,9 +33,10 @@ export function AddToCartButton({
   variant = 'default',
   showLabel = true,
 }: AddToCartButtonProps) {
+  const { user } = useAuth();
   const { addItem } = useCart();
 
-  if (!isPurchasable(product)) return null;
+  if (!canViewerPurchase(product, user?.id)) return null;
 
   const stockCap = maxQuantity ?? product.stockQuantity ?? 1;
   if (stockCap < 1) return null;

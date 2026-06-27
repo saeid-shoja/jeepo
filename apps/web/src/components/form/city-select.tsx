@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { FieldError } from '@/components/form/field-error';
-import { Label } from '@/components/ui/label';
+import { RequiredLabel } from '@/components/form/required-label';
 import {
   Select,
   SelectContent,
@@ -33,9 +33,11 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
   }, [provinceId]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 grid grid-cols-2 gap-3 *:w-full">
       <div>
-        <Label className="mb-2 block text-sm">استان</Label>
+        <RequiredLabel className="mb-2 block text-sm" required={required}>
+          استان
+        </RequiredLabel>
         <Select
           value={provinceId != null ? String(provinceId) : ''}
           onValueChange={(v) => {
@@ -44,7 +46,7 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
             onChange('');
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="انتخاب استان" />
           </SelectTrigger>
           <SelectContent>
@@ -57,12 +59,11 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
         </Select>
       </div>
       <div>
-        <Label className="mb-2 block text-sm">
+        <RequiredLabel className="mb-2 block text-sm" required={required}>
           {label}
-          {required && <span className="text-destructive"> *</span>}
-        </Label>
+        </RequiredLabel>
         <Select value={value} onValueChange={onChange} disabled={!provinceId}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="انتخاب شهر" />
           </SelectTrigger>
           <SelectContent>
@@ -73,8 +74,8 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
             ))}
           </SelectContent>
         </Select>
-        <FieldError message={error} />
       </div>
+      <FieldError message={error} />
     </div>
   );
 }

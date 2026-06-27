@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { SiteLogo } from '@/components/layout/site-logo';
 import { MOCK_SLIDES, type Slide } from '@/lib/get-landing-slides';
 
 function pickRandomSlide(): Slide {
@@ -17,25 +16,19 @@ export function AuthPageShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-dvh min-h-0 flex-col lg:flex-row">
-      <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-4 sm:py-6">
-        <div className="my-auto flex w-full max-w-md flex-col items-center">
-          <SiteLogo href="/" className="mb-4 w-20 shrink-0 lg:mb-5" />
-          <div className="w-full">{children}</div>
-        </div>
-      </div>
-
-      <div className="relative hidden min-h-0 lg:block lg:h-dvh lg:w-1/2 lg:shrink-0">
-        <Image
-          key={slide.id}
-          src={slide.imageUrl}
-          alt={slide.title}
-          fill
-          priority
-          className="object-cover"
-          sizes="50vw"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/10 to-transparent" />
+    <div className="relative h-dvh min-h-0 overflow-hidden">
+      <Image
+        key={slide.id}
+        src={slide.imageUrl}
+        alt={slide.title}
+        fill
+        priority
+        className="object-cover"
+        sizes="100vw"
+      />
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative z-10 flex h-full min-h-0 flex-col items-right justify-center overflow-y-auto px-4 py-6 lg:pr-30">
+        <div className="w-full max-w-md">{children}</div>
       </div>
     </div>
   );

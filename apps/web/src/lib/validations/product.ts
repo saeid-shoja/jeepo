@@ -1,3 +1,4 @@
+import { containsLinkOrPhone, NO_CONTACT_IN_TEXT_MESSAGE } from '@offroad/shared';
 import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
 
@@ -8,9 +9,15 @@ const phoneField = z
   .optional()
   .refine((v) => !v || /^09\d{9}$/.test(v), 'شماره موبایل معتبر نیست');
 
+const listingTextField = (minLen: number, minMsg: string) =>
+  z
+    .string()
+    .min(minLen, minMsg)
+    .refine((value) => !containsLinkOrPhone(value), NO_CONTACT_IN_TEXT_MESSAGE);
+
 const sharedProductFields = {
-  title: z.string().min(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
-  description: z.string().min(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
+  title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
+  description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
   categoryId: z.string().min(1, 'دسته‌بندی را انتخاب کنید'),
   city: z.string().optional(),
   phone: phoneField,

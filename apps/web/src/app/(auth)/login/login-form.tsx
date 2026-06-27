@@ -6,10 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { FieldError } from '@/components/form/field-error';
+import { RequiredLabel } from '@/components/form/required-label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
 import { type LoginFormValues, loginSchema } from '@/lib/validations/auth';
 import { useAuth } from '@/stores/auth-store';
@@ -54,7 +54,7 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="identifier">شماره موبایل یا ایمیل</Label>
+            <RequiredLabel htmlFor="identifier">شماره موبایل یا ایمیل</RequiredLabel>
             <Input
               id="identifier"
               type="text"
@@ -68,7 +68,7 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">رمز عبور</Label>
+              <RequiredLabel htmlFor="password">رمز عبور</RequiredLabel>
               <Link href="/forgot-password" className="text-primary text-xs hover:underline">
                 فراموشی رمز عبور
               </Link>
@@ -84,12 +84,17 @@ export function LoginForm() {
             {isSubmitting ? 'در حال ورود...' : 'ورود'}
           </Button>
         </form>
-        <p className="text-muted-foreground mt-4 text-center text-sm">
-          حساب کاربری ندارید؟{' '}
-          <Link href="/register" className="text-primary hover:underline">
-            ثبت نام
+        <div className="w-full flex justify-between items-center mt-4">
+          <p className="text-muted-foreground text-center text-sm">
+            حساب کاربری ندارید؟{' '}
+            <Link href="/register" className="text-primary hover:underline">
+              ثبت نام
+            </Link>
+          </p>
+          <Link href="/" className="text-primary hover:underline text-sm">
+            بازگشت به صفحه اصلی
           </Link>
-        </p>
+        </div>
       </CardContent>
     </Card>
   );

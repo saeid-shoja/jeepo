@@ -21,7 +21,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 const PAYMENT_LABELS: Record<string, string> = {
   ONLINE: 'آنلاین',
-  COD: 'در محل',
 };
 
 export default function OrdersPage() {

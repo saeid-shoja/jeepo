@@ -10,6 +10,7 @@ export type User = {
   name: string;
   role: string;
   city?: string;
+  telegramId?: string | null;
   emailVerified?: boolean;
 };
 
@@ -25,6 +26,7 @@ type AuthState = {
     password: string,
     email: string,
     city?: string,
+    telegramId?: string,
   ) => Promise<{ email: string; maskedEmail: string; message: string }>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<string>;
@@ -58,13 +60,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: res.user });
   },
 
-  register: async (phone, name, password, email, city) => {
+  register: async (phone, name, password, email, city, telegramId) => {
+    const normalizedTelegram = telegramId?.trim().replace(/^@/, '') || undefined;
     const res = await api.auth.register({
       phone: phone.trim(),
       name: name.trim(),
       password,
       email: email.trim().toLowerCase(),
       city: city?.trim() ?? '',
+      telegramId: normalizedTelegram,
     });
     return {
       email: res.email,

@@ -78,9 +78,10 @@ export function ProductChatsPanel({
   );
 
   const bootstrap = useCallback(async () => {
-    if (productIdHint) {
+    const productId = productIdHint?.trim();
+    if (productId) {
       try {
-        const started = await api.productChats.start(productIdHint);
+        const started = await api.productChats.start(productId);
         await loadConversations();
         setSelectedId(started.id);
         return;
@@ -115,9 +116,10 @@ export function ProductChatsPanel({
     return () => clearInterval(interval);
   }, [selectedId, loadThread, loadConversations]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when message list or thread changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [thread?.messages]);
+  }, [thread?.messages.length, selectedId]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);

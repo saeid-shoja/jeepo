@@ -83,6 +83,7 @@ export const api = {
       name: string;
       password: string;
       city?: string;
+      telegramId?: string;
     }) =>
       request<{
         requiresVerification: boolean;
@@ -202,7 +203,7 @@ export const api = {
       address: string;
       phone?: string;
       note?: string;
-      paymentMethod: 'ONLINE' | 'COD';
+      paymentMethod: 'ONLINE';
     }) => request<any>('/orders', { method: 'POST', body: JSON.stringify(data) }),
     get: (id: string) => request<any>(`/orders/${id}`),
   },
@@ -210,11 +211,16 @@ export const api = {
   productChats: {
     list: () => request<ProductConversationSummary[]>('/product-chats'),
     unreadCount: () => request<{ count: number }>('/product-chats/unread-count'),
-    start: (productId: string) =>
-      request<ProductConversationSummary>('/product-chats', {
+    start: (productId: string) => {
+      const id = productId?.trim();
+      if (!id) {
+        return Promise.reject(new Error('شناسه آگهی نامعتبر است'));
+      }
+      return request<ProductConversationSummary>('/product-chats', {
         method: 'POST',
-        body: JSON.stringify({ productId }),
-      }),
+        body: JSON.stringify({ productId: id }),
+      });
+    },
     get: (id: string) => request<ProductConversationDetail>(`/product-chats/${id}`),
     send: (id: string, body: string) =>
       request<ProductChatMessage>(`/product-chats/${id}/messages`, {

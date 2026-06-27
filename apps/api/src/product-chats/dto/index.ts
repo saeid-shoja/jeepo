@@ -1,7 +1,8 @@
 import { IsString, MinLength } from 'class-validator';
 
 export class StartConversationDto {
-  @IsString()
+  @IsString({ message: 'شناسه آگهی نامعتبر است' })
+  @MinLength(1, { message: 'شناسه آگهی نامعتبر است' })
   productId!: string;
 }
 

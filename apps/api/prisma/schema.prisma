@@ -38,7 +38,6 @@ enum OrderStatus {
 
 enum PaymentMethod {
   ONLINE
-  COD
 }
 
 enum UserMessageType {
@@ -70,6 +69,7 @@ model User {
   password  String
   role      UserRole  @default(CLIENT)
   city      String?
+  telegramId                 String?
   emailVerified              Boolean   @default(false)
   emailVerifiedAt            DateTime?
   emailVerificationCode      String?
@@ -88,7 +88,6 @@ model User {
   productChatMessages ProductChatMessage[]
 }
 
-/** Signup draft — promoted to User only after email verification succeeds. */
 model PendingRegistration {
   id                    String   @id @default(cuid())
   phone                 String   @unique
@@ -96,6 +95,7 @@ model PendingRegistration {
   name                  String
   password              String
   city                  String
+  telegramId            String?
   verificationCode      String
   verificationExpiresAt DateTime
   lastCodeSentAt        DateTime @default(now())

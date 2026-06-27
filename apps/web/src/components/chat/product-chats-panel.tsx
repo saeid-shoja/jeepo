@@ -78,9 +78,10 @@ export function ProductChatsPanel({
   );
 
   const bootstrap = useCallback(async () => {
-    if (productIdHint) {
+    const productId = productIdHint?.trim();
+    if (productId) {
       try {
-        const started = await api.productChats.start(productIdHint);
+        const started = await api.productChats.start(productId);
         await loadConversations();
         setSelectedId(started.id);
         return;

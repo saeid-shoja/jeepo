@@ -12,6 +12,7 @@ export const MOTORCYCLE_ATV_SLUG = 'motorcycle-atv';
 export const LIBRARY_PARTS_SLUG = 'parts';
 export const LIBRARY_CAR_BRANDS_SLUG = 'car-brands';
 export const LIBRARY_CAMPING_SLUG = 'camping';
+export const LIBRARY_CAMPING_NAME = 'تورهای گردشگری آفرودی و لوازم کمپی';
 
 export type DefaultLibraryKind = 'PART_TREE' | 'CAR_BRANDS';
 
@@ -31,7 +32,7 @@ export const DEFAULT_LIBRARIES: DefaultLibrary[] = [
     sortOrder: 2,
   },
   { slug: LIBRARY_CAR_BRANDS_SLUG, name: 'برند خودرو', kind: 'CAR_BRANDS', sortOrder: 3 },
-  { slug: LIBRARY_CAMPING_SLUG, name: 'لوازم کمپی', kind: 'PART_TREE', sortOrder: 4 },
+  { slug: LIBRARY_CAMPING_SLUG, name: LIBRARY_CAMPING_NAME, kind: 'PART_TREE', sortOrder: 4 },
 ];
 
 /** Top-level part groups (قطعات library). */
@@ -80,8 +81,9 @@ export const DEFAULT_PART_CHILDREN = [
   { name: 'سایر', slug: 'other-gear-style', parentSlug: 'gear-style', sortOrder: 6 },
 ] as const;
 
-/** Top-level camping groups (کمپی library). */
+/** Top-level groups (تور و کمپی library). */
 export const DEFAULT_CAMPING_GROUPS = [
+  { name: 'تورهای آفرودی', slug: 'offroad-tours', sortOrder: 0 },
   { name: 'یخچال و بخاری و هیتر های مسافرتی', slug: 'heater-fridge', sortOrder: 1 },
   { name: 'چادر و کیسه خواب و لباس های کمپی', slug: 'tent', sortOrder: 2 },
   { name: 'لوازم روشنایی و بیسیم و مسیریاب', slug: 'directional-light', sortOrder: 3 },

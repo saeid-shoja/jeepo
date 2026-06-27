@@ -2,11 +2,11 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPrice } from '@offroad/shared';
-import { CreditCard, Loader2, Truck } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { CartLineItem } from '@/components/cart/cart-line-item';
@@ -17,32 +17,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { type CheckoutFormValues, checkoutSchema } from '@/lib/validations/checkout';
 import { useAuth } from '@/stores/auth-store';
 import { useCart } from '@/stores/cart-store';
-
-type PaymentMethod = CheckoutFormValues['paymentMethod'];
-
-const PAYMENT_OPTIONS: {
-  value: PaymentMethod;
-  label: string;
-  desc: string;
-  icon: typeof CreditCard;
-}[] = [
-  {
-    value: 'ONLINE',
-    label: 'پرداخت آنلاین',
-    desc: 'پرداخت امن از درگاه بانکی (شبیه‌سازی)',
-    icon: CreditCard,
-  },
-  {
-    value: 'COD',
-    label: 'پرداخت در محل',
-    desc: 'پرداخت هنگام تحویل کالا',
-    icon: Truck,
-  },
-];
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
@@ -52,10 +29,8 @@ export default function CheckoutPage() {
 
   const {
     register,
-    control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -63,11 +38,8 @@ export default function CheckoutPage() {
       address: '',
       phone: '',
       note: '',
-      paymentMethod: 'ONLINE',
     },
   });
-
-  const paymentMethod = watch('paymentMethod');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -99,7 +71,7 @@ export default function CheckoutPage() {
         address: data.address,
         phone: data.phone || undefined,
         note: data.note || undefined,
-        paymentMethod: data.paymentMethod,
+        paymentMethod: 'ONLINE',
       });
       clearCart();
       toast.success('سفارش با موفقیت ثبت شد');
@@ -166,45 +138,6 @@ export default function CheckoutPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">روش پرداخت</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              <Controller
-                name="paymentMethod"
-                control={control}
-                render={({ field }) => (
-                  <>
-                    {PAYMENT_OPTIONS.map((opt) => {
-                      const Icon = opt.icon;
-                      const selected = field.value === opt.value;
-                      return (
-                        <Button
-                          key={opt.value}
-                          type="button"
-                          variant={selected ? 'default' : 'outline'}
-                          className={cn(
-                            'h-auto flex-col items-start gap-2 p-4 text-start',
-                            selected && 'ring-2 ring-ring',
-                          )}
-                          onClick={() => field.onChange(opt.value)}
-                        >
-                          <Icon className="size-5" />
-                          <span className="text-sm font-medium">{opt.label}</span>
-                          <span className="text-muted-foreground text-xs font-normal">
-                            {opt.desc}
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </>
-                )}
-              />
-              <FieldError message={errors.paymentMethod?.message} className="sm:col-span-2" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle className="text-base">مرور سفارش</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
@@ -221,6 +154,10 @@ export default function CheckoutPage() {
               <CardTitle className="text-base">پرداخت</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">روش پرداخت</span>
+                <span>پرداخت آنلاین</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">تعداد</span>
                 <span>{itemCount} عدد</span>
@@ -240,10 +177,8 @@ export default function CheckoutPage() {
                     <Loader2 className="size-4 animate-spin" />
                     در حال ثبت...
                   </>
-                ) : paymentMethod === 'ONLINE' ? (
-                  'پرداخت و ثبت سفارش'
                 ) : (
-                  'ثبت سفارش'
+                  'پرداخت و ثبت سفارش'
                 )}
               </Button>
 

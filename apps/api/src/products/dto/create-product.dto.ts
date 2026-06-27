@@ -11,15 +11,18 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import { NoContactInText } from '../../common/no-contact-in-text.validator';
 import { Advertiser, ProductSituation } from '../../prisma/generated/client';
 
 export class CreateProductDto {
   @IsString()
   @MinLength(3, { message: 'عنوان باید حداقل ۳ کاراکتر باشد' })
+  @NoContactInText()
   title!: string;
 
   @IsString()
   @MinLength(10, { message: 'توضیحات باید حداقل ۱۰ کاراکتر باشد' })
+  @NoContactInText()
   description!: string;
 
   @Type(() => Number)

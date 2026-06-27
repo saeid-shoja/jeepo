@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { getSituationLabel } from '@/lib/product-utils';
-import { isPurchasable } from '@/lib/purchasable';
+import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
 
 export function ProductDetailClient() {
@@ -70,7 +70,7 @@ export function ProductDetailClient() {
   const situationLabel = getSituationLabel(
     product.situation ?? (product.type === 'SHOP' ? 'IN_STOCK' : null),
   );
-  const canBuy = isPurchasable(product);
+  const canBuy = canViewerPurchase(product, user?.id);
   const stockQuantity = product.stockQuantity ?? 1;
   const showStock = !product.isAuction;
   const canChat = !product.isAuction && product.userId && product.status === 'ACTIVE' && !isOwner;
@@ -287,7 +287,7 @@ export function ProductDetailClient() {
               </Button>
             </div>
             {canChat && (
-              <StartProductChatButton productId={product.id} className="w-full" variant="outline" />
+              <StartProductChatButton productId={product.id ?? id} className="w-full" variant="outline" />
             )}
             <AdvertiserContactDialog
               open={contactOpen}
@@ -299,7 +299,7 @@ export function ProductDetailClient() {
         )}
 
         {canChat && product.type !== 'CLIENT' && (
-          <StartProductChatButton productId={product.id} className="w-full" />
+          <StartProductChatButton productId={product.id ?? id} className="w-full" />
         )}
 
         <Link

@@ -149,7 +149,12 @@ export class ProductChatsService {
   }
 
   async startConversation(userId: string, productId: string) {
-    const product = await this.getProductForChat(productId);
+    const normalizedProductId = productId?.trim();
+    if (!normalizedProductId) {
+      throw new BadRequestException('شناسه آگهی نامعتبر است');
+    }
+
+    const product = await this.getProductForChat(normalizedProductId);
     const sellerId = product.userId;
     if (!sellerId) {
       throw new BadRequestException('این آگهی مالک مشخصی ندارد');
@@ -159,9 +164,9 @@ export class ProductChatsService {
     }
 
     await this.prisma.productConversation.upsert({
-      where: { productId_buyerId: { productId, buyerId: userId } },
+      where: { productId_buyerId: { productId: normalizedProductId, buyerId: userId } },
       create: {
-        productId,
+        productId: normalizedProductId,
         buyerId: userId,
         sellerId,
       },
@@ -169,7 +174,7 @@ export class ProductChatsService {
     });
 
     const conversation = await this.prisma.productConversation.findUniqueOrThrow({
-      where: { productId_buyerId: { productId, buyerId: userId } },
+      where: { productId_buyerId: { productId: normalizedProductId, buyerId: userId } },
       include: {
         ...conversationInclude,
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },

@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SWAGGER_BEARER_KEY } from '../swagger';
-import type { SendChatMessageDto, StartConversationDto } from './dto';
+import { SendChatMessageDto, StartConversationDto } from './dto';
 import { ProductChatsService } from './product-chats.service';
 
 @ApiTags('Product chats')

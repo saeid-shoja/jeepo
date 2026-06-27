@@ -30,6 +30,16 @@ export const registerSchema = z.object({
   phone: phoneSchema,
   password: passwordSchema,
   city: z.string().trim().min(1, 'شهر را انتخاب کنید'),
+  telegramId: z
+    .string()
+    .trim()
+    .refine(
+      (value) =>
+        !value ||
+        /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(value) ||
+        /^\d{5,15}$/.test(value),
+      'آیدی تلگرام معتبر نیست (مثال: @username)',
+    ),
 });
 
 export const verifyEmailSchema = z.object({

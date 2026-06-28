@@ -1,15 +1,16 @@
 'use client';
 
 import { formatPrice, isStrengthenedActive, timeAgo } from '@offroad/shared';
-import { Clock, MapPin, Package, Shield, Sparkles, TrendingUp } from 'lucide-react';
+import { Clock, MapPin, Shield, Sparkles, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AuctionProductCard } from '@/components/auction/auction-product-card';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
+import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { getSituationLabel, type ProductSituation } from '@/lib/product-utils';
+import { type ProductSituation, resolveProductSituation } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
 
@@ -40,6 +41,7 @@ interface ProductCardProps {
     isBoosted?: boolean;
     isStrengthenedActive?: boolean;
     strengthenedUntil?: string | null;
+    stockQuantity?: number;
   };
 }
 
@@ -52,8 +54,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const images = product.images || [];
   const firstImage = images[0];
-  const situation = product.situation ?? (product.advertiser === 'SHOP' ? 'IN_STOCK' : null);
-  const situationLabel = getSituationLabel(situation);
+  const situation = resolveProductSituation(product);
   const postedAt = timeAgo(new Date(product.listedAt ?? product.createdAt));
   const canBuy = canViewerPurchase(product, user?.id);
   const strengthenedActive =
@@ -77,24 +78,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.status === 'DEPRECATED' && (
               <Badge className="bg-red-600 text-white hover:bg-red-600">منقضی شده</Badge>
             )}
-            {situationLabel && (
-              <Badge
-                className={
-                  situation === 'IN_STOCK'
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-600'
-                    : situation === 'USED'
-                      ? 'bg-amber-600 text-white hover:bg-amber-600'
-                      : 'bg-sky-600 text-white hover:bg-sky-600'
-                }
-              >
-                {situation === 'IN_STOCK' || situation === 'USED' ? (
-                  <Package className="h-3 w-3" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-                {situationLabel}
-              </Badge>
-            )}
+            <ProductSituationBadge situation={situation} />
             {product.hasGuarantee && (
               <Badge className="bg-green-600 text-white hover:bg-green-600">
                 <Shield className="h-3 w-3" />

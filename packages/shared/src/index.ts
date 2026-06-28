@@ -2,6 +2,7 @@ export * from './api-config';
 export * from './auction';
 export * from './car-brands';
 export * from './category-defaults';
+export * from './listing-tips';
 export * from './no-contact-in-text';
 export * from './products';
 export * from './schema-types';

@@ -140,6 +140,7 @@ export const api = {
       request<{
         product: any;
         requiresListingFee: boolean;
+        requiresAdminApproval?: boolean;
         listingFee: number;
         paymentDueAt: string | null;
       }>('/products/public', { method: 'POST', body: JSON.stringify(data) }),
@@ -158,6 +159,11 @@ export const api = {
     applyStrengthened: (id: string) =>
       request<any>(`/products/${id}/apply-strengthened`, { method: 'POST' }),
     applyBoost: (id: string) => request<any>(`/products/${id}/apply-boost`, { method: 'POST' }),
+    report: (id: string, data: { title: string; description: string }) =>
+      request<{ message: string }>(`/products/${id}/report`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   categories: {
@@ -256,6 +262,16 @@ export const api = {
       request<{ productId: string; favorited: boolean }>(`/users/favorites/${productId}`, {
         method: 'DELETE',
       }),
+    telegramLink: () =>
+      request<{
+        configured: boolean;
+        linked: boolean;
+        botUrl?: string;
+        botUsername?: string;
+        linkedAt?: string;
+        expiresAt?: string;
+        message?: string;
+      }>('/users/telegram/link'),
   },
 
   auctions: {

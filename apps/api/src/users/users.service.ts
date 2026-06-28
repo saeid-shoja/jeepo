@@ -19,12 +19,18 @@ export class UsersService {
         name: true,
         role: true,
         city: true,
+        telegramChatId: true,
+        telegramLinkedAt: true,
         createdAt: true,
         _count: { select: { products: true } },
       },
     });
     if (!user) throw new NotFoundException('کاربر یافت نشد');
-    return user;
+    const { telegramChatId, ...profile } = user;
+    return {
+      ...profile,
+      telegramLinked: Boolean(telegramChatId),
+    };
   }
 
   async getUserProducts(userId: string) {

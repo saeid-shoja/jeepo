@@ -1,30 +1,35 @@
 'use client';
 
-import { formatPrice } from '@offroad/shared';
-import { CheckCircle, Shield, TrendingUp, XCircle } from 'lucide-react';
+import { formatPrice, isAdminApprovalRequiredCategory } from '@offroad/shared';
+import { CheckCircle, Gavel, Shield, Store, TrendingUp, User, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 
+type ProductTab = 'shop' | 'client' | 'pending_approval' | 'auction';
+
+const TABS: Array<{ id: ProductTab; label: string; icon: typeof Store }> = [
+  { id: 'shop', label: 'محصولات فروشگاه', icon: Store },
+  { id: 'client', label: 'محصولات کاربران', icon: User },
+  { id: 'pending_approval', label: 'نیاز به تأیید', icon: CheckCircle },
+  { id: 'auction', label: 'مزایده', icon: Gavel },
+];
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
-  const [type, setType] = useState('');
-  const [status, setStatus] = useState('');
+  const [tab, setTab] = useState<ProductTab>('shop');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchProducts = useCallback(() => {
-    const params: Record<string, string> = { page: String(page), limit: '20' };
-    if (type) params.advertiser = type;
-    if (status) params.status = status;
     adminApi
-      .products(params)
+      .products({ page: String(page), limit: '20', tab })
       .then((res) => {
         setProducts(res.products);
         setTotalPages(res.totalPages);
       })
       .catch(() => toast.error('بارگذاری محصولات ناموفق بود'));
-  }, [page, type, status]);
+  }, [page, tab]);
 
   useEffect(() => {
     fetchProducts();
@@ -46,33 +51,25 @@ export default function AdminProductsPage() {
         <h1 className="text-2xl font-bold">مدیریت محصولات</h1>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <select
-          value={type}
-          onChange={(e) => {
-            setType(e.target.value);
-            setPage(1);
-          }}
-          className="rounded-sm border px-3 py-2 text-sm outline-none"
-        >
-          <option value="">همه انواع</option>
-          <option value="SHOP">محصولات فروشگاه</option>
-          <option value="CLIENT">آگهی کاربران</option>
-        </select>
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-          className="rounded-sm border px-3 py-2 text-sm outline-none"
-        >
-          <option value="">همه وضعیت‌ها</option>
-          <option value="ACTIVE">فعال</option>
-          <option value="PENDING">در انتظار بررسی</option>
-          <option value="SOLD">فروخته شده</option>
-          <option value="REJECTED">رد شده</option>
-        </select>
+      <div className="flex flex-wrap gap-2 border-b pb-1">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              setTab(id);
+              setPage(1);
+            }}
+            className={`flex items-center gap-2 rounded-t-sm border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+              tab === id
+                ? 'border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground border-transparent'
+            }`}
+          >
+            <Icon className="size-4 shrink-0" aria-hidden />
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-white">
@@ -82,7 +79,9 @@ export default function AdminProductsPage() {
               <th className="px-4 py-3 text-right">محصول</th>
               <th className="px-4 py-3 text-right">قیمت</th>
               <th className="px-4 py-3 text-right">فروشنده</th>
-              <th className="px-4 py-3 text-right">نوع</th>
+              {tab !== 'shop' && tab !== 'client' && (
+                <th className="px-4 py-3 text-right">نوع</th>
+              )}
               <th className="px-4 py-3 text-right">ویژگی‌ها</th>
               <th className="px-4 py-3 text-right">وضعیت</th>
               <th className="px-4 py-3 text-center">عملیات</th>
@@ -93,19 +92,29 @@ export default function AdminProductsPage() {
               <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
                 <td className="px-4 py-3">
                   <p className="font-medium">{p.title}</p>
-                  <p className="text-xs text-gray-500">{p.id.slice(0, 8)}...</p>
+                  <p className="text-xs text-gray-500">{p.category?.name ?? '—'}</p>
+                  {p.category?.slug && isAdminApprovalRequiredCategory(p.category.slug) && (
+                    <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-800">
+                      فروش خودرو/موتور
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-primary">{formatPrice(p.price)}</td>
                 <td className="px-4 py-3 text-xs">{p.user?.name || 'فروشگاه'}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs ${(p.advertiser ?? p.type) === 'SHOP' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
-                  >
-                    {(p.advertiser ?? p.type) === 'SHOP' ? 'فروشگاه' : 'کاربری'}
-                  </span>
-                </td>
+                {tab !== 'shop' && tab !== 'client' && (
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${(p.advertiser ?? p.type) === 'SHOP' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}
+                    >
+                      {(p.advertiser ?? p.type) === 'SHOP' ? 'فروشگاه' : 'کاربری'}
+                    </span>
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
+                    {p.isAuction && (
+                      <Gavel className="h-4 w-4 text-violet-600" aria-label="مزایده" />
+                    )}
                     {p.hasGuarantee && <Shield className="h-4 w-4 text-green-600" />}
                     {p.isBoosted && <TrendingUp className="h-4 w-4 text-amber-600" />}
                   </div>
@@ -132,27 +141,49 @@ export default function AdminProductsPage() {
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex justify-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleStatusChange(p.id, p.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE')
-                      }
-                      className="rounded p-1.5 text-gray-500 hover:bg-gray-100"
-                      title={p.status === 'ACTIVE' ? 'غیرفعال' : 'فعال'}
-                    >
-                      {p.status === 'ACTIVE' ? (
-                        <XCircle className="h-4 w-4" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4" />
-                      )}
-                    </button>
+                    {tab === 'pending_approval' && p.status === 'PENDING' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(p.id, 'ACTIVE')}
+                          className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700"
+                        >
+                          تأیید
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(p.id, 'REJECTED')}
+                          className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                        >
+                          رد
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleStatusChange(p.id, p.status === 'ACTIVE' ? 'PENDING' : 'ACTIVE')
+                        }
+                        className="rounded p-1.5 text-gray-500 hover:bg-gray-100"
+                        title={p.status === 'ACTIVE' ? 'غیرفعال' : 'فعال'}
+                      >
+                        {p.status === 'ACTIVE' ? (
+                          <XCircle className="h-4 w-4" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                <td
+                  colSpan={tab === 'shop' || tab === 'client' ? 6 : 7}
+                  className="px-4 py-8 text-center text-gray-500"
+                >
                   محصولی یافت نشد
                 </td>
               </tr>

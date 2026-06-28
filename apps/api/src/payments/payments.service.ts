@@ -3,9 +3,17 @@ import { SITE_NAME_FA } from '@offroad/shared';
 import { OrdersService } from '../orders/orders.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { tomanToRial, ZibalService } from './zibal.service';
+import {
+  isZibalCallbackSuccessful,
+  isZibalVerifyRetryable,
+  isZibalVerifySuccess,
+  normalizeTrackId,
+  sleep,
+} from './zibal.utils';
 
-const ZIBAL_SUCCESS = 100;
-const ZIBAL_ALREADY_VERIFIED = 201;
+const ZIBAL_REQUEST_SUCCESS = 100;
+const VERIFY_RETRY_ATTEMPTS = 4;
+const VERIFY_RETRY_DELAY_MS = 800;
 
 @Injectable()
 export class PaymentsService {
@@ -33,10 +41,15 @@ export class PaymentsService {
       throw new BadRequestException('این سفارش قبلاً پرداخت شده یا لغو شده است');
     }
 
-    const amountRial = tomanToRial(order.total);
+    const total = await this.ordersService.refreshPendingOrderPricing(orderId, userId);
+    const amountRial = tomanToRial(total);
     if (amountRial < 1000) {
       throw new BadRequestException('مبلغ سفارش برای پرداخت آنلاین کافی نیست');
     }
+
+    this.logger.log(
+      `Initiating Zibal payment for order ${order.id} — ${amountRial} Rial, callback ${this.callbackUrl}`,
+    );
 
     const response = await this.zibal.requestPayment({
       amount: amountRial,
@@ -46,7 +59,7 @@ export class PaymentsService {
       mobile: order.phone ?? order.user.phone,
     });
 
-    if (response.result !== ZIBAL_SUCCESS || !response.trackId) {
+    if (response.result !== ZIBAL_REQUEST_SUCCESS || !response.trackId) {
       this.logger.error(`Zibal request failed: ${response.result} ${response.message}`);
       throw new BadRequestException(
         response.message || 'خطا در اتصال به درگاه پرداخت. لطفاً دوباره تلاش کنید',
@@ -65,63 +78,109 @@ export class PaymentsService {
     };
   }
 
+  private async findOrderForCallback(orderId?: string, trackId?: string | null) {
+    const normalizedTrackId = normalizeTrackId(trackId);
+
+    if (orderId?.trim()) {
+      const byId = await this.prisma.order.findUnique({ where: { id: orderId.trim() } });
+      if (byId) return byId;
+    }
+
+    if (normalizedTrackId) {
+      return this.prisma.order.findFirst({
+        where: { paymentTrackId: normalizedTrackId },
+      });
+    }
+
+    return null;
+  }
+
+  private async verifyWithRetry(trackId: string) {
+    let last = await this.zibal.verifyPayment(trackId);
+
+    for (let attempt = 1; attempt < VERIFY_RETRY_ATTEMPTS; attempt++) {
+      if (isZibalVerifySuccess(last.result)) return last;
+      if (!isZibalVerifyRetryable(last.result)) return last;
+      this.logger.warn(
+        `Zibal verify pending for trackId ${trackId} (result ${last.result}), retry ${attempt}/${VERIFY_RETRY_ATTEMPTS - 1}`,
+      );
+      await sleep(VERIFY_RETRY_DELAY_MS);
+      last = await this.zibal.verifyPayment(trackId);
+    }
+
+    return last;
+  }
+
   async handleZibalCallback(query: {
     trackId?: string;
     success?: string;
     orderId?: string;
     status?: string;
   }): Promise<{ ok: boolean; orderId?: string; reason?: string }> {
-    const { trackId, success, orderId } = query;
+    const trackId = normalizeTrackId(query.trackId);
+    const { success, orderId: queryOrderId, status } = query;
 
-    if (!trackId || !orderId) {
+    if (!trackId) {
       return { ok: false, reason: 'invalid_callback' };
     }
 
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.findOrderForCallback(queryOrderId, trackId);
     if (!order) {
-      return { ok: false, orderId, reason: 'order_not_found' };
+      return { ok: false, orderId: queryOrderId, reason: 'order_not_found' };
     }
+
+    const resolvedOrderId = order.id;
 
     if (
       order.status === 'CONFIRMED' ||
       order.status === 'SHIPPED' ||
       order.status === 'DELIVERED'
     ) {
-      return { ok: true, orderId };
+      return { ok: true, orderId: resolvedOrderId };
     }
 
-    if (success !== '1') {
-      return { ok: false, orderId, reason: 'payment_cancelled' };
+    if (!isZibalCallbackSuccessful(success, status)) {
+      return { ok: false, orderId: resolvedOrderId, reason: 'payment_cancelled' };
     }
 
-    const verify = await this.zibal.verifyPayment(trackId);
+    const verify = await this.verifyWithRetry(trackId);
 
-    if (verify.result !== ZIBAL_SUCCESS && verify.result !== ZIBAL_ALREADY_VERIFIED) {
+    if (!isZibalVerifySuccess(verify.result)) {
       this.logger.warn(
-        `Zibal verify failed for order ${orderId}: ${verify.result} ${verify.message}`,
+        `Zibal verify failed for order ${resolvedOrderId}: ${verify.result} ${verify.message}`,
       );
-      return { ok: false, orderId, reason: 'verify_failed' };
+      return { ok: false, orderId: resolvedOrderId, reason: 'verify_failed' };
     }
 
     const expectedRial = tomanToRial(order.total);
-    if (verify.amount != null && verify.amount !== expectedRial) {
+    const paidRial = verify.amount != null ? Number(verify.amount) : null;
+    if (paidRial != null && Number.isFinite(paidRial) && paidRial !== expectedRial) {
       this.logger.error(
-        `Amount mismatch order ${orderId}: expected ${expectedRial}, got ${verify.amount}`,
+        `Amount mismatch order ${resolvedOrderId}: expected ${expectedRial}, got ${paidRial}`,
       );
-      return { ok: false, orderId, reason: 'amount_mismatch' };
+      return { ok: false, orderId: resolvedOrderId, reason: 'amount_mismatch' };
     }
 
-    if (order.paymentTrackId && order.paymentTrackId !== trackId) {
-      this.logger.warn(`TrackId mismatch for order ${orderId}`);
-      return { ok: false, orderId, reason: 'track_mismatch' };
+    if (order.paymentTrackId && String(order.paymentTrackId) !== trackId) {
+      this.logger.warn(
+        `TrackId mismatch for order ${resolvedOrderId}: stored ${order.paymentTrackId}, callback ${trackId}`,
+      );
+      return { ok: false, orderId: resolvedOrderId, reason: 'track_mismatch' };
     }
 
-    await this.ordersService.fulfillAfterPayment(orderId, {
-      trackId,
-      refNumber: verify.refNumber != null ? String(verify.refNumber) : null,
-      paidAt: verify.paidAt ? new Date(verify.paidAt) : new Date(),
-    });
+    try {
+      await this.ordersService.fulfillAfterPayment(resolvedOrderId, {
+        trackId,
+        refNumber: verify.refNumber != null ? String(verify.refNumber) : null,
+        paidAt: verify.paidAt ? new Date(verify.paidAt) : new Date(),
+      });
+    } catch (err) {
+      this.logger.error(
+        `Order fulfillment failed after payment for ${resolvedOrderId}: ${String(err)}`,
+      );
+      return { ok: false, orderId: resolvedOrderId, reason: 'fulfillment_failed' };
+    }
 
-    return { ok: true, orderId };
+    return { ok: true, orderId: resolvedOrderId };
   }
 }

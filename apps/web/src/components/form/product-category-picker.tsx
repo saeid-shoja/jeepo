@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, Loader2 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { type LibraryNode, useCategories } from '@/stores/categories-store';
@@ -31,6 +31,11 @@ function findCategoryPath(
   return null;
 }
 
+function findLibraryForCategory(libraries: LibraryNode[], categoryId: string): LibraryNode | null {
+  if (!categoryId) return null;
+  return libraries.find((library) => containsCategoryId(library, categoryId)) ?? null;
+}
+
 function CategoryTreeNode({
   node,
   depth,
@@ -50,14 +55,23 @@ function CategoryTreeNode({
     return (
       <button
         type="button"
+        role="radio"
+        aria-checked={isSelected}
         onClick={() => onValueChange(node.id)}
         className={cn(
-          'hover:bg-muted/70 w-full rounded-sm py-2 text-start text-sm transition-colors',
+          'hover:bg-muted/70 flex w-full items-center gap-2 rounded-sm py-2 text-start text-sm transition-colors',
           isSelected && 'bg-primary/10 text-primary font-medium',
         )}
         style={{ paddingRight: `${depth * 14 + 12}px`, paddingLeft: '12px' }}
       >
-        {node.name}
+        <span
+          className={cn(
+            'border-muted-foreground/40 size-4 shrink-0 rounded-full border-2',
+            isSelected && 'border-primary bg-primary ring-primary/20 ring-2',
+          )}
+          aria-hidden
+        />
+        <span>{node.name}</span>
       </button>
     );
   }
@@ -97,14 +111,32 @@ export function ProductCategoryPicker({ value, onValueChange }: ProductCategoryP
     [libraries],
   );
 
+  const libraryForValue = useMemo(
+    () => findLibraryForCategory(partLibraries, value),
+    [partLibraries, value],
+  );
+
+  const [manualLibraryId, setManualLibraryId] = useState<string | null>(null);
+
+  const activeLibraryId =
+    manualLibraryId ?? libraryForValue?.id ?? partLibraries[0]?.id ?? null;
+
+  const activeLibrary =
+    partLibraries.find((library) => library.id === activeLibraryId) ?? partLibraries[0] ?? null;
+
   const selectedPath = useMemo(() => {
-    if (!value) return null;
-    for (const library of partLibraries) {
-      const path = findCategoryPath(library.children, value);
-      if (path) return [library.name, ...path];
+    if (!value || !libraryForValue) return null;
+    const path = findCategoryPath(libraryForValue.children, value);
+    if (!path) return null;
+    return [libraryForValue.name, ...path];
+  }, [value, libraryForValue]);
+
+  const handleLibraryChange = (libraryId: string) => {
+    setManualLibraryId(libraryId);
+    if (value && libraryForValue?.id !== libraryId) {
+      onValueChange('');
     }
-    return null;
-  }, [value, partLibraries]);
+  };
 
   if (loading) {
     return (
@@ -124,48 +156,56 @@ export function ProductCategoryPicker({ value, onValueChange }: ProductCategoryP
   }
 
   return (
-    <div className="space-y-3">
-      {selectedPath ? (
-        <p className="text-muted-foreground text-xs">
-          انتخاب شده:{' '}
-          <span className="text-foreground font-medium">{selectedPath.join(' › ')}</span>
-        </p>
-      ) : (
-        <p className="text-muted-foreground text-xs">یک دسته از گروه‌ها انتخاب کنید</p>
-      )}
+    <div className="space-y-3" role="radiogroup" aria-label="دسته‌بندی آگهی">
+      <p className="text-muted-foreground text-xs">
+        {selectedPath ? (
+          <>
+            انتخاب شده:{' '}
+            <span className="text-foreground font-medium">{selectedPath.join(' › ')}</span>
+          </>
+        ) : (
+          'ابتدا گروه را انتخاب کنید، سپس فقط یک دسته‌بندی نهایی'
+        )}
+      </p>
 
-      <div className="space-y-2">
-        {partLibraries.map((library) => (
-          <Collapsible
-            key={library.id}
-            defaultOpen={containsCategoryId(library, value) || partLibraries.length === 1}
-            className="group/library rounded-md border"
-          >
-            <CollapsibleTrigger
+      <div className="flex flex-wrap gap-2">
+        {partLibraries.map((library) => {
+          const isActive = activeLibrary?.id === library.id;
+          return (
+            <button
+              key={library.id}
               type="button"
-              className="hover:bg-muted/40 flex w-full items-center justify-between px-3 py-2.5 text-sm font-semibold"
-            >
-              <span>{library.name}</span>
-              <ChevronDown className="text-muted-foreground size-4 shrink-0 transition-transform group-data-[state=open]/library:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="border-t px-1 py-2">
-              {library.children.length === 0 ? (
-                <p className="text-muted-foreground px-3 py-2 text-xs">زیردسته‌ای ثبت نشده</p>
-              ) : (
-                library.children.map((node) => (
-                  <CategoryTreeNode
-                    key={node.id}
-                    node={node}
-                    depth={0}
-                    value={value}
-                    onValueChange={onValueChange}
-                  />
-                ))
+              onClick={() => handleLibraryChange(library.id)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                isActive
+                  ? 'border-primary bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted/60',
               )}
-            </CollapsibleContent>
-          </Collapsible>
-        ))}
+            >
+              {library.name}
+            </button>
+          );
+        })}
       </div>
+
+      {activeLibrary && (
+        <div className="rounded-md border px-1 py-2">
+          {activeLibrary.children.length === 0 ? (
+            <p className="text-muted-foreground px-3 py-2 text-xs">زیردسته‌ای ثبت نشده</p>
+          ) : (
+            activeLibrary.children.map((node) => (
+              <CategoryTreeNode
+                key={node.id}
+                node={node}
+                depth={0}
+                value={value}
+                onValueChange={onValueChange}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

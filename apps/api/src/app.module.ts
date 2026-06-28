@@ -13,6 +13,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductChatsModule } from './product-chats/product-chats.module';
 import { ProductsModule } from './products/products.module';
+import { TelegramModule } from './telegram/telegram.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
     ProductChatsModule,
     AdminModule,
     AuctionsModule,
+    TelegramModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

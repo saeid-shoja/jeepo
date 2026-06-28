@@ -49,6 +49,7 @@ export function ProfileMessagesTab({ enabled }: ProfileMessagesTabProps) {
       if (items.length > 0) {
         setSelectedId((current) => current ?? items[0].id);
       }
+      await refreshUnreadCount();
     } catch {
       setMessages([]);
       toast.error('بارگذاری پیام‌ها ناموفق بود');

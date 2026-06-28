@@ -3,13 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPrice } from '@offroad/shared';
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { CartLineItem } from '@/components/cart/cart-line-item';
 import { FieldError } from '@/components/form/field-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,11 +21,74 @@ import { type CheckoutFormValues, checkoutSchema } from '@/lib/validations/check
 import { useAuth } from '@/stores/auth-store';
 import { useCart } from '@/stores/cart-store';
 
+type OrderPreviewItem = {
+  productId: string;
+  title: string;
+  image: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+type OrderPreview = {
+  items: OrderPreviewItem[];
+  total: number;
+  itemCount: number;
+};
+
+function CheckoutLineItem({ item }: { item: OrderPreviewItem }) {
+  return (
+    <div className="flex gap-4 border-b py-4 last:border-0">
+      <Link
+        href={`/product/${item.productId}`}
+        className="bg-muted size-20 shrink-0 overflow-hidden rounded-lg"
+      >
+        {item.image ? (
+          <Image
+            width={300}
+            height={400}
+            src={item.image}
+            alt=""
+            className="size-full object-cover"
+          />
+        ) : (
+          <div className="text-muted-foreground flex size-full items-center justify-center text-xs">
+            بدون تصویر
+          </div>
+        )}
+      </Link>
+
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+        <Link
+          href={`/product/${item.productId}`}
+          className="line-clamp-2 text-sm font-medium hover:text-primary"
+        >
+          {item.title}
+        </Link>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-muted-foreground text-sm">{item.quantity} عدد</span>
+          <div className="text-end">
+            <p className="text-primary text-sm font-bold">
+              {formatPrice(item.lineTotal)}{' '}
+              <span className="text-muted-foreground text-xs font-normal">تومان</span>
+            </p>
+            <p className="text-muted-foreground text-xs">واحد: {formatPrice(item.unitPrice)} تومان</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, subtotal, itemCount, clearCart } = useCart();
+  const { items, itemCount, clearCart } = useCart();
   const router = useRouter();
-  const [previewTotal, setPreviewTotal] = useState<number | null>(null);
+  const [preview, setPreview] = useState<OrderPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [redirectingToGateway, setRedirectingToGateway] = useState(false);
 
   const {
     register,
@@ -56,13 +119,32 @@ export default function CheckoutPage() {
       router.replace('/cart');
       return;
     }
+
+    let cancelled = false;
+    setPreviewLoading(true);
+    setPreviewError(null);
+
     api.orders
       .preview({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       })
-      .then((res) => setPreviewTotal(res.total))
-      .catch(() => setPreviewTotal(subtotal));
-  }, [items, router, subtotal]);
+      .then((res) => {
+        if (cancelled) return;
+        setPreview(res);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setPreview(null);
+        setPreviewError(err instanceof Error ? err.message : 'بارگذاری قیمت‌ها ناموفق بود');
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items, router]);
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
@@ -75,15 +157,29 @@ export default function CheckoutPage() {
       });
       clearCart();
       if (paymentUrl) {
-        window.location.href = paymentUrl;
+        setRedirectingToGateway(true);
+        window.location.assign(paymentUrl);
         return;
       }
       toast.success('سفارش با موفقیت ثبت شد');
       router.push(`/checkout/success?orderId=${id}`);
     } catch (err: unknown) {
+      setRedirectingToGateway(false);
       toast.error(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
     }
   };
+
+  if (redirectingToGateway) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 px-4">
+        <Loader2 className="text-primary size-12 animate-spin" />
+        <p className="mt-6 text-lg font-semibold">در حال انتقال به درگاه پرداخت</p>
+        <p className="text-muted-foreground mt-2 text-center text-sm">
+          لطفاً صبر کنید. به زودی به درگاه پرداخت منتقل می‌شوید.
+        </p>
+      </div>
+    );
+  }
 
   if (authLoading || !user || items.length === 0) {
     return (
@@ -93,7 +189,9 @@ export default function CheckoutPage() {
     );
   }
 
-  const total = previewTotal ?? subtotal;
+  const total = preview?.total ?? 0;
+  const displayItemCount = preview?.itemCount ?? itemCount;
+  const canSubmit = Boolean(preview) && !previewLoading && !previewError;
 
   return (
     <div className="container space-y-6 px-4 py-6 sm:py-8">
@@ -145,9 +243,15 @@ export default function CheckoutPage() {
               <CardTitle className="text-base">مرور سفارش</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              {items.map((item) => (
-                <CartLineItem key={item.productId} item={item} />
-              ))}
+              {previewLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="text-muted-foreground size-6 animate-spin" />
+                </div>
+              ) : previewError ? (
+                <p className="text-destructive py-4 text-sm">{previewError}</p>
+              ) : (
+                preview?.items.map((item) => <CheckoutLineItem key={item.productId} item={item} />)
+              )}
             </CardContent>
           </Card>
         </div>
@@ -164,22 +268,36 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">تعداد</span>
-                <span>{itemCount} عدد</span>
+                <span>{displayItemCount} عدد</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">جمع</span>
-                <span>{formatPrice(total)} تومان</span>
+                <span>
+                  {previewLoading ? '...' : previewError ? '—' : `${formatPrice(total)} تومان`}
+                </span>
               </div>
               <div className="flex justify-between border-t pt-3 font-bold">
                 <span>مبلغ نهایی</span>
-                <span className="text-primary text-lg">{formatPrice(total)} تومان</span>
+                <span className="text-primary text-lg">
+                  {previewLoading ? '...' : previewError ? '—' : `${formatPrice(total)} تومان`}
+                </span>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {previewError ? (
+                <p className="text-muted-foreground text-xs">
+                  قیمت‌ها از سرور بارگذاری نشد. لطفاً صفحه را رفرش کنید یا به سبد بازگردید.
+                </p>
+              ) : null}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting || redirectingToGateway || !canSubmit}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    در حال ثبت...
+                    در حال ثبت سفارش...
                   </>
                 ) : (
                   'انتقال به درگاه پرداخت'

@@ -8,6 +8,7 @@ import {
   LIBRARY_CAMPING_SLUG,
   LIBRARY_CAR_BRANDS_SLUG,
   LIBRARY_PARTS_SLUG,
+  MOTORCYCLE_ATV_SALE_CHILDREN,
   MOTORCYCLE_ATV_SLUG,
   MOTORCYCLE_ATV_SUBCATEGORIES,
 } from '@offroad/shared';
@@ -31,10 +32,10 @@ const LEGACY_CATEGORY_SLUGS: {
   to: string;
   group?: CategoryGroup;
 }[] = [
-  { from: 'clothing-gear', to: 'inside' },
-  { from: 'transmission', to: 'engine-drivetrain' },
-  { from: 'other', to: 'misc-group', group: 'PART' },
-];
+    { from: 'clothing-gear', to: 'inside' },
+    { from: 'transmission', to: 'engine-drivetrain' },
+    { from: 'other', to: 'misc-group', group: 'PART' },
+  ];
 
 function buildCategorySeeds(): CategorySeed[] {
   const seeds: CategorySeed[] = [
@@ -61,6 +62,14 @@ function buildCategorySeeds(): CategorySeed[] {
       group: 'PART' as CategoryGroup,
       librarySlug: MOTORCYCLE_ATV_SLUG,
       parentSlug: null,
+    })),
+    ...MOTORCYCLE_ATV_SALE_CHILDREN.map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      sortOrder: c.sortOrder,
+      group: 'PART' as CategoryGroup,
+      librarySlug: MOTORCYCLE_ATV_SLUG,
+      parentSlug: c.parentSlug,
     })),
     ...DEFAULT_CAMPING_GROUPS.map((g) => ({
       slug: g.slug,

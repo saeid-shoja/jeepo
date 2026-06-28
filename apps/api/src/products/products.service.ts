@@ -1,21 +1,24 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import {
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
+  isAdminApprovalRequiredCategory,
   listingPaymentDueAt,
   strengthenedEndsAt,
 } from '@offroad/shared';
 import { CategoriesService } from '../categories/categories.service';
 import { getAuctionCurrentPrice, isAuctionActive } from '../common/auction';
 import { isPurchasableProduct } from '../common/purchasable';
+import { MailService } from '../mail/mail.service';
 import type { Advertiser, ProductSituation } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
-import type { CreateProductDto, UpdateProductDto } from './dto';
+import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
 import { computeActiveUntil, computeDeletionAt } from './product-lifecycle.constants';
 
 const productInclude = {
@@ -37,7 +40,9 @@ export class ProductsService {
   constructor(
     private prisma: PrismaService,
     private categoriesService: CategoriesService,
-  ) {}
+    private mailService: MailService,
+    @Inject('WEB_URL') private readonly webUrl: string,
+  ) { }
 
   private postedSince(postedWithin: string): Date | null {
     const now = Date.now();
@@ -72,6 +77,7 @@ export class ProductsService {
       strengthenedUntil?: Date | null;
       price: number;
       _count?: { auctionBids: number };
+      category?: { slug: string } | null;
     },
   >(product: T, options?: { viewerUserId?: string | null }) {
     const strengthenedActive =
@@ -96,7 +102,12 @@ export class ProductsService {
         value: brand,
         label: brandLabels.get(brand) ?? brand,
       })),
-      situation: product.advertiser === 'SHOP' ? 'IN_STOCK' : (product.situation ?? null),
+      situation:
+        product.advertiser === 'SHOP'
+          ? ((product as { stockQuantity?: number }).stockQuantity ?? 1) < 1
+            ? 'OUT_OF_STOCK'
+            : 'IN_STOCK'
+          : (product.situation ?? null),
       /** @deprecated use advertiser — kept for existing web clients */
       type: product.advertiser,
       purchasable: isPurchasableProduct({
@@ -131,6 +142,11 @@ export class ProductsService {
       awaitingListingPayment:
         product.status === 'PENDING' &&
         (product as { listingFeePaid?: boolean }).listingFeePaid === false,
+      awaitingAdminApproval:
+        product.status === 'PENDING' &&
+        (product as { listingFeePaid?: boolean }).listingFeePaid !== false &&
+        product.category?.slug != null &&
+        isAdminApprovalRequiredCategory(product.category.slug),
       stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
     };
 
@@ -237,25 +253,39 @@ export class ProductsService {
 
   async createPublicListing(data: CreateProductDto, userId: string) {
     await this.purgeExpiredListingPaymentDrafts();
+    await this.categoriesService.assertLeafCategory(data.categoryId);
     const activeCount = await this.countActiveClientListings(userId);
     const requiresListingFee = activeCount >= FREE_CLIENT_LISTING_LIMIT;
+    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
+      data.categoryId,
+    );
+
+    const createOptions = needsAdminApproval
+      ? requiresListingFee
+        ? {
+          status: 'PENDING' as const,
+          listingFeePaid: false,
+          listingPaymentDueAt: listingPaymentDueAt(),
+        }
+        : {
+          status: 'PENDING' as const,
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+        }
+      : requiresListingFee
+        ? {
+          status: 'PENDING' as const,
+          listingFeePaid: false,
+          listingPaymentDueAt: listingPaymentDueAt(),
+        }
+        : {
+          status: 'ACTIVE' as const,
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+        };
 
     const product = await this.prisma.product.create({
-      data: await this.buildCreateData(
-        { ...data, advertiser: 'CLIENT' },
-        userId,
-        requiresListingFee
-          ? {
-              status: 'PENDING',
-              listingFeePaid: false,
-              listingPaymentDueAt: listingPaymentDueAt(),
-            }
-          : {
-              status: 'ACTIVE',
-              listingFeePaid: true,
-              listingPaymentDueAt: null,
-            },
-      ),
+      data: await this.buildCreateData({ ...data, advertiser: 'CLIENT' }, userId, createOptions),
       include: productIncludeDetail,
     });
 
@@ -264,6 +294,7 @@ export class ProductsService {
     return {
       product: mapped,
       requiresListingFee,
+      requiresAdminApproval: needsAdminApproval,
       listingFee: requiresListingFee ? EXTRA_LISTING_FEE : 0,
       paymentDueAt: requiresListingFee ? product.listingPaymentDueAt : null,
     };
@@ -290,19 +321,33 @@ export class ProductsService {
     }
 
     const now = new Date();
+    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
+      product.categoryId,
+    );
+
     const updated = await this.prisma.product.update({
       where: { id: productId },
-      data: {
-        status: 'ACTIVE',
-        listingFeePaid: true,
-        listingPaymentDueAt: null,
-        activeUntil: computeActiveUntil(now),
-        listedAt: now,
-      },
+      data: needsAdminApproval
+        ? {
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+          status: 'PENDING',
+        }
+        : {
+          status: 'ACTIVE',
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+          activeUntil: computeActiveUntil(now),
+          listedAt: now,
+        },
       include: productIncludeDetail,
     });
 
-    return this.mapProduct(updated);
+    const mapped = await this.mapProduct(updated);
+    return {
+      ...mapped,
+      requiresAdminApproval: needsAdminApproval,
+    };
   }
 
   async findAll(params: {
@@ -467,6 +512,7 @@ export class ProductsService {
   }
 
   async create(data: CreateProductDto, userId?: string) {
+    await this.categoriesService.assertLeafCategory(data.categoryId);
     const product = await this.prisma.product.create({
       data: await this.buildCreateData(data, userId || '', {
         status: 'ACTIVE',
@@ -506,6 +552,10 @@ export class ProductsService {
           create: brands.map((brandCode) => ({ brandCode })),
         };
       }
+    }
+
+    if (data.categoryId) {
+      await this.categoriesService.assertLeafCategory(data.categoryId);
     }
 
     if (data.isBoosted === true && !product.isBoosted) {
@@ -586,6 +636,9 @@ export class ProductsService {
 
     const activeCount = await this.countActiveClientListings(userId);
     const requiresListingFee = activeCount >= FREE_CLIENT_LISTING_LIMIT;
+    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
+      product.categoryId,
+    );
     const now = new Date();
 
     if (requiresListingFee) {
@@ -603,6 +656,7 @@ export class ProductsService {
       return {
         product: await this.mapProduct(pending),
         requiresListingFee: true,
+        requiresAdminApproval: needsAdminApproval,
         listingFee: EXTRA_LISTING_FEE,
         paymentDueAt: pending.listingPaymentDueAt,
       };
@@ -610,22 +664,87 @@ export class ProductsService {
 
     const updated = await this.prisma.product.update({
       where: { id },
-      data: {
-        status: 'ACTIVE',
-        listingFeePaid: true,
-        listingPaymentDueAt: null,
-        activeUntil: computeActiveUntil(now),
-        deprecatedAt: null,
-        listedAt: now,
-      },
+      data: needsAdminApproval
+        ? {
+          status: 'PENDING',
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+          deprecatedAt: null,
+        }
+        : {
+          status: 'ACTIVE',
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+          activeUntil: computeActiveUntil(now),
+          deprecatedAt: null,
+          listedAt: now,
+        },
       include: productIncludeDetail,
     });
 
     return {
       product: await this.mapProduct(updated),
       requiresListingFee: false,
+      requiresAdminApproval: needsAdminApproval,
       listingFee: 0,
       paymentDueAt: null,
     };
+  }
+
+  async reportProduct(productId: string, reporterId: string, data: ReportProductDto) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        category: { select: { name: true } },
+        user: { select: { id: true, name: true, phone: true, email: true, city: true, telegramId: true } },
+      },
+    });
+
+    if (!product) throw new NotFoundException('آگهی یافت نشد');
+    if (product.userId === reporterId) {
+      throw new BadRequestException('نمی‌توانید آگهی خود را گزارش کنید');
+    }
+
+    const reporter = await this.prisma.user.findUnique({
+      where: { id: reporterId },
+      select: { id: true, name: true, phone: true, email: true },
+    });
+    if (!reporter) throw new NotFoundException('کاربر یافت نشد');
+
+    const title = data.title.trim();
+    const description = data.description.trim();
+    const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${product.id}`;
+
+    await this.mailService.sendProductReport({
+      reportTitle: title,
+      reportDescription: description,
+      product: {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        city: product.city,
+        advertiser: product.advertiser,
+        categoryName: product.category?.name ?? null,
+        url: productUrl,
+      },
+      advertiser: product.user
+        ? {
+          id: product.user.id,
+          name: product.user.name,
+          phone: product.user.phone,
+          email: product.user.email,
+          city: product.user.city,
+          telegramId: product.user.telegramId,
+        }
+        : null,
+      reporter: {
+        id: reporter.id,
+        name: reporter.name,
+        phone: reporter.phone,
+        email: reporter.email,
+      },
+    });
+
+    return { message: 'گزارش شما ثبت شد و برای بررسی ارسال شد' };
   }
 }

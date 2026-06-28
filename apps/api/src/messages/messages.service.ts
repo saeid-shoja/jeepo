@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { MessageTarget, UserMessageType } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { TelegramService } from '../telegram/telegram.service';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
 import type { CreateMessageDto } from './dto';
 
 const MESSAGE_TYPE_LABELS: Record<UserMessageType, string> = {
@@ -11,7 +13,11 @@ const MESSAGE_TYPE_LABELS: Record<UserMessageType, string> = {
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private telegramBot: TelegramBotService,
+    private telegram: TelegramService,
+  ) { }
 
   private mapUserMessage(message: {
     id: string;
@@ -106,9 +112,48 @@ export class MessagesService {
       return createdBatch;
     });
 
+    let telegramSent = 0;
+    let telegramFailed = 0;
+    const warnings: string[] = [];
+    const telegramConfigured = this.telegram.isConfigured();
+
+    if (dto.sendTelegram) {
+      if (!telegramConfigured) {
+        warnings.push(
+          'ربات تلگرام پیکربندی نشده (TELEGRAM_BOT_TOKEN و TELEGRAM_BOT_USERNAME در سرور).',
+        );
+      } else {
+        const recipientIds = recipients.map((user) => user.id);
+        const chatIds =
+          dto.target === 'USER'
+            ? await this.telegramBot.getChatIdsForUsers(recipientIds)
+            : await this.telegramBot.getAllSubscriberChatIds();
+
+        if (chatIds.length === 0) {
+          warnings.push(
+            dto.target === 'USER'
+              ? 'این کاربر ربات تلگرام را متصل نکرده است.'
+              : 'هیچ کاربری ربات تلگرام را متصل نکرده است.',
+          );
+        } else {
+          const result = await this.telegram.broadcast(chatIds, title, body);
+          telegramSent = result.sent;
+          telegramFailed = result.failed;
+          if (result.failed > 0) {
+            warnings.push(`${result.failed.toLocaleString('fa-IR')} ارسال تلگرام ناموفق بود.`);
+          }
+        }
+      }
+    }
+
     return {
       id: batch.id,
       recipientCount: batch.recipientCount,
+      inAppDelivered: batch.recipientCount,
+      telegramConfigured,
+      telegramSent,
+      telegramFailed,
+      warnings,
       message: 'پیام با موفقیت ارسال شد',
     };
   }

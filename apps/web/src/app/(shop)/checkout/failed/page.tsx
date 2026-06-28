@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 
 const REASON_MESSAGES: Record<string, string> = {
   payment_cancelled: 'پرداخت توسط شما لغو شد.',
-  verify_failed: 'تأیید پرداخت در درگاه ناموفق بود.',
+  verify_failed: 'تأیید پرداخت در درگاه ناموفق بود. در صورت کسر وجه با پشتیبانی تماس بگیرید.',
   amount_mismatch: 'مبلغ پرداخت با سفارش مطابقت ندارد.',
   track_mismatch: 'اطلاعات پرداخت با سفارش همخوانی ندارد.',
   order_not_found: 'سفارش یافت نشد.',
   invalid_callback: 'پاسخ درگاه پرداخت نامعتبر است.',
+  fulfillment_failed: 'پرداخت انجام شد اما ثبت نهایی سفارش با خطا مواجه شد. با پشتیبانی تماس بگیرید.',
+  server_error: 'خطای سرور هنگام بازگشت از درگاه. در صورت کسر وجه با پشتیبانی تماس بگیرید.',
 };
 
 function FailedContent() {

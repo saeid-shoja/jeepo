@@ -52,8 +52,12 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
     setPayingListingId(productId);
     setPaymentLoading(true);
     try {
-      await api.products.payListingFee(productId);
-      toast.success('پرداخت انجام شد و آگهی منتشر شد');
+      const res = await api.products.payListingFee(productId);
+      if (res.requiresAdminApproval) {
+        toast.success('پرداخت انجام شد. آگهی پس از بررسی قیمت توسط مدیر منتشر می‌شود.');
+      } else {
+        toast.success('پرداخت انجام شد و آگهی منتشر شد');
+      }
       setPendingPayment(null);
       await loadProducts();
     } catch (err: unknown) {
@@ -114,6 +118,16 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
         {products.map((product: any) => (
           <div key={product.id} className="flex flex-col gap-2">
             <ProductCard product={product} />
+            {product.awaitingAdminApproval && (
+              <div className="space-y-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-2 dark:border-blue-900 dark:bg-blue-950/30">
+                <p className="text-center text-[11px] font-medium text-blue-800 dark:text-blue-200">
+                  در انتظار تأیید مدیر
+                </p>
+                <p className="text-muted-foreground text-center text-[10px]">
+                  پس از بررسی قیمت، آگهی در سایت نمایش داده می‌شود.
+                </p>
+              </div>
+            )}
             {product.awaitingListingPayment && (
               <div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-2 dark:border-amber-900 dark:bg-amber-950/30">
                 <p className="text-center text-[11px] font-medium text-amber-800 dark:text-amber-200">

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } fro
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/custom.decorator';
 import { SWAGGER_BEARER_KEY } from '../swagger';
-import { CreateProductDto, FindProductsQueryDto, UpdateProductDto } from './dto';
+import { CreateProductDto, FindProductsQueryDto, ReportProductDto, UpdateProductDto } from './dto';
 import { ProductsService } from './products.service';
 
 @ApiTags('Products')
@@ -53,6 +53,15 @@ export class ProductsController {
   @Post('public')
   createPublic(@Body() body: CreateProductDto, @Request() req: { user: { userId: string } }) {
     return this.productsService.createPublicListing(body, req.user.userId);
+  }
+
+  @Post(':id/report')
+  report(
+    @Param('id') id: string,
+    @Body() body: ReportProductDto,
+    @Request() req: { user: { userId: string } },
+  ) {
+    return this.productsService.reportProduct(id, req.user.userId, body);
   }
 
   @Post(':id/pay-listing-fee')

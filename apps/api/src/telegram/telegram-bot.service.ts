@@ -132,10 +132,7 @@ export class TelegramBotService {
     }
 
     if (user.telegramChatId && user.telegramChatId !== chatId) {
-      await this.telegram.sendMessage(
-        chatId,
-        'این حساب کاربری قبلاً به تلگرام دیگری متصل شده است.',
-      );
+      await this.telegram.sendMessage(chatId, 'این حساب کاربری قبلاً به تلگرام دیگری متصل شده است.');
       return { ok: true };
     }
 

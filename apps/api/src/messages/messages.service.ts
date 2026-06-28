@@ -17,7 +17,7 @@ export class MessagesService {
     private prisma: PrismaService,
     private telegramBot: TelegramBotService,
     private telegram: TelegramService,
-  ) { }
+  ) {}
 
   private mapUserMessage(message: {
     id: string;

@@ -7,7 +7,7 @@ import { TelegramBotService } from './telegram-bot.service';
 @ApiTags('Telegram')
 @Controller('telegram')
 export class TelegramController {
-  constructor(private readonly telegramBotService: TelegramBotService) { }
+  constructor(private readonly telegramBotService: TelegramBotService) {}
 
   @Public()
   @Post('webhook')

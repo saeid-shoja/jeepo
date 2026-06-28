@@ -53,26 +53,23 @@ function CategoryTreeNode({
 
   if (!hasChildren) {
     return (
-      <button
-        type="button"
-        role="radio"
-        aria-checked={isSelected}
-        onClick={() => onValueChange(node.id)}
+      <label
         className={cn(
-          'hover:bg-muted/70 flex w-full items-center gap-2 rounded-sm py-2 text-start text-sm transition-colors',
+          'hover:bg-muted/70 flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 text-start text-sm transition-colors',
           isSelected && 'bg-primary/10 text-primary font-medium',
         )}
         style={{ paddingRight: `${depth * 14 + 12}px`, paddingLeft: '12px' }}
       >
-        <span
-          className={cn(
-            'border-muted-foreground/40 size-4 shrink-0 rounded-full border-2',
-            isSelected && 'border-primary bg-primary ring-primary/20 ring-2',
-          )}
-          aria-hidden
+        <input
+          type="radio"
+          name="product-category-id"
+          value={node.id}
+          checked={isSelected}
+          onChange={() => onValueChange(node.id)}
+          className="text-primary size-4 shrink-0 accent-primary"
         />
         <span>{node.name}</span>
-      </button>
+      </label>
     );
   }
 
@@ -118,8 +115,7 @@ export function ProductCategoryPicker({ value, onValueChange }: ProductCategoryP
 
   const [manualLibraryId, setManualLibraryId] = useState<string | null>(null);
 
-  const activeLibraryId =
-    manualLibraryId ?? libraryForValue?.id ?? partLibraries[0]?.id ?? null;
+  const activeLibraryId = manualLibraryId ?? libraryForValue?.id ?? partLibraries[0]?.id ?? null;
 
   const activeLibrary =
     partLibraries.find((library) => library.id === activeLibraryId) ?? partLibraries[0] ?? null;

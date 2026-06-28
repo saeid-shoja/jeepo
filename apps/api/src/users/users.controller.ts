@@ -16,7 +16,7 @@ export class UsersController {
     private messagesService: MessagesService,
     private favoritesService: FavoritesService,
     private telegramBotService: TelegramBotService,
-  ) { }
+  ) {}
 
   @Get('profile')
   getProfile(@Request() req: { user: { userId: string } }) {

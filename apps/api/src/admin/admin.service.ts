@@ -23,7 +23,7 @@ export class AdminService {
     private prisma: PrismaService,
     private mailService: MailService,
     @Inject('WEB_URL') private readonly webUrl: string,
-  ) { }
+  ) {}
 
   async getDashboard() {
     const [products, clientProducts, orders, users] = await Promise.all([
@@ -291,7 +291,7 @@ export class AdminService {
       const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${id}`;
       await this.mailService
         .sendListingApproved(product.user.email, product.user.name, product.title, productUrl)
-        .catch(() => { });
+        .catch(() => {});
     }
 
     return updated;

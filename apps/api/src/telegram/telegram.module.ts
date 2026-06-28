@@ -8,4 +8,4 @@ import { TelegramBotService } from './telegram-bot.service';
   providers: [TelegramService, TelegramBotService],
   exports: [TelegramService, TelegramBotService],
 })
-export class TelegramModule { }
+export class TelegramModule {}

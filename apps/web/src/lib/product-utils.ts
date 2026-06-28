@@ -8,10 +8,7 @@ export function getSituationLabel(situation: ProductSituation): string | null {
   return null;
 }
 
-export function isShopProduct(product: {
-  advertiser?: string;
-  type?: string;
-}): boolean {
+export function isShopProduct(product: { advertiser?: string; type?: string }): boolean {
   return product.advertiser === 'SHOP' || product.type === 'SHOP';
 }
 

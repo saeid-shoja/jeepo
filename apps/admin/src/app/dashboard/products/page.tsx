@@ -79,9 +79,7 @@ export default function AdminProductsPage() {
               <th className="px-4 py-3 text-right">محصول</th>
               <th className="px-4 py-3 text-right">قیمت</th>
               <th className="px-4 py-3 text-right">فروشنده</th>
-              {tab !== 'shop' && tab !== 'client' && (
-                <th className="px-4 py-3 text-right">نوع</th>
-              )}
+              {tab !== 'shop' && tab !== 'client' && <th className="px-4 py-3 text-right">نوع</th>}
               <th className="px-4 py-3 text-right">ویژگی‌ها</th>
               <th className="px-4 py-3 text-right">وضعیت</th>
               <th className="px-4 py-3 text-center">عملیات</th>

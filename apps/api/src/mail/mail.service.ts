@@ -363,9 +363,11 @@ export class MailService {
                 email: payload.advertiser.email,
                 city: payload.advertiser.city,
               }) +
-              (payload.advertiser.telegramId
-                ? `<p style="font-size:14px">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
-                : '')
+              (
+                payload.advertiser.telegramId
+                  ? `<p style="font-size:14px">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
+                  : ''
+              )
             : ''
         }
         ${formatParty('گزارش‌دهنده', {

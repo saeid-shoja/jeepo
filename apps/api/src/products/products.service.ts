@@ -42,7 +42,7 @@ export class ProductsService {
     private categoriesService: CategoriesService,
     private mailService: MailService,
     @Inject('WEB_URL') private readonly webUrl: string,
-  ) { }
+  ) {}
 
   private postedSince(postedWithin: string): Date | null {
     const now = Date.now();
@@ -263,26 +263,26 @@ export class ProductsService {
     const createOptions = needsAdminApproval
       ? requiresListingFee
         ? {
-          status: 'PENDING' as const,
-          listingFeePaid: false,
-          listingPaymentDueAt: listingPaymentDueAt(),
-        }
+            status: 'PENDING' as const,
+            listingFeePaid: false,
+            listingPaymentDueAt: listingPaymentDueAt(),
+          }
         : {
-          status: 'PENDING' as const,
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-        }
+            status: 'PENDING' as const,
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+          }
       : requiresListingFee
         ? {
-          status: 'PENDING' as const,
-          listingFeePaid: false,
-          listingPaymentDueAt: listingPaymentDueAt(),
-        }
+            status: 'PENDING' as const,
+            listingFeePaid: false,
+            listingPaymentDueAt: listingPaymentDueAt(),
+          }
         : {
-          status: 'ACTIVE' as const,
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-        };
+            status: 'ACTIVE' as const,
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+          };
 
     const product = await this.prisma.product.create({
       data: await this.buildCreateData({ ...data, advertiser: 'CLIENT' }, userId, createOptions),
@@ -329,17 +329,17 @@ export class ProductsService {
       where: { id: productId },
       data: needsAdminApproval
         ? {
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          status: 'PENDING',
-        }
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            status: 'PENDING',
+          }
         : {
-          status: 'ACTIVE',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          activeUntil: computeActiveUntil(now),
-          listedAt: now,
-        },
+            status: 'ACTIVE',
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            activeUntil: computeActiveUntil(now),
+            listedAt: now,
+          },
       include: productIncludeDetail,
     });
 
@@ -666,19 +666,19 @@ export class ProductsService {
       where: { id },
       data: needsAdminApproval
         ? {
-          status: 'PENDING',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          deprecatedAt: null,
-        }
+            status: 'PENDING',
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            deprecatedAt: null,
+          }
         : {
-          status: 'ACTIVE',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          activeUntil: computeActiveUntil(now),
-          deprecatedAt: null,
-          listedAt: now,
-        },
+            status: 'ACTIVE',
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            activeUntil: computeActiveUntil(now),
+            deprecatedAt: null,
+            listedAt: now,
+          },
       include: productIncludeDetail,
     });
 
@@ -696,7 +696,9 @@ export class ProductsService {
       where: { id: productId },
       include: {
         category: { select: { name: true } },
-        user: { select: { id: true, name: true, phone: true, email: true, city: true, telegramId: true } },
+        user: {
+          select: { id: true, name: true, phone: true, email: true, city: true, telegramId: true },
+        },
       },
     });
 
@@ -729,13 +731,13 @@ export class ProductsService {
       },
       advertiser: product.user
         ? {
-          id: product.user.id,
-          name: product.user.name,
-          phone: product.user.phone,
-          email: product.user.email,
-          city: product.user.city,
-          telegramId: product.user.telegramId,
-        }
+            id: product.user.id,
+            name: product.user.name,
+            phone: product.user.phone,
+            email: product.user.email,
+            city: product.user.city,
+            telegramId: product.user.telegramId,
+          }
         : null,
       reporter: {
         id: reporter.id,

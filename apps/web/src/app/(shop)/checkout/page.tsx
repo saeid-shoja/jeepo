@@ -73,7 +73,9 @@ function CheckoutLineItem({ item }: { item: OrderPreviewItem }) {
               {formatPrice(item.lineTotal)}{' '}
               <span className="text-muted-foreground text-xs font-normal">تومان</span>
             </p>
-            <p className="text-muted-foreground text-xs">واحد: {formatPrice(item.unitPrice)} تومان</p>
+            <p className="text-muted-foreground text-xs">
+              واحد: {formatPrice(item.unitPrice)} تومان
+            </p>
           </div>
         </div>
       </div>

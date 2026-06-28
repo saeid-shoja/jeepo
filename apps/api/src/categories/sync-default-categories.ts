@@ -32,10 +32,10 @@ const LEGACY_CATEGORY_SLUGS: {
   to: string;
   group?: CategoryGroup;
 }[] = [
-    { from: 'clothing-gear', to: 'inside' },
-    { from: 'transmission', to: 'engine-drivetrain' },
-    { from: 'other', to: 'misc-group', group: 'PART' },
-  ];
+  { from: 'clothing-gear', to: 'inside' },
+  { from: 'transmission', to: 'engine-drivetrain' },
+  { from: 'other', to: 'misc-group', group: 'PART' },
+];
 
 function buildCategorySeeds(): CategorySeed[] {
   const seeds: CategorySeed[] = [

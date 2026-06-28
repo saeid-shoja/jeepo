@@ -3,12 +3,7 @@ import { IsEnum, IsIn, IsOptional } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Advertiser, ProductStatus } from '../../prisma/generated/client';
 
-export const ADMIN_PRODUCT_TABS = [
-  'shop',
-  'client',
-  'pending_approval',
-  'auction',
-] as const;
+export const ADMIN_PRODUCT_TABS = ['shop', 'client', 'pending_approval', 'auction'] as const;
 
 export type AdminProductTab = (typeof ADMIN_PRODUCT_TABS)[number];
 

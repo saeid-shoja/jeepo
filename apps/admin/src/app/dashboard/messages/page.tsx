@@ -24,6 +24,9 @@ export default function AdminMessagesPage() {
   const [type, setType] = useState('ANNOUNCEMENT');
   const [target, setTarget] = useState('ALL');
   const [userId, setUserId] = useState('');
+  const [sendTelegram, setSendTelegram] = useState(false);
+  const [telegramSubscribers, setTelegramSubscribers] = useState(0);
+  const [telegramConfigured, setTelegramConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
   const loadData = useCallback(() => {
     adminApi
@@ -39,6 +42,16 @@ export default function AdminMessagesPage() {
       .catch(() => {
         setUsers([]);
         toast.error('بارگذاری کاربران ناموفق بود');
+      });
+    adminApi
+      .telegramStats()
+      .then((res) => {
+        setTelegramSubscribers(res.subscriberCount);
+        setTelegramConfigured(res.configured);
+      })
+      .catch(() => {
+        setTelegramSubscribers(0);
+        setTelegramConfigured(false);
       });
   }, []);
 
@@ -56,11 +69,22 @@ export default function AdminMessagesPage() {
         type,
         target,
         userId: target === 'USER' ? userId : undefined,
+        sendTelegram,
       });
-      toast.success(`${res.message} (${res.recipientCount.toLocaleString('fa-IR')} گیرنده)`);
+      const telegramNote =
+        res.telegramSent != null && res.telegramSent > 0
+          ? ` — تلگرام: ${res.telegramSent.toLocaleString('fa-IR')} ارسال`
+          : '';
+      toast.success(
+        `${res.message} (${(res.inAppDelivered ?? res.recipientCount).toLocaleString('fa-IR')} گیرنده در پنل کاربری${telegramNote})`,
+      );
+      for (const warning of res.warnings ?? []) {
+        toast.warning(warning);
+      }
       setTitle('');
       setBody('');
       setUserId('');
+      setSendTelegram(false);
       loadData();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در ارسال پیام');
@@ -172,6 +196,34 @@ export default function AdminMessagesPage() {
             minLength={2}
           />
         </div>
+
+        <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={sendTelegram}
+            onChange={(e) => setSendTelegram(e.target.checked)}
+            disabled={!telegramConfigured}
+            className="mt-0.5 size-4 rounded border disabled:opacity-50"
+          />
+          <span className={!telegramConfigured ? 'text-muted-foreground' : undefined}>
+            ارسال همزمان در تلگرام ({telegramSubscribers.toLocaleString('fa-IR')} کاربر متصل)
+            {!telegramConfigured && (
+              <span className="mt-1 block text-xs text-amber-700">
+                ربات تلگرام در سرور API پیکربندی نشده — فقط پیام درون‌برنامه‌ای ارسال می‌شود.
+              </span>
+            )}
+            {telegramConfigured && telegramSubscribers === 0 && (
+              <span className="mt-1 block text-xs text-amber-700">
+                هنوز کاربری ربات را از پنل کاربری متصل نکرده است.
+              </span>
+            )}
+          </span>
+        </label>
+
+        <p className="text-muted-foreground text-xs">
+          پیام درون‌برنامه‌ای در تب «پیام‌ها» داخل پنل کاربری (dashboard?tab=messages) برای هر کاربر
+          نمایش داده می‌شود.
+        </p>
 
         <button
           type="submit"

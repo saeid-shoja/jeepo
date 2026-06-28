@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { formatPrice, SITE_NAME_FA } from '@offroad/shared';
+import { formatPrice, SITE_EMAIL, SITE_NAME_FA } from '@offroad/shared';
 import { Resend } from 'resend';
 import type { PaymentMethod } from '../prisma/generated/client';
 
@@ -283,6 +283,107 @@ export class MailService {
           this.logger.warn(`Order email to ${email} failed: ${String(err)}`);
         }),
       ),
+    );
+  }
+
+  async sendListingApproved(
+    to: string,
+    name: string,
+    title: string,
+    productUrl: string,
+  ): Promise<void> {
+    const html = `
+      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
+        <h2 style="margin:0 0 12px">آگهی شما تأیید شد</h2>
+        <p>سلام ${escapeHtml(name)}،</p>
+        <p>آگهی «${escapeHtml(title)}» پس از بررسی توسط تیم ${SITE_NAME_FA} تأیید و در سایت منتشر شد.</p>
+        <p style="margin:20px 0">
+          <a href="${escapeHtml(productUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">مشاهده آگهی</a>
+        </p>
+        <p style="color:#666;font-size:14px">لینک آگهی: <a href="${escapeHtml(productUrl)}">${escapeHtml(productUrl)}</a></p>
+        <p style="color:#666;font-size:14px;margin-top:20px">با تشکر،<br/>تیم ${SITE_NAME_FA}</p>
+      </div>
+    `;
+
+    await this.send(to, `آگهی شما منتشر شد — ${SITE_NAME_FA}`, html);
+  }
+
+  async sendProductReport(payload: {
+    reportTitle: string;
+    reportDescription: string;
+    product: {
+      id: string;
+      title: string;
+      price: number;
+      city: string | null;
+      advertiser: string;
+      categoryName: string | null;
+      url: string;
+    };
+    advertiser: {
+      id: string;
+      name: string;
+      phone: string;
+      email: string | null;
+      city: string | null;
+      telegramId: string | null;
+    } | null;
+    reporter: {
+      id: string;
+      name: string;
+      phone: string;
+      email: string | null;
+    };
+  }): Promise<void> {
+    const advertiserLabel =
+      payload.product.advertiser === 'SHOP' ? 'فروشگاه جیپو' : 'کاربر (آگهی شخصی)';
+
+    const html = `
+      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
+        <h2 style="margin:0 0 12px">گزارش تخلف آگهی — ${escapeHtml(SITE_NAME_FA)}</h2>
+        <h3 style="margin:16px 0 8px;font-size:16px">عنوان گزارش</h3>
+        <p style="margin:0 0 12px">${escapeHtml(payload.reportTitle)}</p>
+        <h3 style="margin:16px 0 8px;font-size:16px">توضیحات گزارش</h3>
+        <p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(payload.reportDescription)}</p>
+        <h3 style="margin:16px 0 8px;font-size:16px">اطلاعات آگهی</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
+          <tr><td style="padding:4px 0;color:#666;width:140px">عنوان</td><td>${escapeHtml(payload.product.title)}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">شناسه</td><td dir="ltr">${escapeHtml(payload.product.id)}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">دسته</td><td>${escapeHtml(payload.product.categoryName ?? '—')}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">قیمت</td><td>${formatPrice(payload.product.price)} تومان</td></tr>
+          <tr><td style="padding:4px 0;color:#666">شهر</td><td>${escapeHtml(payload.product.city ?? '—')}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">نوع آگهی</td><td>${escapeHtml(advertiserLabel)}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">لینک</td><td><a href="${escapeHtml(payload.product.url)}">${escapeHtml(payload.product.url)}</a></td></tr>
+        </table>
+        ${
+          payload.advertiser
+            ? formatParty('آگهی‌دهنده', {
+                name: payload.advertiser.name,
+                phone: payload.advertiser.phone,
+                email: payload.advertiser.email,
+                city: payload.advertiser.city,
+              }) +
+              (
+                payload.advertiser.telegramId
+                  ? `<p style="font-size:14px">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
+                  : ''
+              )
+            : ''
+        }
+        ${formatParty('گزارش‌دهنده', {
+          name: payload.reporter.name,
+          phone: payload.reporter.phone,
+          email: payload.reporter.email,
+          city: null,
+        })}
+        <p style="color:#666;font-size:14px;margin-top:20px">زمان: ${new Date().toLocaleString('fa-IR')}</p>
+      </div>
+    `;
+
+    await this.send(
+      SITE_EMAIL,
+      `گزارش آگهی: ${payload.reportTitle} — ${payload.product.title.slice(0, 40)}`,
+      html,
     );
   }
 }

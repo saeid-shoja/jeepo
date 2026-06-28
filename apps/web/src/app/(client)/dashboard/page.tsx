@@ -18,6 +18,7 @@ import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
 import { ProfileMessagesTab } from '@/components/profile/profile-messages-tab';
 import { ProfileProductsTab } from '@/components/profile/profile-products-tab';
+import { TelegramNotificationsCard } from '@/components/profile/telegram-notifications-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -146,6 +147,8 @@ function DashboardContent() {
           </div>
         )}
       </div>
+
+      <TelegramNotificationsCard />
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="h-auto w-full flex-wrap sm:w-auto">

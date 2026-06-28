@@ -1,15 +1,50 @@
 /** Seed templates only — runtime data lives in the database; admin edits are not overwritten on sync. */
 
+export const LIBRARY_PARTS_SLUG = 'parts';
+export const LIBRARY_PARTS_NAME = 'خودرو';
+
 export const MOTORCYCLE_ATV_NAME = 'چهارچرخ و موتورسیکلت';
 
+/** Top-level categories under the motorcycle library. */
 export const MOTORCYCLE_ATV_SUBCATEGORIES = [
   { name: 'تریل و کراس و اندرو', slug: 'trail-cross-enduro', sortOrder: 1 },
   { name: 'چهارچرخ ها', slug: 'atvs', sortOrder: 2 },
   { name: 'ادونچر و سفری', slug: 'adventure-touring', sortOrder: 3 },
+  {
+    name: 'فروش موتورسیکلت',
+    slug: 'travel-offroad-motorcycle-sales',
+    sortOrder: 4,
+  },
 ] as const;
 
+/** Subcategories under «فروش موتورسیکلت های سفری و آفرودی» — require admin price review before publish. */
+export const MOTORCYCLE_ATV_SALE_CHILDREN = [
+  {
+    name: 'انواع تریل و کراس',
+    slug: 'travel-offroad-trail-cross',
+    parentSlug: 'travel-offroad-motorcycle-sales',
+    sortOrder: 1,
+  },
+  {
+    name: 'ادونچر و سفری',
+    slug: 'travel-offroad-adventure',
+    parentSlug: 'travel-offroad-motorcycle-sales',
+    sortOrder: 2,
+  },
+] as const;
+
+/** Client vehicle/motorcycle sale ads — hidden until admin approves price. */
+export const ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS = [
+  'car-sales',
+  'travel-offroad-trail-cross',
+  'travel-offroad-adventure',
+] as const;
+
+export function isAdminApprovalRequiredCategory(slug: string): boolean {
+  return (ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS as readonly string[]).includes(slug);
+}
+
 export const MOTORCYCLE_ATV_SLUG = 'motorcycle-atv';
-export const LIBRARY_PARTS_SLUG = 'parts';
 export const LIBRARY_CAR_BRANDS_SLUG = 'car-brands';
 export const LIBRARY_CAMPING_SLUG = 'camping';
 export const LIBRARY_CAMPING_NAME = 'تورهای گردشگری آفرودی و لوازم کمپی';
@@ -24,7 +59,7 @@ export type DefaultLibrary = {
 };
 
 export const DEFAULT_LIBRARIES: DefaultLibrary[] = [
-  { slug: LIBRARY_PARTS_SLUG, name: 'قطعات و یدکی خودرو', kind: 'PART_TREE', sortOrder: 1 },
+  { slug: LIBRARY_PARTS_SLUG, name: LIBRARY_PARTS_NAME, kind: 'PART_TREE', sortOrder: 1 },
   {
     slug: MOTORCYCLE_ATV_SLUG,
     name: MOTORCYCLE_ATV_NAME,
@@ -35,13 +70,14 @@ export const DEFAULT_LIBRARIES: DefaultLibrary[] = [
   { slug: LIBRARY_CAMPING_SLUG, name: LIBRARY_CAMPING_NAME, kind: 'PART_TREE', sortOrder: 4 },
 ];
 
-/** Top-level part groups (قطعات library). */
+/** Top-level part groups (خودرو library). */
 export const DEFAULT_PART_GROUPS = [
+  { name: 'فروش خودرو', slug: 'car-sales', sortOrder: 0 },
   { name: 'موتور و انتقال قدرت و دف', slug: 'engine-drivetrain', sortOrder: 1 },
-  { name: 'شاسی و سیستم تعلیق و چرخ ها ', slug: 'chassis', sortOrder: 2 },
-  { name: 'برق و روشنایی خودرو', slug: 'electrical', sortOrder: 3 },
-  { name: 'ظاهر و تجهیزات بدنه و داخل خودرو', slug: 'gear-style', sortOrder: 4 },
-  { name: 'سایر', slug: 'misc-group', sortOrder: 5 },
+  { name: 'شاسی و سیستم تعلیق و چرخ ها ', slug: 'chassis', sortOrder: 3 },
+  { name: 'برق و روشنایی خودرو', slug: 'electrical', sortOrder: 4 },
+  { name: 'ظاهر و تجهیزات بدنه و داخل خودرو', slug: 'gear-style', sortOrder: 5 },
+  { name: 'سایر', slug: 'misc-group', sortOrder: 6 },
 ] as const;
 
 /** Subcategories under part groups. */

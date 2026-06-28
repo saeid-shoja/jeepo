@@ -16,6 +16,11 @@ import { AuctionListingOptions } from '@/components/form/auction-listing-options
 import { CitySelect } from '@/components/form/city-select';
 import { dateTimeLocalToIso, defaultMinDateTimeLocal } from '@/components/form/datetime-picker';
 import { FieldError } from '@/components/form/field-error';
+import { ListingFormTips } from '@/components/form/listing-form-tips';
+import {
+  ListingSubmitResultDialog,
+  type ListingSubmitResultVariant,
+} from '@/components/form/listing-submit-result-dialog';
 import { ListingPremiumPaymentDialog } from '@/components/form/premium-listing-payment-dialog';
 import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
@@ -38,6 +43,9 @@ export default function NewProductPage() {
   const { carBrands: carBrandOptions } = useCategories();
   const [strengthenedPaymentOpen, setStrengthenedPaymentOpen] = useState(false);
   const [listingPaymentOpen, setListingPaymentOpen] = useState(false);
+  const [submitResultOpen, setSubmitResultOpen] = useState(false);
+  const [submitResultVariant, setSubmitResultVariant] =
+    useState<ListingSubmitResultVariant>('published');
   const [pendingListingId, setPendingListingId] = useState<string | null>(null);
   const [listingFee, setListingFee] = useState(EXTRA_LISTING_FEE);
   const [listingPaymentDueAt, setListingPaymentDueAt] = useState<string | null>(null);
@@ -81,6 +89,16 @@ export default function NewProductPage() {
   const hasGuarantee = watch('hasGuarantee');
   const applyStrengthened = watch('applyStrengthened');
   const carBrands = watch('carBrands');
+
+  const showSubmitResult = (variant: ListingSubmitResultVariant) => {
+    setSubmitResultVariant(variant);
+    setSubmitResultOpen(true);
+  };
+
+  const goToDashboard = () => {
+    setSubmitResultOpen(false);
+    router.push('/dashboard');
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -131,8 +149,12 @@ export default function NewProductPage() {
         return;
       }
 
-      toast.success('آگهی با موفقیت ثبت شد');
-      router.push('/dashboard');
+      if (result.requiresAdminApproval) {
+        showSubmitResult('pending_review');
+        return;
+      }
+
+      showSubmitResult('published');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در ثبت آگهی');
     } finally {
@@ -144,11 +166,10 @@ export default function NewProductPage() {
     if (!pendingListingId) return;
     setPayingListingFee(true);
     try {
-      await api.products.payListingFee(pendingListingId);
+      const res = await api.products.payListingFee(pendingListingId);
       listingPaymentResolvedRef.current = true;
-      toast.success('پرداخت انجام شد و آگهی منتشر شد');
       setListingPaymentOpen(false);
-      router.push('/dashboard');
+      showSubmitResult(res.requiresAdminApproval ? 'pending_review' : 'published');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'پرداخت ناموفق بود');
     } finally {
@@ -178,7 +199,7 @@ export default function NewProductPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
       <h1 className="mb-8 text-2xl font-bold">ثبت آگهی جدید</h1>
-
+      <ListingFormTips />
       <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6" noValidate>
         <Card>
           <CardHeader>
@@ -187,7 +208,11 @@ export default function NewProductPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
-              <Input id="title" placeholder="مثلاً: لاستیک ۳۳ اینچ گرندپیت" {...register('title')} />
+              <Input
+                id="title"
+                placeholder="مثلاً: لاستیک ۳۳ اینچ برند .. "
+                {...register('title')}
+              />
               <FieldError message={errors.title?.message} />
             </div>
 
@@ -363,7 +388,6 @@ export default function NewProductPage() {
             onStrengthenedChange={(v) => setValue('applyStrengthened', v)}
           />
         )}
-
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
           {isSubmitting ? 'در حال ثبت...' : 'ثبت آگهی'}
         </Button>
@@ -395,6 +419,12 @@ export default function NewProductPage() {
         }`}
         fee={listingFee}
         onConfirm={() => void handlePayListingFee()}
+      />
+
+      <ListingSubmitResultDialog
+        open={submitResultOpen}
+        variant={submitResultVariant}
+        onGoToDashboard={goToDashboard}
       />
     </div>
   );

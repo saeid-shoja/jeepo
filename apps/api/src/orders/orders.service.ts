@@ -358,6 +358,52 @@ export class OrdersService {
     return order;
   }
 
+  /**
+   * Re-read catalog prices for a pending order before charging the gateway.
+   * Ensures Zibal amount always matches current DB prices, not stale cart/client values.
+   */
+  async refreshPendingOrderPricing(orderId: string, userId: string): Promise<number> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order) throw new NotFoundException('سفارش یافت نشد');
+    if (order.userId !== userId) {
+      throw new ForbiddenException('دسترسی به این سفارش مجاز نیست');
+    }
+    if (order.status !== 'PENDING') {
+      throw new BadRequestException('این سفارش دیگر در انتظار پرداخت نیست');
+    }
+
+    const lines = await this.resolveItems(
+      order.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+      userId,
+    );
+    const total = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
+    const lineByProductId = new Map(lines.map((line) => [line.productId, line]));
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        const line = lineByProductId.get(item.productId);
+        if (!line) {
+          throw new BadRequestException('برخی اقلام سفارش دیگر قابل خرید نیستند');
+        }
+        await tx.orderItem.update({
+          where: { id: item.id },
+          data: { price: line.price, quantity: line.quantity },
+        });
+      }
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: { total },
+      });
+    });
+
+    return total;
+  }
+
   async fulfillAfterPayment(
     orderId: string,
     payment: { trackId: string; refNumber: string | null; paidAt: Date },

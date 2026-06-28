@@ -38,7 +38,13 @@ export type ZibalVerifyResponse = {
 export class ZibalService {
   private readonly logger = new Logger(ZibalService.name);
 
-  constructor(@Inject('ZIBAL_MERCHANT') private readonly merchant: string) {}
+  constructor(@Inject('ZIBAL_MERCHANT') private readonly merchant: string) {
+    if (merchant === 'zibal') {
+      this.logger.warn('Zibal SANDBOX merchant active — payments are test-only');
+    } else {
+      this.logger.log(`Zibal live merchant configured (${merchant.slice(0, 4)}…)`);
+    }
+  }
 
   getStartUrl(trackId: number | string): string {
     return `${ZIBAL_BASE}/start/${trackId}`;

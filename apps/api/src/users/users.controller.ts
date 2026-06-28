@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FavoritesService } from '../favorites/favorites.service';
 import { MessagesService } from '../messages/messages.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { UpdateProfileDto } from './dto';
 import { UsersService } from './users.service';
 
@@ -14,11 +15,17 @@ export class UsersController {
     private usersService: UsersService,
     private messagesService: MessagesService,
     private favoritesService: FavoritesService,
+    private telegramBotService: TelegramBotService,
   ) {}
 
   @Get('profile')
   getProfile(@Request() req: { user: { userId: string } }) {
     return this.usersService.getProfile(req.user.userId);
+  }
+
+  @Get('telegram/link')
+  getTelegramLink(@Request() req: { user: { userId: string } }) {
+    return this.telegramBotService.createLinkForUser(req.user.userId);
   }
 
   @Get('products')

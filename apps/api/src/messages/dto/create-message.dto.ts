@@ -1,4 +1,5 @@
-import { IsEnum, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsEnum, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator';
 import { MessageTarget, UserMessageType } from '../../prisma/generated/client';
 
 export class CreateMessageDto {
@@ -20,4 +21,10 @@ export class CreateMessageDto {
   @ValidateIf((dto: CreateMessageDto) => dto.target === 'USER')
   @IsString({ message: 'شناسه کاربر الزامی است' })
   userId?: string;
+
+  /** Also push to Telegram subscribers who linked the bot. */
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  sendTelegram?: boolean;
 }

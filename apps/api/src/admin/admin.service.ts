@@ -1,18 +1,29 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS,
+  isAdminApprovalRequiredCategory,
+} from '@offroad/shared';
 import * as bcrypt from 'bcryptjs';
+import { MailService } from '../mail/mail.service';
 import type { Advertiser, ProductStatus, UserRole } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { computeActiveUntil } from '../products/product-lifecycle.constants';
 import type { CreateAdminUserDto, UpdateAdminUserDto } from './dto';
+import type { AdminProductTab } from './dto/find-admin-products-query.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+    @Inject('WEB_URL') private readonly webUrl: string,
+  ) {}
 
   async getDashboard() {
     const [products, clientProducts, orders, users] = await Promise.all([
@@ -168,9 +179,42 @@ export class AdminService {
     return this.prisma.user.delete({ where: { id } });
   }
 
+  private buildAdminProductsWhere(params: {
+    tab?: AdminProductTab;
+    advertiser?: Advertiser;
+    status?: ProductStatus;
+  }) {
+    const where: Record<string, unknown> = {};
+
+    switch (params.tab) {
+      case 'shop':
+        where.advertiser = 'SHOP';
+        break;
+      case 'client':
+        where.advertiser = 'CLIENT';
+        where.isAuction = false;
+        break;
+      case 'pending_approval':
+        where.status = 'PENDING';
+        where.category = {
+          slug: { in: [...ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS] },
+        };
+        break;
+      case 'auction':
+        where.isAuction = true;
+        break;
+      default:
+        if (params.advertiser) where.advertiser = params.advertiser;
+        if (params.status) where.status = params.status;
+    }
+
+    return where;
+  }
+
   async getAllProducts(params: {
     page?: number;
     limit?: number;
+    tab?: AdminProductTab;
     advertiser?: Advertiser;
     status?: ProductStatus;
   }) {
@@ -178,9 +222,7 @@ export class AdminService {
     const limit = params.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (params.advertiser) where.advertiser = params.advertiser;
-    if (params.status) where.status = params.status;
+    const where = this.buildAdminProductsWhere(params);
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
@@ -188,7 +230,7 @@ export class AdminService {
         include: { category: true, user: { select: { name: true, phone: true } } },
         skip,
         take: limit,
-        orderBy: { listedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
     ]);
@@ -207,7 +249,13 @@ export class AdminService {
   async updateProductStatus(id: string, status: ProductStatus) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      select: { advertiser: true, status: true },
+      select: {
+        advertiser: true,
+        status: true,
+        title: true,
+        user: { select: { name: true, email: true } },
+        category: { select: { slug: true } },
+      },
     });
 
     const data: {
@@ -220,16 +268,32 @@ export class AdminService {
     if (status === 'ACTIVE' && product?.advertiser === 'CLIENT') {
       data.activeUntil = computeActiveUntil();
       data.deprecatedAt = null;
-      if (product.status === 'DEPRECATED') {
+      if (product.status === 'DEPRECATED' || product.status === 'PENDING') {
         data.listedAt = new Date();
       }
     } else if (status === 'DEPRECATED') {
       data.deprecatedAt = new Date();
     }
 
-    return this.prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id },
       data,
     });
+
+    const categorySlug = product?.category?.slug;
+    if (
+      status === 'ACTIVE' &&
+      product?.status === 'PENDING' &&
+      categorySlug &&
+      isAdminApprovalRequiredCategory(categorySlug) &&
+      product.user?.email
+    ) {
+      const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${id}`;
+      await this.mailService
+        .sendListingApproved(product.user.email, product.user.name, product.title, productUrl)
+        .catch(() => {});
+    }
+
+    return updated;
   }
 }

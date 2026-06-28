@@ -70,6 +70,10 @@ model User {
   role      UserRole  @default(CLIENT)
   city      String?
   telegramId                 String?
+  telegramChatId             String?   @unique
+  telegramLinkedAt           DateTime?
+  telegramLinkToken          String?
+  telegramLinkExpiresAt      DateTime?
   emailVerified              Boolean   @default(false)
   emailVerifiedAt            DateTime?
   emailVerificationCode      String?

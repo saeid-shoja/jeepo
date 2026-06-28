@@ -8,6 +8,27 @@ function apiPublicUrl(): string {
   return `http://localhost:${port}`;
 }
 
+function webUrl(): string {
+  const fromEnv = process.env.WEB_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, '');
+  if (process.env.NODE_ENV !== 'production') return 'http://localhost:3000';
+  return SITE_URL.replace(/\/$/, '');
+}
+
+function zibalMerchant(): string {
+  const merchant = process.env.ZIBAL_MERCHANT?.trim();
+  if (merchant) return merchant;
+  return 'zibal';
+}
+
+function telegramBotToken(): string {
+  return process.env.TELEGRAM_BOT_TOKEN?.trim() ?? '';
+}
+
+function telegramBotUsername(): string {
+  return process.env.TELEGRAM_BOT_USERNAME?.trim()?.replace(/^@/, '') ?? '';
+}
+
 @Global()
 @Module({
   providers: [
@@ -29,7 +50,7 @@ function apiPublicUrl(): string {
     },
     {
       provide: 'ZIBAL_MERCHANT',
-      useValue: process.env.ZIBAL_MERCHANT || 'zibal',
+      useValue: zibalMerchant(),
     },
     {
       provide: 'ZIBAL_CALLBACK_URL',
@@ -37,7 +58,19 @@ function apiPublicUrl(): string {
     },
     {
       provide: 'WEB_URL',
-      useValue: (process.env.WEB_URL || SITE_URL).replace(/\/$/, ''),
+      useValue: webUrl(),
+    },
+    {
+      provide: 'TELEGRAM_BOT_TOKEN',
+      useValue: telegramBotToken(),
+    },
+    {
+      provide: 'TELEGRAM_BOT_USERNAME',
+      useValue: telegramBotUsername(),
+    },
+    {
+      provide: 'TELEGRAM_WEBHOOK_SECRET',
+      useValue: process.env.TELEGRAM_WEBHOOK_SECRET?.trim() ?? '',
     },
   ],
   exports: [
@@ -48,6 +81,9 @@ function apiPublicUrl(): string {
     'ZIBAL_MERCHANT',
     'ZIBAL_CALLBACK_URL',
     'WEB_URL',
+    'TELEGRAM_BOT_TOKEN',
+    'TELEGRAM_BOT_USERNAME',
+    'TELEGRAM_WEBHOOK_SECRET',
   ],
 })
 export class ConfigModule {}

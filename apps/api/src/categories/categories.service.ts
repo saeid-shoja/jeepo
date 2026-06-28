@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { isAdminApprovalRequiredCategory } from '@offroad/shared';
 import { CategoryGroup, LibraryKind } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
@@ -191,6 +192,28 @@ export class CategoriesService {
     if (!category) return [categoryId];
     if (category.children.length === 0) return [categoryId];
     return [category.id, ...category.children.map((c) => c.id)];
+  }
+
+  async categoryRequiresAdminApproval(categoryId: string): Promise<boolean> {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { slug: true },
+    });
+    if (!category) return false;
+    return isAdminApprovalRequiredCategory(category.slug);
+  }
+
+  /** Product listings must use a leaf category (no subcategories). */
+  async assertLeafCategory(categoryId: string) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+      include: { _count: { select: { children: true } } },
+    });
+    if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
+    if (category._count.children > 0) {
+      throw new BadRequestException('فقط یک زیردسته نهایی قابل انتخاب است');
+    }
+    return category;
   }
 
   async findOne(id: string) {

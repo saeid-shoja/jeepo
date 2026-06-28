@@ -4,6 +4,7 @@ import { formatPrice, timeAgo } from '@offroad/shared';
 import {
   ArrowRight,
   Edit3,
+  Flag,
   MapPin,
   Package,
   Phone,
@@ -21,11 +22,13 @@ import { AuctionPanel } from '@/components/auction/auction-panel';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { StartProductChatButton } from '@/components/chat/start-product-chat-button';
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
+import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
+import { ReportProductDialog } from '@/components/shop/report-product-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { canStartProductChat, isClientProduct } from '@/lib/product-advertiser';
-import { getSituationLabel } from '@/lib/product-utils';
+import { resolveProductSituation } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
 
@@ -37,6 +40,7 @@ export function ProductDetailClient() {
   const [currentImage, setCurrentImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [contactOpen, setContactOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     if (!id || authLoading) return;
@@ -68,9 +72,7 @@ export function ProductDetailClient() {
 
   const images = product.images || [];
   const isOwner = user?.id === product.userId;
-  const situationLabel = getSituationLabel(
-    product.situation ?? (product.type === 'SHOP' ? 'IN_STOCK' : null),
-  );
+  const situation = resolveProductSituation(product);
   const canBuy = canViewerPurchase(product, user?.id);
   const stockQuantity = product.stockQuantity ?? 1;
   const showStock = !product.isAuction;
@@ -79,7 +81,7 @@ export function ProductDetailClient() {
   return (
     <div className="grid gap-8 lg:grid-cols-2 container">
       <div className="space-y-3">
-        <div className="overflow-hidden rounded-lg bg-gray-100">
+        <div className="relative overflow-hidden rounded-lg bg-gray-100">
           {images[currentImage] ? (
             <Image
               width={100}
@@ -93,6 +95,9 @@ export function ProductDetailClient() {
               بدون تصویر
             </div>
           )}
+          <div className="absolute top-2 right-2 flex flex-col gap-1">
+            <ProductSituationBadge situation={situation} />
+          </div>
         </div>
         {images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto">
@@ -100,7 +105,7 @@ export function ProductDetailClient() {
               <Button
                 key={img}
                 onClick={() => setCurrentImage(i)}
-                className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-sm border-2 ${currentImage === i ? 'border-primary' : 'border-transparent'}`}
+                className={`h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 ${currentImage === i ? 'border-primary' : 'border-transparent'}`}
               >
                 <Image
                   width={100}
@@ -145,26 +150,6 @@ export function ProductDetailClient() {
         )}
 
         <div className="flex flex-wrap gap-2">
-          {situationLabel && (
-            <Badge
-              className={
-                product.situation === 'IN_STOCK' || product.type === 'SHOP'
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-600'
-                  : product.situation === 'USED'
-                    ? 'bg-amber-600 text-white hover:bg-amber-600'
-                    : 'bg-sky-600 text-white hover:bg-sky-600'
-              }
-            >
-              {product.situation === 'IN_STOCK' ||
-              product.type === 'SHOP' ||
-              product.situation === 'USED' ? (
-                <Package className="h-3 w-3" />
-              ) : (
-                <Sparkles className="h-3 w-3" />
-              )}
-              {situationLabel}
-            </Badge>
-          )}
           {product.carBrands?.map((b: { value: string; label: string }) => (
             <span
               key={b.value}
@@ -310,6 +295,28 @@ export function ProductDetailClient() {
           <ArrowRight className="h-4 w-4" />
           بازگشت به لیست
         </Link>
+
+        {!isOwner && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+              onClick={() => setReportOpen(true)}
+            >
+              <Flag className="size-4" />
+              گزارش تخلف
+            </Button>
+            <ReportProductDialog
+              open={reportOpen}
+              onOpenChange={setReportOpen}
+              productId={product.id ?? id}
+              productTitle={product.title}
+              isAuthenticated={Boolean(user)}
+            />
+          </>
+        )}
       </div>
     </div>
   );

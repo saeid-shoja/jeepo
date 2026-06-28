@@ -81,12 +81,26 @@ export const adminApi = {
     type: string;
     target: string;
     userId?: string;
+    sendTelegram?: boolean;
   }) =>
-    request<{ id: string; recipientCount: number; message: string }>('/admin/messages', {
+    request<{
+      id: string;
+      recipientCount: number;
+      inAppDelivered?: number;
+      telegramConfigured?: boolean;
+      telegramSent?: number;
+      telegramFailed?: number;
+      warnings?: string[];
+      message: string;
+    }>('/admin/messages', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   messages: () => request<any[]>('/admin/messages'),
+  telegramStats: () =>
+    request<{ configured: boolean; subscriberCount: number; botUsername: string | null }>(
+      '/admin/telegram/stats',
+    ),
   categories: () => request<any>('/categories'),
   createCategory: (data: {
     name: string;

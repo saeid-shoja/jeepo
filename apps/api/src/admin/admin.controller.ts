@@ -4,6 +4,7 @@ import { Roles } from '../auth/custom.decorator';
 import { CreateMessageDto } from '../messages/dto';
 import { MessagesService } from '../messages/messages.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { AdminService } from './admin.service';
 import {
   CreateAdminUserDto,
@@ -20,6 +21,7 @@ export class AdminController {
   constructor(
     private adminService: AdminService,
     private messagesService: MessagesService,
+    private telegramBotService: TelegramBotService,
   ) {}
 
   @Get('dashboard')
@@ -52,6 +54,7 @@ export class AdminController {
     return this.adminService.getAllProducts({
       page: query.page ?? 1,
       limit: query.limit ?? 20,
+      tab: query.tab,
       advertiser: query.advertiser,
       status: query.status,
     });
@@ -70,5 +73,10 @@ export class AdminController {
   @Get('messages')
   listMessages() {
     return this.messagesService.listBatches();
+  }
+
+  @Get('telegram/stats')
+  getTelegramStats() {
+    return this.telegramBotService.getStats();
   }
 }

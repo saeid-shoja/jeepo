@@ -28,9 +28,11 @@ export function MessagesNavButton() {
     <Button variant="card" asChild className="relative h-10 w-10">
       <Link href="/dashboard?tab=messages" aria-label="پیام‌ها">
         <Bell className="h-5 w-5" />
-        <Badge className="absolute -top-2 -left-2 flex h-3.5 w-3.5 items-center justify-center rounded-full px-1 text-[10px]">
-          {unreadCount > 99 ? '99+' : unreadCount.toLocaleString('fa-IR')}
-        </Badge>
+        {unreadCount > 0 && (
+          <Badge className="absolute -top-2 -left-2 flex h-3.5 w-3.5 items-center justify-center rounded-full px-1 text-[10px]">
+            {unreadCount > 99 ? '99+' : unreadCount.toLocaleString('fa-IR')}
+          </Badge>
+        )}
       </Link>
     </Button>
   );

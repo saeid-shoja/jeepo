@@ -31,7 +31,7 @@ type AuthState = {
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<string>;
   logout: () => void;
-  patchUser: (data: Partial<Pick<User, 'name' | 'city'>>) => void;
+  patchUser: (data: Partial<Pick<User, 'name' | 'city' | 'telegramId'>>) => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({

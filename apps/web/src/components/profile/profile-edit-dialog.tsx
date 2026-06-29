@@ -21,11 +21,7 @@ const TELEGRAM_ID_PATTERN = /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$|^\d{5,15}$/;
 
 type ProfileEditDialogProps = {
   profile: { name?: string; city?: string | null; telegramId?: string | null } | null;
-  onUpdated: (profile: {
-    name: string;
-    city?: string | null;
-    telegramId?: string | null;
-  }) => void;
+  onUpdated: (profile: { name: string; city?: string | null; telegramId?: string | null }) => void;
 };
 
 export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps) {
@@ -57,9 +53,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       return;
     }
 
-    const normalizedTelegram = trimmedTelegram
-      ? trimmedTelegram.replace(/^@/, '')
-      : null;
+    const normalizedTelegram = trimmedTelegram ? trimmedTelegram.replace(/^@/, '') : null;
 
     setSaving(true);
     try {

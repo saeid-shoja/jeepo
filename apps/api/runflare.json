@@ -1,6 +1,6 @@
 {
   "dockerfile": "Dockerfile.api",
-  "buildCommand": "corepack enable && corepack prepare pnpm@11.6.0 --activate && RUNFLARE_APP=api node scripts/runflare-build.mjs",
+  "buildCommand": "npm install -g pnpm@11.6.0 && RUNFLARE_APP=api node scripts/runflare-build.mjs",
   "startCommand": "cd apps/api && pnpm exec prisma migrate deploy && node dist/main.js",
   "port": 4000
 }

@@ -6,6 +6,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
+const PNPM_VERSION = '11.6.0';
+
 const APPS = {
   web: '@offroad/web',
   admin: '@offroad/admin',
@@ -19,12 +21,22 @@ function sh(command) {
   execSync(command, { stdio: 'inherit', shell: true });
 }
 
+function ensurePnpm() {
+  try {
+    execSync('pnpm --version', { stdio: 'pipe' });
+    return;
+  } catch {
+    // Runflare Node 22 images ship an old corepack that cannot verify pnpm 11.x signatures.
+    sh(`npm install -g pnpm@${PNPM_VERSION}`);
+  }
+}
+
 const monorepoReady = existsSync('node_modules/.pnpm');
 
 if (monorepoReady) {
   sh('pnpm exec turbo build');
 } else {
-  sh('corepack enable && corepack prepare pnpm@11.6.0 --activate');
+  ensurePnpm();
   sh(`pnpm install --frozen-lockfile --filter ${filter}...`);
   sh(`pnpm --filter ${filter}... run build`);
 }

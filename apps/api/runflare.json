@@ -1,6 +1,0 @@
-{
-  "dockerfile": "Dockerfile.api",
-  "buildCommand": "npm install -g pnpm@11.6.0 && RUNFLARE_APP=api node scripts/runflare-build.mjs",
-  "startCommand": "cd apps/api && pnpm exec prisma migrate deploy && node dist/main.js",
-  "port": 4000
-}

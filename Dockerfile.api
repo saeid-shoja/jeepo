@@ -1,0 +1,36 @@
+# Runflare / Docker deploy for @offroad/api (NestJS + Prisma).
+# In Runflare panel: set Dockerfile path to Dockerfile.api, port 4000.
+
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PATH"
+RUN npm install -g pnpm@11.6.0
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+RUN pnpm install --frozen-lockfile --filter @offroad/api...
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY . .
+RUN pnpm --filter @offroad/api build
+RUN pnpm deploy --filter @offroad/api --prod /prod/api
+RUN cp -r apps/api/dist /prod/api/dist && cp -r apps/api/prisma /prod/api/prisma
+
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=4000
+
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+COPY --from=builder --chown=nestjs:nodejs /prod/api ./
+
+USER nestjs
+EXPOSE 4000
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]

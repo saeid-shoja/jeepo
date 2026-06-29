@@ -1,0 +1,7 @@
+{
+  "dockerfile": "Dockerfile.admin",
+  "buildCommand": "npm install -g pnpm@11.6.0 && RUNFLARE_APP=admin node scripts/runflare-build.mjs",
+  "startCommand": "node apps/admin/.next/standalone/apps/admin/server.js",
+  "outputDirectory": "apps/admin/.next",
+  "port": 3001
+}

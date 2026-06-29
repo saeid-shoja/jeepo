@@ -1,0 +1,7 @@
+{
+  "dockerfile": "Dockerfile.api",
+  "installCommand": "corepack enable && corepack prepare pnpm@11.6.0 --activate && pnpm install --frozen-lockfile --filter @offroad/api...",
+  "buildCommand": "pnpm build --filter @offroad/api",
+  "startCommand": "cd apps/api && pnpm exec prisma migrate deploy && node dist/main.js",
+  "port": 4000
+}

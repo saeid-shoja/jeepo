@@ -1,6 +1,6 @@
 {
   "dockerfile": "Dockerfile",
-  "buildCommand": "corepack enable && corepack prepare pnpm@11.6.0 --activate && pnpm install --frozen-lockfile --filter @offroad/web... && pnpm --filter @offroad/web build",
+  "buildCommand": "npm install -g pnpm@11.6.0 && pnpm install --frozen-lockfile --filter @offroad/web... && pnpm --filter @offroad/web build",
   "startCommand": "node apps/web/.next/standalone/apps/web/server.js",
   "outputDirectory": "apps/web/.next",
   "port": 3000

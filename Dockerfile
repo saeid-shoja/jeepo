@@ -5,7 +5,7 @@
 FROM node:22-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME/bin:$PATH"
-RUN corepack enable && corepack prepare pnpm@11.6.0 --activate
+RUN npm install -g pnpm@11.6.0
 
 FROM base AS deps
 WORKDIR /app

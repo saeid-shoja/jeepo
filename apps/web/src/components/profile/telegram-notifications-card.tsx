@@ -50,12 +50,12 @@ export function TelegramNotificationsCard() {
 
   if (state.linked) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50/50 p-4">
+      <div className="rounded-lg border border-green-300 bg-card p-4">
         <div className="flex items-start gap-3">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-600" />
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-700" />
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-green-900">تلگرام متصل است</p>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="font-semibold text-neutral-900">تلگرام متصل است</p>
+            <p className="mt-1 text-sm text-neutral-700">
               اطلاعیه‌ها و پیام‌های مدیریت در تب «پیام‌ها» همین صفحه نمایش داده می‌شوند.
               {state.botUsername ? ` (@${state.botUsername})` : ''}
             </p>

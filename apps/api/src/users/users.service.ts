@@ -19,6 +19,7 @@ export class UsersService {
         name: true,
         role: true,
         city: true,
+        telegramId: true,
         telegramChatId: true,
         telegramLinkedAt: true,
         createdAt: true,
@@ -43,10 +44,16 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, data: UpdateProfileDto) {
+    const { telegramId, ...rest } = data;
+    const updateData = {
+      ...rest,
+      ...(telegramId !== undefined ? { telegramId } : {}),
+    };
+
     return this.prisma.user.update({
       where: { id: userId },
-      data,
-      select: { id: true, phone: true, name: true, role: true, city: true },
+      data: updateData,
+      select: { id: true, phone: true, name: true, role: true, city: true, telegramId: true },
     });
   }
 }

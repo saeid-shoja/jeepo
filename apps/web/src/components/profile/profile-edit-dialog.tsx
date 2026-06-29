@@ -17,9 +17,15 @@ import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
 
+const TELEGRAM_ID_PATTERN = /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$|^\d{5,15}$/;
+
 type ProfileEditDialogProps = {
-  profile: { name?: string; city?: string | null } | null;
-  onUpdated: (profile: { name: string; city?: string | null }) => void;
+  profile: { name?: string; city?: string | null; telegramId?: string | null } | null;
+  onUpdated: (profile: {
+    name: string;
+    city?: string | null;
+    telegramId?: string | null;
+  }) => void;
 };
 
 export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps) {
@@ -27,14 +33,16 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
+  const [telegramId, setTelegramId] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
       setName(profile?.name ?? '');
       setCity(profile?.city ?? '');
+      setTelegramId(profile?.telegramId ? `@${profile.telegramId.replace(/^@/, '')}` : '');
     }
-  }, [open, profile?.name, profile?.city]);
+  }, [open, profile?.name, profile?.city, profile?.telegramId]);
 
   const handleSave = async () => {
     const trimmedName = name.trim();
@@ -43,13 +51,28 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       return;
     }
 
+    const trimmedTelegram = telegramId.trim();
+    if (trimmedTelegram && !TELEGRAM_ID_PATTERN.test(trimmedTelegram)) {
+      toast.error('آیدی تلگرام معتبر نیست (مثال: @username)');
+      return;
+    }
+
+    const normalizedTelegram = trimmedTelegram
+      ? trimmedTelegram.replace(/^@/, '')
+      : null;
+
     setSaving(true);
     try {
       const updated = await api.users.updateProfile({
         name: trimmedName,
         city: city || undefined,
+        telegramId: normalizedTelegram,
       });
-      patchUser({ name: updated.name, city: updated.city ?? undefined });
+      patchUser({
+        name: updated.name,
+        city: updated.city ?? undefined,
+        telegramId: updated.telegramId ?? null,
+      });
       onUpdated(updated);
       toast.success('پروفایل به‌روزرسانی شد');
       setOpen(false);
@@ -89,6 +112,24 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
               />
             </div>
             <CitySelect value={city} onChange={setCity} label="شهر" />
+            <div className="space-y-2">
+              <Label htmlFor="profile-telegram">
+                آیدی تلگرام{' '}
+                <span className="text-muted-foreground text-xs font-normal">
+                  (جهت دریافت اعلان‌های چت و خبر)
+                </span>
+              </Label>
+              <Input
+                id="profile-telegram"
+                type="text"
+                value={telegramId}
+                onChange={(e) => setTelegramId(e.target.value)}
+                placeholder="@username"
+                dir="ltr"
+                className="text-end"
+                autoComplete="off"
+              />
+            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button

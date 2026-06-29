@@ -21,7 +21,7 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build --filter @offroad/web
+RUN pnpm --filter @offroad/web build
 
 FROM base AS runner
 WORKDIR /app

@@ -19,7 +19,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
-RUN pnpm build --filter @offroad/api
+RUN pnpm --filter @offroad/api build
 RUN pnpm deploy --filter @offroad/api --prod /prod/api
 RUN cp -r apps/api/dist /prod/api/dist && cp -r apps/api/prisma /prod/api/prisma
 

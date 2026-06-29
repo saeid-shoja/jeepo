@@ -1,0 +1,5 @@
+{
+  "installCommand": "cd ../.. && pnpm install --filter @offroad/web...",
+  "buildCommand": "cd ../.. && pnpm build --filter @offroad/web",
+  "outputDirectory": ".next"
+}

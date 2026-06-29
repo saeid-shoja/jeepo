@@ -1,6 +1,7 @@
 {
-  "installCommand": "cd ../.. && corepack enable && corepack prepare pnpm@11.6.0 --activate && pnpm install --frozen-lockfile --filter @offroad/web...",
-  "buildCommand": "cd ../.. && pnpm build --filter @offroad/web",
-  "startCommand": "node .next/standalone/apps/web/server.js",
-  "outputDirectory": ".next"
+  "dockerfile": "Dockerfile",
+  "buildCommand": "corepack enable && corepack prepare pnpm@11.6.0 --activate && pnpm install --frozen-lockfile --filter @offroad/web... && pnpm --filter @offroad/web... run build",
+  "startCommand": "node apps/web/.next/standalone/apps/web/server.js",
+  "outputDirectory": "apps/web/.next",
+  "port": 3000
 }

@@ -1,0 +1,8 @@
+{
+  "dockerfile": "Dockerfile.admin",
+  "installCommand": "corepack enable && corepack prepare pnpm@11.6.0 --activate && pnpm install --frozen-lockfile --filter @offroad/admin...",
+  "buildCommand": "pnpm build --filter @offroad/admin",
+  "startCommand": "node apps/admin/.next/standalone/apps/admin/server.js",
+  "outputDirectory": "apps/admin/.next",
+  "port": 3001
+}

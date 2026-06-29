@@ -1,7 +1,7 @@
 /**
- * Runflare's Next.js preset runs `npm install` (root only) then `npm run build`.
- * Detect incomplete pnpm install and bootstrap with corepack + pnpm before building.
- * Set RUNFLARE_APP=web|admin|api to choose the app (default: web).
+ * Root build entry used by `pnpm build` / `npm run build`.
+ * - Full pnpm workspace (local, Vercel, Docker): turbo build
+ * - Runflare Next.js preset (npm install at root only): bootstrap pnpm + build one app
  */
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';

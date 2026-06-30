@@ -14,6 +14,7 @@ const appKey = process.env.RUNFLARE_APP || 'web';
 const command = START[appKey] ?? START.web;
 
 process.env.HOSTNAME = process.env.HOSTNAME || '0.0.0.0';
-process.env.PORT = process.env.PORT || (appKey === 'admin' ? '3001' : appKey === 'api' ? '4000' : '3000');
+process.env.PORT =
+  process.env.PORT || (appKey === 'admin' ? '3001' : appKey === 'api' ? '4000' : '3000');
 
 execSync(command, { stdio: 'inherit', shell: true });

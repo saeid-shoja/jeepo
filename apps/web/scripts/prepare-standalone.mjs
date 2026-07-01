@@ -7,10 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const webDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const layouts = [
-  join(webDir, '.next/standalone/apps/web'),
-  join(webDir, '.next/standalone'),
-];
+const layouts = [join(webDir, '.next/standalone/apps/web'), join(webDir, '.next/standalone')];
 
 const standaloneDir = layouts.find((dir) => existsSync(join(dir, 'server.js')));
 

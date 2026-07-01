@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd ../.. && npm install -g pnpm@11.6.0 && HUSKY=0 pnpm install --frozen-lockfile --filter @offroad/web...",
-  "buildCommand": "cd ../.. && pnpm --filter @offroad/web build"
+  "installCommand": "cd ../.. && bash scripts/vercel-install.sh @offroad/web...",
+  "buildCommand": "cd ../.. && bash scripts/vercel-pnpm.sh @offroad/web build"
 }

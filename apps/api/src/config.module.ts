@@ -21,6 +21,13 @@ function zibalMerchant(): string {
   return 'zibal';
 }
 
+/** Zibal live merchants require callback on the same domain registered in the Zibal panel (e.g. jeepo.ir). */
+function zibalCallbackUrl(): string {
+  const override = process.env.ZIBAL_CALLBACK_URL?.trim();
+  if (override) return override.replace(/\/$/, '');
+  return `${apiPublicUrl()}/api/payments/zibal/callback`;
+}
+
 function telegramBotToken(): string {
   return process.env.TELEGRAM_BOT_TOKEN?.trim() ?? '';
 }
@@ -54,7 +61,7 @@ function telegramBotUsername(): string {
     },
     {
       provide: 'ZIBAL_CALLBACK_URL',
-      useValue: `${apiPublicUrl()}/api/payments/zibal/callback`,
+      useValue: zibalCallbackUrl(),
     },
     {
       provide: 'WEB_URL',

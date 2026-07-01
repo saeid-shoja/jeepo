@@ -15,5 +15,7 @@ api-1.json
 mimocode.jsonc
 coverage/
 apps/api/src/prisma/generated/
+apps/web/vendor/
+apps/web/package.json.monorepo.bak
 
 .DS_Store

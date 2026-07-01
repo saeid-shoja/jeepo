@@ -17,5 +17,6 @@ coverage/
 apps/api/src/prisma/generated/
 apps/web/vendor/
 apps/web/package.json.monorepo.bak
+apps/web/package-lock.json
 
 .DS_Store

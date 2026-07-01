@@ -16,4 +16,5 @@ if (existsSync(backupPath)) {
 }
 
 rmSync(join(webDir, 'vendor'), { recursive: true, force: true });
+rmSync(join(webDir, 'package-lock.json'), { force: true });
 console.log('apps/web restored for monorepo development.');

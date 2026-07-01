@@ -3,8 +3,9 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
-    "build": "node scripts/runflare-build.mjs",
-    "start": "node scripts/runflare-start.mjs",
+    "build": "turbo build",
+    "build:runflare": "node scripts/runflare-build.mjs",
+    "start:runflare": "node scripts/runflare-start.mjs",
     "build:turbo": "turbo build",
     "lint": "biome check .",
     "format": "biome check --write .",

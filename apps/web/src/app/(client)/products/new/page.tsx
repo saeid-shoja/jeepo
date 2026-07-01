@@ -146,12 +146,12 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(data.isAuction
           ? {
-            auctionStartPrice: data.auctionStartPrice,
-            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-            realPriceMin: data.realPriceMin,
-            realPriceMax: data.realPriceMax,
-            buyNowPrice: data.buyNowPrice,
-          }
+              auctionStartPrice: data.auctionStartPrice,
+              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+              realPriceMin: data.realPriceMin,
+              realPriceMax: data.realPriceMax,
+              buyNowPrice: data.buyNowPrice,
+            }
           : {}),
       });
 
@@ -435,10 +435,11 @@ export default function NewProductPage() {
         }}
         loading={payingListingFee}
         title="پرداخت هزینه ثبت آگهی"
-        description={`شما ${activeListingsCount.toLocaleString('fa-IR')} آگهی فعال دارید و سقف رایگان ${listingFreeLimit.toLocaleString('fa-IR')} است. برای انتشار این آگهی باید هزینه ثبت بپردازید.${listingPaymentDueAt
+        description={`شما ${activeListingsCount.toLocaleString('fa-IR')} آگهی فعال دارید و سقف رایگان ${listingFreeLimit.toLocaleString('fa-IR')} است. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
+          listingPaymentDueAt
             ? ` تا ${new Date(listingPaymentDueAt).toLocaleDateString('fa-IR')} (${LISTING_PAYMENT_GRACE_DAYS} روز) جهت پرداخت فرصت دارید بعد از این تاریخ آگهی از پیش نویس های شما حذف خواهد شد..`
             : ''
-          }`}
+        }`}
         fee={listingFee}
         onConfirm={() => void handlePayListingFee()}
       />

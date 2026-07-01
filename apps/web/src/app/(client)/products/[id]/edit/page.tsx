@@ -232,11 +232,7 @@ export default function EditProductPage() {
               />
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
-                <DigitsInput
-                  id="phone"
-                  type="tel"
-                  {...register('phone')}
-                />
+                <DigitsInput id="phone" type="tel" {...register('phone')} />
                 <FieldError message={errors.phone?.message} />
               </div>
             </div>

@@ -38,7 +38,7 @@ export const adminApi = {
     }),
   dashboard: () => request<any>('/admin/dashboard'),
   users: () => request<any[]>('/admin/users'),
-    createUser: (data: {
+  createUser: (data: {
     phone: string;
     email: string;
     name: string;

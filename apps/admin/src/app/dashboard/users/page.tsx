@@ -66,8 +66,7 @@ export default function AdminUsersPage() {
       password: '',
       city: user.city ?? '',
       role: user.role,
-      maxActiveListings:
-        user.maxActiveListings != null ? String(user.maxActiveListings) : '',
+      maxActiveListings: user.maxActiveListings != null ? String(user.maxActiveListings) : '',
     });
     setShowForm(true);
   };
@@ -213,9 +212,7 @@ export default function AdminUsersPage() {
               </select>
             </label>
             <label className="block text-sm sm:col-span-2">
-              <span className="mb-1 block text-gray-600">
-                حداکثر آگهی فعال رایگان
-              </span>
+              <span className="mb-1 block text-gray-600">حداکثر آگهی فعال رایگان</span>
               <input
                 type="number"
                 min={1}

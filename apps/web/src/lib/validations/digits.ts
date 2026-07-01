@@ -1,4 +1,8 @@
-import { normalizeLoginIdentifier, normalizeTelegramIdInput, toEnglishDigits } from '@offroad/shared';
+import {
+  normalizeLoginIdentifier,
+  normalizeTelegramIdInput,
+  toEnglishDigits,
+} from '@offroad/shared';
 import { z } from 'zod';
 
 export const IRAN_MOBILE_REGEX = /^09\d{9}$/;

@@ -1,5 +1,15 @@
 import { Type } from 'class-transformer';
-import { IsEmail, IsEnum, IsInt, IsOptional, IsString, Matches, Max, Min, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { UserRole } from '../../prisma/generated/client';
 
 export class CreateAdminUserDto {

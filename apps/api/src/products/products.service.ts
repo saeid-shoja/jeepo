@@ -84,7 +84,7 @@ export class ProductsService {
     const strengthenedActive =
       product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
     const brandLabels =
-      product.carBrands?.length ?? 0
+      (product.carBrands?.length ?? 0)
         ? await this.categoriesService.getCarBrandLabelMap()
         : new Map<string, string>();
     const brands = product.carBrands?.map((row) => row.brandCode) ?? [];

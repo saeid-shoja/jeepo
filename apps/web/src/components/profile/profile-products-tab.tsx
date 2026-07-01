@@ -204,9 +204,7 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
               variant="outline"
               className="w-full gap-1 text-destructive hover:bg-destructive/5 hover:text-destructive"
               disabled={deleting && pendingDelete?.productId === product.id}
-              onClick={() =>
-                setPendingDelete({ productId: product.id, title: product.title })
-              }
+              onClick={() => setPendingDelete({ productId: product.id, title: product.title })}
             >
               <Trash2
                 className={`h-3.5 w-3.5 ${deleting && pendingDelete?.productId === product.id ? 'animate-pulse' : ''}`}

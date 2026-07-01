@@ -1,6 +1,5 @@
 import { SITE_DESCRIPTION } from '@offroad/shared';
 import type { Metadata } from 'next';
-import Head from 'next/head';
 import { HeroSlider } from '@/components/home/hero';
 import MainSection from '@/components/home/main-section';
 import { JsonLd } from '@/components/seo/json-ld';

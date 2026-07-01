@@ -66,18 +66,16 @@ function LibraryNodeItem({
     }
   };
 
+  const checkboxId = `${node.id}-${node.name}`;
+
   if (!hasChildren) {
     return (
       <label
-        htmlFor={`${node.id}-${node.name}`}
+        htmlFor={checkboxId}
         className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2"
         style={{ paddingRight: `${depth * 12 + 8}px` }}
       >
-        <Checkbox
-          id={`${node.id}-${node.name}`}
-          checked={isSelected}
-          onCheckedChange={selectNode}
-        />
+        <Checkbox id={checkboxId} checked={isSelected} onCheckedChange={selectNode} />
         <span className="text-sm">{node.name}</span>
       </label>
     );
@@ -87,10 +85,11 @@ function LibraryNodeItem({
     <Collapsible defaultOpen={depth < 1} className="group/library-node">
       <div className="flex items-center gap-1">
         <label
+          htmlFor={checkboxId}
           className="hover:bg-muted/60 flex flex-1 cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2"
           style={{ paddingRight: `${depth * 12 + 8}px` }}
         >
-          <Checkbox checked={isSelected} onCheckedChange={selectNode} />
+          <Checkbox id={checkboxId} checked={isSelected} onCheckedChange={selectNode} />
           <span className="text-sm font-medium">{node.name}</span>
         </label>
         <CollapsibleTrigger asChild>
@@ -160,18 +159,23 @@ export function ProductsFilterSidebar({
         <div className="space-y-3">
           <Label className="text-sm font-semibold">وضعیت کالا</Label>
           <div className="space-y-2">
-            {SITUATION_FILTER_OPTIONS.map((opt) => (
-              <label
-                key={opt.value || 'all-situation'}
-                className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm px-1 py-1.5"
-              >
-                <Checkbox
-                  checked={filters.situation === opt.value}
-                  onCheckedChange={() => onChange({ situation: opt.value })}
-                />
-                <span className="text-sm">{opt.label}</span>
-              </label>
-            ))}
+            {SITUATION_FILTER_OPTIONS.map((opt) => {
+              const optionId = `situation-filter-${opt.value || 'all'}`;
+              return (
+                <label
+                  key={opt.value || 'all-situation'}
+                  htmlFor={optionId}
+                  className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm px-1 py-1.5"
+                >
+                  <Checkbox
+                    id={optionId}
+                    checked={filters.situation === opt.value}
+                    onCheckedChange={() => onChange({ situation: opt.value })}
+                  />
+                  <span className="text-sm">{opt.label}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -180,18 +184,23 @@ export function ProductsFilterSidebar({
         <div className="space-y-3">
           <Label className="text-sm font-semibold">ضمانت فروشگاه</Label>
           <div className="space-y-2">
-            {GUARANTEE_FILTER_OPTIONS.map((opt) => (
-              <label
-                key={opt.value || 'all-guarantee'}
-                className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm px-1 py-1.5"
-              >
-                <Checkbox
-                  checked={filters.hasGuarantee === opt.value}
-                  onCheckedChange={() => onChange({ hasGuarantee: opt.value })}
-                />
-                <span className="text-sm">{opt.label}</span>
-              </label>
-            ))}
+            {GUARANTEE_FILTER_OPTIONS.map((opt) => {
+              const optionId = `guarantee-filter-${opt.value || 'all'}`;
+              return (
+                <label
+                  key={opt.value || 'all-guarantee'}
+                  htmlFor={optionId}
+                  className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm px-1 py-1.5"
+                >
+                  <Checkbox
+                    id={optionId}
+                    checked={filters.hasGuarantee === opt.value}
+                    onCheckedChange={() => onChange({ hasGuarantee: opt.value })}
+                  />
+                  <span className="text-sm">{opt.label}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -200,18 +209,23 @@ export function ProductsFilterSidebar({
         <div className="space-y-3">
           <Label className="text-sm font-semibold">زمان انتشار</Label>
           <div className="space-y-2">
-            {POSTED_WITHIN_OPTIONS.map((opt) => (
-              <label
-                key={opt.value || 'all'}
-                className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm px-1 py-1.5"
-              >
-                <Checkbox
-                  checked={filters.postedWithin === opt.value}
-                  onCheckedChange={() => onChange({ postedWithin: opt.value })}
-                />
-                <span className="text-sm">{opt.label}</span>
-              </label>
-            ))}
+            {POSTED_WITHIN_OPTIONS.map((opt) => {
+              const optionId = `posted-within-filter-${opt.value || 'all'}`;
+              return (
+                <label
+                  key={opt.value || 'all'}
+                  htmlFor={optionId}
+                  className="hover:bg-muted/60 flex cursor-pointer items-center gap-2 rounded-sm px-1 py-1.5"
+                >
+                  <Checkbox
+                    id={optionId}
+                    checked={filters.postedWithin === opt.value}
+                    onCheckedChange={() => onChange({ postedWithin: opt.value })}
+                  />
+                  <span className="text-sm">{opt.label}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 

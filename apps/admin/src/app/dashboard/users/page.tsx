@@ -1,5 +1,6 @@
 'use client';
 
+import { FREE_CLIENT_LISTING_LIMIT } from '@offroad/shared';
 import { Calendar, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +14,10 @@ type UserRow = {
   name: string;
   role: string;
   city?: string | null;
+  maxActiveListings?: number | null;
+  activeListingCount?: number;
+  effectiveListingLimit?: number;
+  defaultListingLimit?: number;
   createdAt: string;
 };
 
@@ -23,6 +28,7 @@ const emptyForm = {
   password: '',
   city: '',
   role: 'CLIENT',
+  maxActiveListings: '',
 };
 
 export default function AdminUsersPage() {
@@ -60,6 +66,7 @@ export default function AdminUsersPage() {
       password: '',
       city: user.city ?? '',
       role: user.role,
+      maxActiveListings: user.maxActiveListings != null ? String(user.maxActiveListings) : '',
     });
     setShowForm(true);
   };
@@ -69,7 +76,7 @@ export default function AdminUsersPage() {
     const wasEditing = Boolean(editingId);
     try {
       if (editingId) {
-        const payload: Record<string, string | null> = {
+        const payload: Record<string, string | number | null> = {
           phone: form.phone.trim(),
           email: form.email.trim(),
           name: form.name.trim(),
@@ -77,16 +84,25 @@ export default function AdminUsersPage() {
           role: form.role,
         };
         if (form.password.trim()) payload.password = form.password;
+        payload.maxActiveListings = form.maxActiveListings.trim()
+          ? Number(form.maxActiveListings)
+          : null;
         await adminApi.updateUser(editingId, payload);
       } else {
-        await adminApi.createUser({
+        const createPayload: Parameters<typeof adminApi.createUser>[0] & {
+          maxActiveListings?: number;
+        } = {
           phone: form.phone.trim(),
           email: form.email.trim(),
           name: form.name.trim(),
           password: form.password,
           city: form.city.trim() || undefined,
           role: form.role,
-        });
+        };
+        if (form.maxActiveListings.trim()) {
+          createPayload.maxActiveListings = Number(form.maxActiveListings);
+        }
+        await adminApi.createUser(createPayload);
       }
       setShowForm(false);
       setForm(emptyForm);
@@ -107,6 +123,13 @@ export default function AdminUsersPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'خطا در حذف');
     }
+  };
+
+  const formatListingQuota = (user: UserRow) => {
+    const active = user.activeListingCount ?? 0;
+    const limit = user.effectiveListingLimit ?? FREE_CLIENT_LISTING_LIMIT;
+    const custom = user.maxActiveListings != null;
+    return `${active.toLocaleString('fa-IR')}/${limit.toLocaleString('fa-IR')}${custom ? ' (ویژه)' : ''}`;
   };
 
   return (
@@ -188,6 +211,23 @@ export default function AdminUsersPage() {
                 <option value="ADMIN">مدیر</option>
               </select>
             </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block text-gray-600">حداکثر آگهی فعال رایگان</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={form.maxActiveListings}
+                onChange={(e) => setForm((f) => ({ ...f, maxActiveListings: e.target.value }))}
+                placeholder={`پیش‌فرض (${FREE_CLIENT_LISTING_LIMIT})`}
+                className="w-full rounded-sm border px-3 py-2 ltr text-left"
+                dir="ltr"
+              />
+              <span className="mt-1 block text-xs text-gray-500">
+                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT} آگهی). برای استثنا، عدد بیشتر وارد کنید
+                (مثلاً ۱۰).
+              </span>
+            </label>
           </div>
           <div className="flex gap-2">
             <button type="submit" className="bg-primary rounded-sm px-4 py-2 text-sm text-white">
@@ -218,6 +258,7 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-right">شماره موبایل</th>
                 <th className="px-4 py-3 text-right">ایمیل</th>
                 <th className="px-4 py-3 text-right">شهر</th>
+                <th className="px-4 py-3 text-right">آگهی فعال</th>
                 <th className="px-4 py-3 text-right">نقش</th>
                 <th className="px-4 py-3 text-right">تاریخ ثبت نام</th>
                 <th className="px-4 py-3 text-right">عملیات</th>
@@ -246,6 +287,7 @@ export default function AdminUsersPage() {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-xs">{formatListingQuota(u)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}

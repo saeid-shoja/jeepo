@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
+import { DigitsInput, TelegramIdInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { RequiredLabel } from '@/components/form/required-label';
 import { Button } from '@/components/ui/button';
@@ -123,12 +124,11 @@ function RegisterPageContent() {
             <input type="hidden" {...verifyForm.register('email')} />
             <div className="space-y-2">
               <RequiredLabel htmlFor="code">کد تأیید</RequiredLabel>
-              <Input
+              <DigitsInput
                 id="code"
                 inputMode="numeric"
                 maxLength={6}
                 placeholder="123456"
-                dir="ltr"
                 className="text-center text-lg tracking-widest"
                 autoComplete="one-time-code"
                 {...verifyForm.register('code')}
@@ -192,12 +192,10 @@ function RegisterPageContent() {
           </div>
           <div className="space-y-2">
             <RequiredLabel htmlFor="phone">شماره موبایل</RequiredLabel>
-            <Input
+            <DigitsInput
               id="phone"
               type="tel"
               placeholder="0912xxxxxxx"
-              dir="ltr"
-              className="text-end"
               autoComplete="tel"
               {...detailsForm.register('phone')}
             />
@@ -229,12 +227,10 @@ function RegisterPageContent() {
               آیدی تلگرام{' '}
               <span className="text-muted-foreground text-xs">(جهت دریافت اعلان های چت و خبر)</span>
             </RequiredLabel>
-            <Input
+            <TelegramIdInput
               id="telegramId"
               type="text"
               placeholder="@username"
-              dir="ltr"
-              className="text-end"
               autoComplete="off"
               {...detailsForm.register('telegramId')}
             />

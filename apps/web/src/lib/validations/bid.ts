@@ -1,13 +1,11 @@
 import { formatPrice } from '@offroad/shared';
 import { z } from 'zod';
+import { iranMobileField } from '@/lib/validations/digits';
 
 const bidBaseSchema = z.object({
   bidAmount: z.number().positive('مبلغ پیشنهاد باید بیشتر از صفر باشد'),
   bidderName: z.string().min(2, 'نام را وارد کنید'),
-  bidderPhone: z
-    .string()
-    .min(1, 'شماره تماس را وارد کنید')
-    .regex(/^09\d{9}$/, 'شماره موبایل معتبر نیست'),
+  bidderPhone: iranMobileField('شماره تماس را وارد کنید'),
   bidderAddress: z.string().min(10, 'آدرس کامل را وارد کنید'),
   bidderCity: z.string().optional(),
 });

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
 import { ProfileMessagesTab } from '@/components/profile/profile-messages-tab';
@@ -44,6 +44,13 @@ function DashboardContent() {
   const refreshChatsUnread = useChatsUnreadStore((s) => s.refresh);
   const [profile, setProfile] = useState<any>(null);
 
+  const refreshProfile = useCallback(() => {
+    return api.users
+      .profile()
+      .then(setProfile)
+      .catch(() => {});
+  }, []);
+
   const tabParam = searchParams.get('tab');
   const activeTab: ProfileTab = isProfileTab(tabParam) ? tabParam : 'products';
 
@@ -53,14 +60,11 @@ function DashboardContent() {
       return;
     }
     if (user) {
-      api.users
-        .profile()
-        .then(setProfile)
-        .catch(() => {});
+      void refreshProfile();
       void refreshUnreadCount();
       void refreshChatsUnread();
     }
-  }, [user, authLoading, router, refreshUnreadCount, refreshChatsUnread]);
+  }, [user, authLoading, router, refreshUnreadCount, refreshChatsUnread, refreshProfile]);
 
   const handleTabChange = (value: string) => {
     if (!isProfileTab(value)) return;
@@ -114,8 +118,15 @@ function DashboardContent() {
         {profile && (
           <div className="mt-4 flex items-center justify-between border-t pt-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-primary">{profile._count?.products || 0}</p>
-              <p className="text-xs text-gray-500">آگهی‌ها</p>
+              <p className="text-2xl font-bold text-primary">
+                {(profile.activeListingsCount ?? 0).toLocaleString('fa-IR')}
+              </p>
+              <p className="text-xs text-gray-500">آگهی فعال</p>
+              {profile.totalListingsCount > profile.activeListingsCount && (
+                <p className="text-[10px] text-gray-400">
+                  از {(profile.totalListingsCount ?? 0).toLocaleString('fa-IR')} آگهی
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Link
@@ -172,7 +183,10 @@ function DashboardContent() {
         </TabsList>
 
         <TabsContent value="products">
-          <ProfileProductsTab enabled={activeTab === 'products'} />
+          <ProfileProductsTab
+            enabled={activeTab === 'products'}
+            onListingsChanged={refreshProfile}
+          />
         </TabsContent>
         <TabsContent value="favorites">
           <ProfileFavoritesTab enabled={activeTab === 'favorites'} />

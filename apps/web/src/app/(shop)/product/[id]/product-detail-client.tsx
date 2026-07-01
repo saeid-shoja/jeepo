@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { AuctionPanel } from '@/components/auction/auction-panel';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { StartProductChatButton } from '@/components/chat/start-product-chat-button';
+import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
@@ -34,9 +36,12 @@ import { useAuth } from '@/stores/auth-store';
 
 export function ProductDetailClient() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [contactOpen, setContactOpen] = useState(false);
@@ -78,6 +83,20 @@ export function ProductDetailClient() {
   const showStock = !product.isAuction;
   const canChat = canStartProductChat(product, user?.id);
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.products.delete(product.id ?? id);
+      toast.success('آگهی حذف شد');
+      setDeleteOpen(false);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'حذف آگهی ناموفق بود');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="grid gap-8 lg:grid-cols-2 container">
       <div className="space-y-3">
@@ -88,7 +107,7 @@ export function ProductDetailClient() {
               height={100}
               src={images[currentImage]}
               alt={product.title}
-              className="h-auto w-full object-cover"
+              className="h-auto max-h-[90vh] w-full object-cover"
             />
           ) : (
             <div className="flex aspect-square items-center justify-center text-gray-400">
@@ -132,8 +151,14 @@ export function ProductDetailClient() {
                 >
                   <Edit3 className="h-4 w-4" />
                 </Link>
-                <button type="button" className="rounded-sm p-2 text-red-500 hover:bg-red-50">
-                  <Trash2 className="h-4 w-4" />
+                <button
+                  type="button"
+                  className="rounded-sm p-2 text-red-500 hover:bg-red-50 disabled:opacity-50"
+                  disabled={deleting}
+                  aria-label="حذف آگهی"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className={`h-4 w-4 ${deleting ? 'animate-pulse' : ''}`} />
                 </button>
               </div>
             )}
@@ -318,6 +343,14 @@ export function ProductDetailClient() {
           </>
         )}
       </div>
+
+      <DeleteListingDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        listingTitle={product.title}
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

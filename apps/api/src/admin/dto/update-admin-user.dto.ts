@@ -1,4 +1,16 @@
-import { IsEmail, IsEnum, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
 import { UserRole } from '../../prisma/generated/client';
 
 export class UpdateAdminUserDto {
@@ -28,4 +40,13 @@ export class UpdateAdminUserDto {
   @IsOptional()
   @IsEnum(UserRole, { message: 'نقش کاربر نامعتبر است' })
   role?: UserRole;
+
+  /** Custom free active listing cap. null = reset to platform default (5). */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @Type(() => Number)
+  @IsInt({ message: 'حداکثر آگهی باید عدد صحیح باشد' })
+  @Min(1, { message: 'حداقل ۱ آگهی فعال مجاز است' })
+  @Max(100, { message: 'حداکثر ۱۰۰ آگهی فعال قابل تنظیم است' })
+  maxActiveListings?: number | null;
 }

@@ -1,15 +1,16 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { normalizeLoginIdentifier } from '@offroad/shared';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { LoginIdentifierInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { RequiredLabel } from '@/components/form/required-label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { type LoginFormValues, loginSchema } from '@/lib/validations/auth';
 import { useAuth } from '@/stores/auth-store';
@@ -55,14 +56,15 @@ export function LoginForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
             <RequiredLabel htmlFor="identifier">شماره موبایل یا ایمیل</RequiredLabel>
-            <Input
+            <LoginIdentifierInput
               id="identifier"
               type="text"
               placeholder="0912xxxxxxx یا you@example.com"
-              dir="ltr"
-              className="text-end"
               autoComplete="username"
-              {...register('identifier')}
+              {...register('identifier', {
+                setValueAs: (value) =>
+                  typeof value === 'string' ? normalizeLoginIdentifier(value) : '',
+              })}
             />
             <FieldError message={errors.identifier?.message} />
           </div>

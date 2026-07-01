@@ -45,6 +45,7 @@ export const adminApi = {
     password: string;
     city?: string;
     role?: string;
+    maxActiveListings?: number;
   }) =>
     request<any>('/admin/users', {
       method: 'POST',
@@ -59,6 +60,7 @@ export const adminApi = {
       password?: string;
       city?: string | null;
       role?: string;
+      maxActiveListings?: number | null;
     },
   ) =>
     request<any>(`/admin/users/${id}`, {

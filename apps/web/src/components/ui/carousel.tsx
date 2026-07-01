@@ -115,16 +115,15 @@ function Carousel({
         canScrollNext,
       }}
     >
-      <div
+      <section
         onKeyDownCapture={handleKeyDown}
         className={cn('relative', className)}
-        role="region"
-        aria-roledescription="carousel"
+        aria-label="Carousel"
         data-slot="carousel"
         {...props}
       >
         {children}
-      </div>
+      </section>
     </CarouselContext.Provider>
   );
 }
@@ -142,16 +141,15 @@ function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
+function CarouselItem({ className, ...props }: React.ComponentProps<'fieldset'>) {
   const { orientation } = useCarousel();
 
   return (
-    <div
-      role="group"
+    <fieldset
       aria-roledescription="slide"
       data-slot="carousel-item"
       className={cn(
-        'min-w-0 shrink-0 grow-0 basis-full',
+        'm-0 min-w-0 shrink-0 grow-0 basis-full border-0 p-0',
         orientation === 'horizontal' ? 'ps-4' : 'pt-4',
         className,
       )}

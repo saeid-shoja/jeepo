@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice } from '@offroad/shared';
+import { formatPrice, parsePriceInput } from '@offroad/shared';
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,7 @@ export function PriceInput({
   value,
   onChange,
   className,
-  placeholder = 'مثلاً: 5000000',
+  placeholder = 'مثلاً: ۵٬۰۰۰٬۰۰۰',
   required,
   id,
 }: PriceInputProps) {
@@ -32,12 +32,19 @@ export function PriceInput({
   }, [value, focused]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '');
-    setDraft(digits);
-    onChange(digits ? Number(digits) : 0);
+    const parsed = parsePriceInput(e.target.value);
+    setDraft(parsed > 0 ? String(parsed) : '');
+    onChange(parsed);
   };
 
-  const displayValue = focused ? draft : value > 0 ? formatPrice(value) : '';
+  const numeric = focused ? (draft ? Number(draft) : 0) : value;
+  const displayValue = focused
+    ? numeric > 0
+      ? numeric.toLocaleString('en-US')
+      : ''
+    : numeric > 0
+      ? formatPrice(numeric)
+      : '';
 
   return (
     <Input

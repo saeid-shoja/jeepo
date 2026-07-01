@@ -10,6 +10,7 @@ import {
   FREE_CLIENT_LISTING_LIMIT,
   isAdminApprovalRequiredCategory,
   listingPaymentDueAt,
+  resolveUserListingLimit,
   strengthenedEndsAt,
 } from '@offroad/shared';
 import { CategoriesService } from '../categories/categories.service';
@@ -82,7 +83,10 @@ export class ProductsService {
   >(product: T, options?: { viewerUserId?: string | null }) {
     const strengthenedActive =
       product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
-    const brandLabels = await this.categoriesService.getCarBrandLabelMap();
+    const brandLabels =
+      product.carBrands?.length ?? 0
+        ? await this.categoriesService.getCarBrandLabelMap()
+        : new Map<string, string>();
     const brands = product.carBrands?.map((row) => row.brandCode) ?? [];
     const isAuction = Boolean(product.isAuction);
     const startPrice = product.auctionStartPrice ?? product.price;
@@ -196,15 +200,29 @@ export class ProductsService {
     });
   }
 
+  private async getListingQuotaState(userId: string) {
+    const [activeCount, user] = await Promise.all([
+      this.countActiveClientListings(userId),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { maxActiveListings: true },
+      }),
+    ]);
+    const freeLimit = resolveUserListingLimit(user?.maxActiveListings);
+    const requiresListingFee = activeCount >= freeLimit;
+    return { activeCount, freeLimit, requiresListingFee };
+  }
+
   async getListingQuota(userId: string) {
-    await this.purgeExpiredListingPaymentDrafts();
-    const activeCount = await this.countActiveClientListings(userId);
-    const requiresListingFee = activeCount >= FREE_CLIENT_LISTING_LIMIT;
+    void this.purgeExpiredListingPaymentDrafts();
+    const { activeCount, freeLimit, requiresListingFee } = await this.getListingQuotaState(userId);
 
     return {
       activeCount,
-      freeLimit: FREE_CLIENT_LISTING_LIMIT,
-      remainingFree: Math.max(0, FREE_CLIENT_LISTING_LIMIT - activeCount),
+      freeLimit,
+      defaultLimit: FREE_CLIENT_LISTING_LIMIT,
+      hasCustomLimit: freeLimit !== FREE_CLIENT_LISTING_LIMIT,
+      remainingFree: Math.max(0, freeLimit - activeCount),
       requiresListingFee,
       listingFee: EXTRA_LISTING_FEE,
       paymentGraceDays: 3,
@@ -252,10 +270,9 @@ export class ProductsService {
   }
 
   async createPublicListing(data: CreateProductDto, userId: string) {
-    await this.purgeExpiredListingPaymentDrafts();
+    void this.purgeExpiredListingPaymentDrafts();
     await this.categoriesService.assertLeafCategory(data.categoryId);
-    const activeCount = await this.countActiveClientListings(userId);
-    const requiresListingFee = activeCount >= FREE_CLIENT_LISTING_LIMIT;
+    const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
       data.categoryId,
     );
@@ -295,6 +312,8 @@ export class ProductsService {
       product: mapped,
       requiresListingFee,
       requiresAdminApproval: needsAdminApproval,
+      activeCount,
+      freeLimit,
       listingFee: requiresListingFee ? EXTRA_LISTING_FEE : 0,
       paymentDueAt: requiresListingFee ? product.listingPaymentDueAt : null,
     };
@@ -634,8 +653,7 @@ export class ProductsService {
       throw new BadRequestException('فقط آگهی‌های منقضی‌شده قابل فعال‌سازی مجدد هستند');
     }
 
-    const activeCount = await this.countActiveClientListings(userId);
-    const requiresListingFee = activeCount >= FREE_CLIENT_LISTING_LIMIT;
+    const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
       product.categoryId,
     );
@@ -657,6 +675,8 @@ export class ProductsService {
         product: await this.mapProduct(pending),
         requiresListingFee: true,
         requiresAdminApproval: needsAdminApproval,
+        activeCount,
+        freeLimit,
         listingFee: EXTRA_LISTING_FEE,
         paymentDueAt: pending.listingPaymentDueAt,
       };
@@ -686,6 +706,8 @@ export class ProductsService {
       product: await this.mapProduct(updated),
       requiresListingFee: false,
       requiresAdminApproval: needsAdminApproval,
+      activeCount,
+      freeLimit,
       listingFee: 0,
       paymentDueAt: null,
     };

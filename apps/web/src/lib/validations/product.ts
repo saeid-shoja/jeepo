@@ -1,13 +1,13 @@
-import { containsLinkOrPhone, NO_CONTACT_IN_TEXT_MESSAGE } from '@offroad/shared';
+import { containsLinkOrPhone, NO_CONTACT_IN_TEXT_MESSAGE, toEnglishDigits } from '@offroad/shared';
 import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
+import { IRAN_MOBILE_REGEX } from '@/lib/validations/digits';
 
 const situationSchema = z.enum(['NEW', 'USED']);
 
 const phoneField = z
   .string()
-  .optional()
-  .refine((v) => !v || /^09\d{9}$/.test(v), 'شماره موبایل معتبر نیست');
+  .refine((v) => !v || IRAN_MOBILE_REGEX.test(toEnglishDigits(v)), 'شماره موبایل معتبر نیست');
 
 const listingTextField = (minLen: number, minMsg: string) =>
   z

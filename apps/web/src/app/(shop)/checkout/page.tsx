@@ -9,11 +9,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-
+import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
@@ -218,12 +217,10 @@ export default function CheckoutPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
-                <Input
+                <DigitsInput
                   id="phone"
                   type="tel"
                   placeholder="0912xxxxxxx"
-                  dir="ltr"
-                  className="text-end"
                   {...register('phone')}
                 />
                 <FieldError message={errors.phone?.message} />

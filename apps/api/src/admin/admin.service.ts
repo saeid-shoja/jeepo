@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import {
   ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS,
+  FREE_CLIENT_LISTING_LIMIT,
   isAdminApprovalRequiredCategory,
+  resolveUserListingLimit,
 } from '@offroad/shared';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
@@ -59,7 +61,7 @@ export class AdminService {
   }
 
   async getAllUsers() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       select: {
         id: true,
         phone: true,
@@ -67,10 +69,30 @@ export class AdminService {
         name: true,
         role: true,
         city: true,
+        maxActiveListings: true,
         createdAt: true,
+        _count: {
+          select: {
+            products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return users.map((user) => ({
+      id: user.id,
+      phone: user.phone,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      city: user.city,
+      maxActiveListings: user.maxActiveListings,
+      activeListingCount: user._count.products,
+      effectiveListingLimit: resolveUserListingLimit(user.maxActiveListings),
+      defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
+      createdAt: user.createdAt,
+    }));
   }
 
   async createUser(data: CreateAdminUserDto) {
@@ -96,6 +118,7 @@ export class AdminService {
         password: hashedPassword,
         city: data.city,
         role: data.role ?? 'CLIENT',
+        maxActiveListings: data.maxActiveListings ?? null,
         emailVerified: true,
         emailVerifiedAt: new Date(),
       },
@@ -141,6 +164,7 @@ export class AdminService {
       city?: string | null;
       role?: UserRole;
       password?: string;
+      maxActiveListings?: number | null;
     } = {};
 
     if (data.phone) updateData.phone = data.phone;
@@ -149,8 +173,11 @@ export class AdminService {
     if (data.city !== undefined) updateData.city = data.city;
     if (data.role) updateData.role = data.role;
     if (data.password) updateData.password = await bcrypt.hash(data.password, 12);
+    if (data.maxActiveListings !== undefined) {
+      updateData.maxActiveListings = data.maxActiveListings;
+    }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: updateData,
       select: {
@@ -160,9 +187,29 @@ export class AdminService {
         name: true,
         role: true,
         city: true,
+        maxActiveListings: true,
         createdAt: true,
+        _count: {
+          select: {
+            products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
+          },
+        },
       },
     });
+
+    return {
+      id: updated.id,
+      phone: updated.phone,
+      email: updated.email,
+      name: updated.name,
+      role: updated.role,
+      city: updated.city,
+      maxActiveListings: updated.maxActiveListings,
+      activeListingCount: updated._count.products,
+      effectiveListingLimit: resolveUserListingLimit(updated.maxActiveListings),
+      defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
+      createdAt: updated.createdAt,
+    };
   }
 
   async deleteUser(id: string) {

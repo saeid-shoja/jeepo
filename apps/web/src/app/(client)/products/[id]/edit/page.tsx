@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
+import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
@@ -18,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { parseIntegerInput } from '@/lib/validations/digits';
 import { type EditProductFormValues, editProductSchema } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
 import { useCategories } from '@/stores/categories-store';
@@ -153,14 +155,11 @@ export default function EditProductPage() {
 
             <div className="space-y-2">
               <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
-              <Input
+              <DigitsInput
                 id="stockQuantity"
-                type="number"
-                min={1}
-                max={9999}
-                dir="ltr"
-                className="text-end"
-                {...register('stockQuantity', { valueAsNumber: true })}
+                inputMode="numeric"
+                maxLength={4}
+                {...register('stockQuantity', { setValueAs: parseIntegerInput })}
               />
               <FieldError message={errors.stockQuantity?.message} />
             </div>
@@ -233,11 +232,9 @@ export default function EditProductPage() {
               />
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
-                <Input
+                <DigitsInput
                   id="phone"
                   type="tel"
-                  dir="ltr"
-                  className="text-end"
                   {...register('phone')}
                 />
                 <FieldError message={errors.phone?.message} />

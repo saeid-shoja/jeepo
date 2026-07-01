@@ -38,13 +38,14 @@ export const adminApi = {
     }),
   dashboard: () => request<any>('/admin/dashboard'),
   users: () => request<any[]>('/admin/users'),
-  createUser: (data: {
+    createUser: (data: {
     phone: string;
     email: string;
     name: string;
     password: string;
     city?: string;
     role?: string;
+    maxActiveListings?: number;
   }) =>
     request<any>('/admin/users', {
       method: 'POST',
@@ -59,6 +60,7 @@ export const adminApi = {
       password?: string;
       city?: string | null;
       role?: string;
+      maxActiveListings?: number | null;
     },
   ) =>
     request<any>(`/admin/users/${id}`, {

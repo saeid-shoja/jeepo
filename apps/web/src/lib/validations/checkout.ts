@@ -1,11 +1,9 @@
 import { z } from 'zod';
+import { optionalIranMobileField } from '@/lib/validations/digits';
 
 export const checkoutSchema = z.object({
   address: z.string().min(10, 'آدرس تحویل را کامل وارد کنید'),
-  phone: z
-    .string()
-    .optional()
-    .refine((v) => !v || /^09\d{9}$/.test(v), 'شماره موبایل معتبر نیست'),
+  phone: optionalIranMobileField(),
   note: z.string().optional(),
 });
 

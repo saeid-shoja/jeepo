@@ -1,9 +1,11 @@
 'use client';
 
+import { normalizeTelegramIdInput } from '@offroad/shared';
 import { Loader2, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
+import { TelegramIdInput } from '@/components/form/digits-input';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,8 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
-
-const TELEGRAM_ID_PATTERN = /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$|^\d{5,15}$/;
 
 type ProfileEditDialogProps = {
   profile: { name?: string; city?: string | null; telegramId?: string | null } | null;
@@ -47,8 +47,12 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       return;
     }
 
-    const trimmedTelegram = telegramId.trim();
-    if (trimmedTelegram && !TELEGRAM_ID_PATTERN.test(trimmedTelegram)) {
+    const trimmedTelegram = normalizeTelegramIdInput(telegramId);
+    if (
+      trimmedTelegram &&
+      !/^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(trimmedTelegram) &&
+      !/^\d{5,15}$/.test(trimmedTelegram)
+    ) {
       toast.error('آیدی تلگرام معتبر نیست (مثال: @username)');
       return;
     }
@@ -113,14 +117,12 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                   (جهت دریافت اعلان‌های چت و خبر)
                 </span>
               </Label>
-              <Input
+              <TelegramIdInput
                 id="profile-telegram"
                 type="text"
                 value={telegramId}
                 onChange={(e) => setTelegramId(e.target.value)}
                 placeholder="@username"
-                dir="ltr"
-                className="text-end"
                 autoComplete="off"
               />
             </div>

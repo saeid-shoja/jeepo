@@ -129,6 +129,8 @@ export const api = {
       request<{
         activeCount: number;
         freeLimit: number;
+        defaultLimit: number;
+        hasCustomLimit: boolean;
         remainingFree: number;
         requiresListingFee: boolean;
         listingFee: number;
@@ -141,6 +143,8 @@ export const api = {
         product: any;
         requiresListingFee: boolean;
         requiresAdminApproval?: boolean;
+        activeCount?: number;
+        freeLimit?: number;
         listingFee: number;
         paymentDueAt: string | null;
       }>('/products/public', { method: 'POST', body: JSON.stringify(data) }),
@@ -153,6 +157,8 @@ export const api = {
       request<{
         product: any;
         requiresListingFee: boolean;
+        activeCount?: number;
+        freeLimit?: number;
         listingFee: number;
         paymentDueAt: string | null;
       }>(`/products/${id}/reactivate`, { method: 'POST' }),

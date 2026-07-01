@@ -78,6 +78,8 @@ model User {
   emailVerifiedAt            DateTime?
   emailVerificationCode      String?
   emailVerificationExpiresAt DateTime?
+  /** Null = default free limit (5). Admin can raise for trusted sellers. */
+  maxActiveListings          Int?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]

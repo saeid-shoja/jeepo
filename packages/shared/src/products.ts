@@ -1,4 +1,5 @@
 import { MOTORCYCLE_ATV_SUBCATEGORIES } from './category-defaults';
+import { toEnglishDigits } from './digits';
 
 export const CATEGORIES = [
   ...MOTORCYCLE_ATV_SUBCATEGORIES.map(({ name, slug }) => ({ name, slug })),
@@ -29,6 +30,14 @@ export const PERSIAN_MONTHS = [
 
 /** Free active client listings per user; each additional listing requires a fee. */
 export const FREE_CLIENT_LISTING_LIMIT = 5;
+
+/** Effective listing cap: user override or platform default. */
+export function resolveUserListingLimit(maxActiveListings?: number | null): number {
+  if (maxActiveListings != null && maxActiveListings > 0) {
+    return Math.floor(maxActiveListings);
+  }
+  return FREE_CLIENT_LISTING_LIMIT;
+}
 /** Fee per listing beyond the free quota (Toman). */
 export const EXTRA_LISTING_FEE = 30_000;
 /** Days to pay for a pending listing draft before it is removed. */
@@ -74,9 +83,9 @@ export function formatPrice(price: number): string {
   });
 }
 
-/** Strip formatting and parse digits from user input */
+/** Strip formatting and parse digits from user input (ASCII, Persian, Arabic-Indic). */
 export function parsePriceInput(value: string): number {
-  const digits = value.replace(/[^\d]/g, '');
+  const digits = toEnglishDigits(value).replace(/[^\d]/g, '');
   if (!digits) return 0;
   return Number(digits);
 }

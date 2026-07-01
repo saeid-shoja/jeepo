@@ -11,26 +11,33 @@ export class UsersService {
   ) {}
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        phone: true,
-        name: true,
-        role: true,
-        city: true,
-        telegramId: true,
-        telegramChatId: true,
-        telegramLinkedAt: true,
-        createdAt: true,
-        _count: { select: { products: true } },
-      },
-    });
+    const [user, activeListingsCount, totalListingsCount] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          phone: true,
+          name: true,
+          role: true,
+          city: true,
+          telegramId: true,
+          telegramChatId: true,
+          telegramLinkedAt: true,
+          createdAt: true,
+        },
+      }),
+      this.productsService.countActiveClientListings(userId),
+      this.prisma.product.count({
+        where: { userId, advertiser: 'CLIENT' },
+      }),
+    ]);
     if (!user) throw new NotFoundException('کاربر یافت نشد');
     const { telegramChatId, ...profile } = user;
     return {
       ...profile,
       telegramLinked: Boolean(telegramChatId),
+      activeListingsCount,
+      totalListingsCount,
     };
   }
 

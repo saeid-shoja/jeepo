@@ -5,6 +5,7 @@ import { formatPrice } from '@offroad/shared';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { PriceInput } from '@/components/form/price-input';
 import { Button } from '@/components/ui/button';
@@ -108,13 +109,7 @@ function BidForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="bid-phone">شماره تماس</Label>
-          <Input
-            id="bid-phone"
-            type="tel"
-            dir="ltr"
-            className="text-end"
-            {...register('bidderPhone')}
-          />
+          <DigitsInput id="bid-phone" type="tel" {...register('bidderPhone')} />
           <FieldError message={errors.bidderPhone?.message} />
         </div>
         <div className="space-y-2">

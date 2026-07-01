@@ -5,11 +5,12 @@ import {
   FREE_CLIENT_LISTING_LIMIT,
   LISTING_PAYMENT_GRACE_DAYS,
 } from '@offroad/shared';
-import { CreditCard, PackageSearch, RefreshCw } from 'lucide-react';
+import { CreditCard, PackageSearch, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ListingPremiumPaymentDialog } from '@/components/form/premium-listing-payment-dialog';
+import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
 import { ProductListingPremiumActions } from '@/components/profile/product-listing-premium-actions';
 import { ProductCard } from '@/components/shop/product-card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { api } from '@/lib/api';
 
 type ProfileProductsTabProps = {
   enabled: boolean;
+  onListingsChanged?: () => void;
 };
 
 type PendingPaymentState = {
@@ -25,28 +27,51 @@ type PendingPaymentState = {
   paymentDueAt: string | null;
 };
 
-export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
+type PendingDeleteState = {
+  productId: string;
+  title: string;
+};
+
+export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProductsTabProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
   const [payingListingId, setPayingListingId] = useState<string | null>(null);
   const [pendingPayment, setPendingPayment] = useState<PendingPaymentState | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [listingFreeLimit, setListingFreeLimit] = useState(FREE_CLIENT_LISTING_LIMIT);
+  const [activeListingsCount, setActiveListingsCount] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<PendingDeleteState | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadProducts = useCallback(() => {
     setLoading(true);
     return api.users
       .products()
-      .then(setProducts)
+      .then((items) => {
+        setProducts(items);
+        onListingsChanged?.();
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
+  }, [onListingsChanged]);
+
+  const refreshListingQuota = useCallback(() => {
+    return api.products
+      .listingQuota()
+      .then((quota) => {
+        setListingFreeLimit(quota.freeLimit);
+        setActiveListingsCount(quota.activeCount);
+      })
+      .catch(() => setListingFreeLimit(FREE_CLIENT_LISTING_LIMIT));
   }, []);
 
   useEffect(() => {
     if (enabled) {
       void loadProducts();
+      void refreshListingQuota();
     }
-  }, [enabled, loadProducts]);
+  }, [enabled, loadProducts, refreshListingQuota]);
 
   const handlePayListingFee = async (productId: string) => {
     setPayingListingId(productId);
@@ -59,7 +84,7 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
         toast.success('پرداخت انجام شد و آگهی منتشر شد');
       }
       setPendingPayment(null);
-      await loadProducts();
+      await Promise.all([loadProducts(), refreshListingQuota()]);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'پرداخت ناموفق بود');
     } finally {
@@ -78,18 +103,35 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
           listingFee: result.listingFee,
           paymentDueAt: result.paymentDueAt,
         });
+        if (result.freeLimit) setListingFreeLimit(result.freeLimit);
+        if (result.activeCount != null) setActiveListingsCount(result.activeCount);
         toast.info(
-          `شما ${FREE_CLIENT_LISTING_LIMIT} آگهی فعال دارید. برای فعال‌سازی مجدد باید هزینه ثبت آگهی را بپردازید.`,
+          `شما ${(result.activeCount ?? activeListingsCount).toLocaleString('fa-IR')} آگهی فعال دارید (سقف رایگان: ${(result.freeLimit ?? listingFreeLimit).toLocaleString('fa-IR')}). برای فعال‌سازی مجدد باید هزینه ثبت آگهی را بپردازید.`,
         );
-        await loadProducts();
+        await Promise.all([loadProducts(), refreshListingQuota()]);
         return;
       }
       toast.success('آگهی با موفقیت فعال شد');
-      await loadProducts();
+      await Promise.all([loadProducts(), refreshListingQuota()]);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'فعال‌سازی آگهی ناموفق بود');
     } finally {
       setReactivatingId(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await api.products.delete(pendingDelete.productId);
+      toast.success('آگهی حذف شد');
+      setPendingDelete(null);
+      await Promise.all([loadProducts(), refreshListingQuota()]);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'حذف آگهی ناموفق بود');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -156,6 +198,21 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
               </div>
             )}
             <ProductListingPremiumActions product={product} onUpdated={loadProducts} />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full gap-1 text-destructive hover:bg-destructive/5 hover:text-destructive"
+              disabled={deleting && pendingDelete?.productId === product.id}
+              onClick={() =>
+                setPendingDelete({ productId: product.id, title: product.title })
+              }
+            >
+              <Trash2
+                className={`h-3.5 w-3.5 ${deleting && pendingDelete?.productId === product.id ? 'animate-pulse' : ''}`}
+              />
+              حذف آگهی
+            </Button>
             {product.status === 'DEPRECATED' && (
               <div className="space-y-1 px-1">
                 {product.deletionAt && (
@@ -181,12 +238,20 @@ export function ProfileProductsTab({ enabled }: ProfileProductsTabProps) {
         ))}
       </div>
 
+      <DeleteListingDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && !deleting && setPendingDelete(null)}
+        listingTitle={pendingDelete?.title ?? ''}
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
+
       <ListingPremiumPaymentDialog
         open={pendingPayment !== null}
         onOpenChange={(open) => !open && !paymentLoading && setPendingPayment(null)}
         loading={paymentLoading}
         title="پرداخت هزینه ثبت آگهی"
-        description={`بیش از ${FREE_CLIENT_LISTING_LIMIT} آگهی فعال دارید. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
+        description={`شما ${activeListingsCount.toLocaleString('fa-IR')} آگهی فعال دارید و سقف رایگان ${listingFreeLimit.toLocaleString('fa-IR')} است. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
           pendingPayment?.paymentDueAt
             ? ` تا ${new Date(pendingPayment.paymentDueAt).toLocaleDateString('fa-IR')} (${LISTING_PAYMENT_GRACE_DAYS} روز) فرصت دارید.`
             : ''

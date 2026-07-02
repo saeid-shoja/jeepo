@@ -2,9 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  EXTRA_LISTING_FEE,
-  FREE_CLIENT_LISTING_LIMIT,
-  LISTING_PAYMENT_GRACE_DAYS,
+  PAYMENT_PURPOSES,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
 } from '@offroad/shared';
@@ -35,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { buildPaymentPageUrl } from '@/lib/payment-url';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { type NewProductFormValues, newProductSchema } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
@@ -45,18 +44,11 @@ export default function NewProductPage() {
   const router = useRouter();
   const { carBrands: carBrandOptions } = useCategories();
   const [strengthenedPaymentOpen, setStrengthenedPaymentOpen] = useState(false);
-  const [listingPaymentOpen, setListingPaymentOpen] = useState(false);
   const [submitResultOpen, setSubmitResultOpen] = useState(false);
   const [submitResultVariant, setSubmitResultVariant] =
     useState<ListingSubmitResultVariant>('published');
-  const [pendingListingId, setPendingListingId] = useState<string | null>(null);
-  const [listingFee, setListingFee] = useState(EXTRA_LISTING_FEE);
-  const [listingPaymentDueAt, setListingPaymentDueAt] = useState<string | null>(null);
-  const [payingListingFee, setPayingListingFee] = useState(false);
-  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
-  const [listingFreeLimit, setListingFreeLimit] = useState(FREE_CLIENT_LISTING_LIMIT);
-  const [activeListingsCount, setActiveListingsCount] = useState(0);
   const listingPaymentResolvedRef = useRef(false);
+  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
 
   const {
     register,
@@ -113,17 +105,6 @@ export default function NewProductPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!user) return;
-    api.products
-      .listingQuota()
-      .then((quota) => {
-        setListingFreeLimit(quota.freeLimit);
-        setActiveListingsCount(quota.activeCount);
-      })
-      .catch(() => setListingFreeLimit(FREE_CLIENT_LISTING_LIMIT));
-  }, [user]);
-
-  useEffect(() => {
     if (price <= 0 && hasGuarantee) setValue('hasGuarantee', false);
   }, [price, hasGuarantee, setValue]);
 
@@ -156,16 +137,22 @@ export default function NewProductPage() {
       });
 
       if (result.requiresListingFee) {
-        listingPaymentResolvedRef.current = false;
-        setPendingListingId(result.product.id);
-        setListingFee(result.listingFee);
-        setListingPaymentDueAt(result.paymentDueAt);
-        if (result.freeLimit) setListingFreeLimit(result.freeLimit);
-        if (result.activeCount != null) setActiveListingsCount(result.activeCount);
-        setListingPaymentOpen(true);
-        toast.info(
-          `شما ${(result.activeCount ?? activeListingsCount).toLocaleString('fa-IR')} آگهی فعال دارید (سقف رایگان: ${(result.freeLimit ?? listingFreeLimit).toLocaleString('fa-IR')}). برای انتشار آگهی جدید باید ${EXTRA_LISTING_FEE.toLocaleString('fa-IR')} تومان بپردازید. تا ${LISTING_PAYMENT_GRACE_DAYS} روز فرصت دارید.`,
+        listingPaymentResolvedRef.current = true;
+        const nextPurpose =
+          data.applyStrengthened && !data.isAuction
+            ? PAYMENT_PURPOSES.LISTING_STRENGTHENED
+            : undefined;
+        toast.info('آگهی ثبت شد. برای انتشار، هزینه ثبت را پرداخت کنید.');
+        router.push(
+          buildPaymentPageUrl(result.product.id, PAYMENT_PURPOSES.LISTING_FEE, nextPurpose),
         );
+        return;
+      }
+
+      if (data.applyStrengthened && !data.isAuction) {
+        listingPaymentResolvedRef.current = true;
+        toast.info('آگهی ثبت شد. برای فعال‌سازی تقویت، پرداخت را تکمیل کنید.');
+        router.push(buildPaymentPageUrl(result.product.id, PAYMENT_PURPOSES.LISTING_STRENGTHENED));
         return;
       }
 
@@ -181,30 +168,6 @@ export default function NewProductPage() {
       setIsSubmittingListing(false);
       setStrengthenedPaymentOpen(false);
     }
-  };
-
-  const handlePayListingFee = async () => {
-    if (!pendingListingId) return;
-    setPayingListingFee(true);
-    try {
-      const res = await api.products.payListingFee(pendingListingId);
-      listingPaymentResolvedRef.current = true;
-      setListingPaymentOpen(false);
-      showSubmitResult(res.requiresAdminApproval ? 'pending_review' : 'published');
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'پرداخت ناموفق بود');
-    } finally {
-      setPayingListingFee(false);
-    }
-  };
-
-  const handleListingPaymentDismiss = () => {
-    if (listingPaymentResolvedRef.current) return;
-    setListingPaymentOpen(false);
-    toast.info(
-      `آگهی در پیش‌نویس‌های شما ذخیره شد. تا ${LISTING_PAYMENT_GRACE_DAYS} روز برای پرداخت فرصت دارید.`,
-    );
-    router.push('/dashboard');
   };
 
   const onValidSubmit = async (data: NewProductFormValues) => {
@@ -420,28 +383,11 @@ export default function NewProductPage() {
         open={strengthenedPaymentOpen}
         onOpenChange={setStrengthenedPaymentOpen}
         loading={isSubmittingListing}
-        title="پرداخت هزینه تقویت آگهی"
-        description={`آگهی شما به مدت ${STRENGTHENED_DURATION_DAYS} روز در بالای لیست‌ها نمایش داده می‌شود.`}
+        title="تقویت آگهی"
+        description={`پس از ثبت آگهی، هزینه تقویت (${STRENGTHENED_DURATION_DAYS} روز نمایش در بالای لیست) از طریق درگاه پرداخت دریافت می‌شود.`}
         fee={STRENGTHENED_LISTING_FEE}
+        confirmLabel="ثبت آگهی و ادامه"
         onConfirm={() => submitListing(getValues())}
-      />
-
-      <ListingPremiumPaymentDialog
-        open={listingPaymentOpen}
-        onOpenChange={(open) => {
-          if (!open && !payingListingFee) {
-            handleListingPaymentDismiss();
-          }
-        }}
-        loading={payingListingFee}
-        title="پرداخت هزینه ثبت آگهی"
-        description={`شما ${activeListingsCount.toLocaleString('fa-IR')} آگهی فعال دارید و سقف رایگان ${listingFreeLimit.toLocaleString('fa-IR')} است. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
-          listingPaymentDueAt
-            ? ` تا ${new Date(listingPaymentDueAt).toLocaleDateString('fa-IR')} (${LISTING_PAYMENT_GRACE_DAYS} روز) جهت پرداخت فرصت دارید بعد از این تاریخ آگهی از پیش نویس های شما حذف خواهد شد..`
-            : ''
-        }`}
-        fee={listingFee}
-        onConfirm={() => void handlePayListingFee()}
       />
 
       <ListingSubmitResultDialog

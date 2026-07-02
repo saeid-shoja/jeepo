@@ -5,6 +5,7 @@ export * from './category-defaults';
 export * from './digits';
 export * from './listing-tips';
 export * from './no-contact-in-text';
+export * from './payments';
 export * from './products';
 export * from './schema-types';
 export * from './site-info';

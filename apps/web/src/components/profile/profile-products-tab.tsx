@@ -4,9 +4,11 @@ import {
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
   LISTING_PAYMENT_GRACE_DAYS,
+  PAYMENT_PURPOSES,
 } from '@offroad/shared';
 import { CreditCard, PackageSearch, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ListingPremiumPaymentDialog } from '@/components/form/premium-listing-payment-dialog';
@@ -15,6 +17,7 @@ import { ProductListingPremiumActions } from '@/components/profile/product-listi
 import { ProductCard } from '@/components/shop/product-card';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { buildPaymentPageUrl } from '@/lib/payment-url';
 
 type ProfileProductsTabProps = {
   enabled: boolean;
@@ -33,12 +36,11 @@ type PendingDeleteState = {
 };
 
 export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProductsTabProps) {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
-  const [payingListingId, setPayingListingId] = useState<string | null>(null);
   const [pendingPayment, setPendingPayment] = useState<PendingPaymentState | null>(null);
-  const [paymentLoading, setPaymentLoading] = useState(false);
   const [listingFreeLimit, setListingFreeLimit] = useState(FREE_CLIENT_LISTING_LIMIT);
   const [activeListingsCount, setActiveListingsCount] = useState(0);
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteState | null>(null);
@@ -73,24 +75,8 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
     }
   }, [enabled, loadProducts, refreshListingQuota]);
 
-  const handlePayListingFee = async (productId: string) => {
-    setPayingListingId(productId);
-    setPaymentLoading(true);
-    try {
-      const res = await api.products.payListingFee(productId);
-      if (res.requiresAdminApproval) {
-        toast.success('پرداخت انجام شد. آگهی پس از بررسی قیمت توسط مدیر منتشر می‌شود.');
-      } else {
-        toast.success('پرداخت انجام شد و آگهی منتشر شد');
-      }
-      setPendingPayment(null);
-      await Promise.all([loadProducts(), refreshListingQuota()]);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'پرداخت ناموفق بود');
-    } finally {
-      setPayingListingId(null);
-      setPaymentLoading(false);
-    }
+  const goToListingPayment = (productId: string) => {
+    router.push(buildPaymentPageUrl(productId, PAYMENT_PURPOSES.LISTING_FEE));
   };
 
   const handleReactivate = async (productId: string) => {
@@ -183,14 +169,7 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
                 <Button
                   size="sm"
                   className="w-full gap-1"
-                  disabled={payingListingId === product.id}
-                  onClick={() =>
-                    setPendingPayment({
-                      productId: product.id,
-                      listingFee: EXTRA_LISTING_FEE,
-                      paymentDueAt: product.listingPaymentDueAt ?? null,
-                    })
-                  }
+                  onClick={() => goToListingPayment(product.id)}
                 >
                   <CreditCard className="h-3.5 w-3.5" />
                   پرداخت و انتشار
@@ -246,8 +225,8 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
 
       <ListingPremiumPaymentDialog
         open={pendingPayment !== null}
-        onOpenChange={(open) => !open && !paymentLoading && setPendingPayment(null)}
-        loading={paymentLoading}
+        onOpenChange={(open) => !open && setPendingPayment(null)}
+        loading={false}
         title="پرداخت هزینه ثبت آگهی"
         description={`شما ${activeListingsCount.toLocaleString('fa-IR')} آگهی فعال دارید و سقف رایگان ${listingFreeLimit.toLocaleString('fa-IR')} است. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
           pendingPayment?.paymentDueAt
@@ -255,8 +234,12 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
             : ''
         }`}
         fee={pendingPayment?.listingFee ?? EXTRA_LISTING_FEE}
+        confirmLabel="ادامه به درگاه پرداخت"
         onConfirm={() => {
-          if (pendingPayment) void handlePayListingFee(pendingPayment.productId);
+          if (pendingPayment) {
+            setPendingPayment(null);
+            goToListingPayment(pendingPayment.productId);
+          }
         }}
       />
     </>

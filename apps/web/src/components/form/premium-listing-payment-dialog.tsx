@@ -53,7 +53,7 @@ export function ListingPremiumPaymentDialog({
                 <span className="text-muted-foreground text-base font-normal">تومان</span>
               </p>
               <p className="text-muted-foreground text-xs">
-                پرداخت شبیه‌سازی‌شده است. پس از تأیید، تغییرات اعمال می‌شود.
+                پس از تأیید به صفحه انتخاب درگاه پرداخت منتقل می‌شوید.
               </p>
             </div>
           </DialogDescription>
@@ -74,7 +74,7 @@ export function ListingPremiumPaymentDialog({
                 در حال پرداخت...
               </>
             ) : (
-              (confirmLabel ?? `پرداخت ${formatPrice(fee)} تومان`)
+              (confirmLabel ?? 'ادامه به درگاه پرداخت')
             )}
           </Button>
         </DialogFooter>

@@ -40,6 +40,23 @@ enum PaymentMethod {
   ONLINE
 }
 
+enum PaymentPurpose {
+  LISTING_FEE
+  LISTING_STRENGTHENED
+  LISTING_BOOST
+}
+
+enum PaymentGateway {
+  ZIBAL
+}
+
+enum PaymentSessionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 enum UserMessageType {
   ANNOUNCEMENT
   NOTIFICATION
@@ -78,7 +95,6 @@ model User {
   emailVerifiedAt            DateTime?
   emailVerificationCode      String?
   emailVerificationExpiresAt DateTime?
-  /** Null = default free limit (5). Admin can raise for trusted sellers. */
   maxActiveListings          Int?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -92,6 +108,7 @@ model User {
   buyerConversations ProductConversation[] @relation("ConversationBuyer")
   sellerConversations ProductConversation[] @relation("ConversationSeller")
   productChatMessages ProductChatMessage[]
+  paymentSessions PaymentSession[]
 }
 
 model PendingRegistration {
@@ -188,6 +205,7 @@ model Product {
   auctionBids        AuctionBid[]
   favorites          Favorite[]
   conversations      ProductConversation[]
+  paymentSessions    PaymentSession[]
 
   @@index([advertiser, status])
   @@index([categoryId])
@@ -230,6 +248,27 @@ model Order {
   items     OrderItem[]
 
   @@index([userId])
+}
+
+model PaymentSession {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id])
+  productId String
+  product   Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purpose   PaymentPurpose
+  gateway   PaymentGateway
+  status    PaymentSessionStatus @default(PENDING)
+  amount    Float
+  trackId   String?              @unique
+  refNumber String?
+  paidAt    DateTime?
+  nextPurpose PaymentPurpose?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([userId, status])
+  @@index([productId, purpose])
 }
 
 model OrderItem {
@@ -286,7 +325,6 @@ model UserMessage {
   @@index([userId, createdAt])
 }
 
-/** Per-listing chat thread between a buyer and the ad owner (Divar-style). */
 model ProductConversation {
   id            String   @id @default(cuid())
   productId     String

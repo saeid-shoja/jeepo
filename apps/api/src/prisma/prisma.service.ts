@@ -72,6 +72,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.pendingRegistration;
   }
 
+  get paymentSession(): PrismaClient['paymentSession'] {
+    return this.client.paymentSession;
+  }
+
   $transaction<T>(
     fn: (
       tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>,

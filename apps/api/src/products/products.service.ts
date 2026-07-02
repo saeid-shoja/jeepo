@@ -669,12 +669,16 @@ export class ProductsService {
 
   async applyStrengthened(id: string, userId: string) {
     await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_STRENGTHENED);
-    throw new BadRequestException('برای پرداخت تقویت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید');
+    throw new BadRequestException(
+      'برای پرداخت تقویت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+    );
   }
 
   async applyBoost(id: string, userId: string) {
     await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_BOOST);
-    throw new BadRequestException('برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید');
+    throw new BadRequestException(
+      'برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+    );
   }
 
   async remove(id: string, userId?: string, userRole?: string) {

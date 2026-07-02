@@ -1,4 +1,9 @@
-import { PAYMENT_GATEWAYS, PAYMENT_PURPOSES, type PaymentGateway, type PaymentPurpose } from '@offroad/shared';
+import {
+  PAYMENT_GATEWAYS,
+  PAYMENT_PURPOSES,
+  type PaymentGateway,
+  type PaymentPurpose,
+} from '@offroad/shared';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class InitiatePaymentDto {

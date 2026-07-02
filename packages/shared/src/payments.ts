@@ -1,8 +1,4 @@
-import {
-  BOOST_LISTING_FEE,
-  EXTRA_LISTING_FEE,
-  STRENGTHENED_LISTING_FEE,
-} from './products';
+import { BOOST_LISTING_FEE, EXTRA_LISTING_FEE, STRENGTHENED_LISTING_FEE } from './products';
 
 export const PAYMENT_GATEWAYS = {
   ZIBAL: 'ZIBAL',

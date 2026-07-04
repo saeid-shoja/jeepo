@@ -30,7 +30,26 @@ export default function MainSection() {
 
   return (
     <div className="space-y-5 lg:space-y-10">
-      <BadgeInfo />
+      <section className="border-y border-border -mx-4 px-4 py-6">
+        <div className="container mb-6 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-xl font-bold">
+            <PackageSearch className="text-secondary h-6 w-6" />
+            آگهی‌های کاربران
+          </h2>
+          <Link href="/products" className="text-primary text-sm hover:underline">
+            مشاهده همه
+          </Link>
+        </div>
+        {clientProducts.length > 0 ? (
+          <div className="container grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
+            {clientProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground py-8 text-center">هنوز آگهی‌ای ثبت نشده است</p>
+        )}
+      </section>
       <section className="bg-border/30 -mx-4 px-4 py-5">
         <div className="container mb-5 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-xl font-bold">
@@ -80,27 +99,7 @@ export default function MainSection() {
           </p>
         )}
       </section>
-
-      <section className="border-y border-border -mx-4 px-4 py-6">
-        <div className="container mb-6 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-xl font-bold">
-            <PackageSearch className="text-secondary h-6 w-6" />
-            آگهی‌های کاربران
-          </h2>
-          <Link href="/products" className="text-primary text-sm hover:underline">
-            مشاهده همه
-          </Link>
-        </div>
-        {clientProducts.length > 0 ? (
-          <div className="container grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
-            {clientProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground py-8 text-center">هنوز آگهی‌ای ثبت نشده است</p>
-        )}
-      </section>
+      <BadgeInfo />
     </div>
   );
 }

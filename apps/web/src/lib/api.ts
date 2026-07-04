@@ -303,6 +303,11 @@ export const api = {
     products: () => request<any[]>('/users/products'),
     updateProfile: (data: any) =>
       request<any>('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      request<{ message: string }>('/users/profile/password', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
     messages: () => request<any[]>('/users/messages'),
     messagesUnreadCount: () => request<{ count: number }>('/users/messages/unread-count'),
     markMessageRead: (id: string) =>

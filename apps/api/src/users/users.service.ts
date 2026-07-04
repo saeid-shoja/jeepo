@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService } from '../products/products.service';
-import type { UpdateProfileDto } from './dto';
+import type { ChangePasswordDto, UpdateProfileDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -62,5 +63,30 @@ export class UsersService {
       data: updateData,
       select: { id: true, phone: true, name: true, role: true, city: true, telegramId: true },
     });
+  }
+
+  async changePassword(userId: string, data: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    const valid = await bcrypt.compare(data.currentPassword, user.password);
+    if (!valid) {
+      throw new BadRequestException('رمز عبور فعلی اشتباه است');
+    }
+
+    if (data.currentPassword === data.newPassword) {
+      throw new BadRequestException('رمز عبور جدید باید با رمز فعلی متفاوت باشد');
+    }
+
+    const hashedPassword = await bcrypt.hash(data.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: 'رمز عبور با موفقیت تغییر کرد' };
   }
 }

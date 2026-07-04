@@ -114,6 +114,7 @@ function PaymentPageContent() {
       <div>
         <h1 className="text-2xl font-bold">پرداخت</h1>
         <p className="text-muted-foreground mt-1 text-sm">{data.purposeLabel}</p>
+        <p className="text-muted-foreground mt-1 text-sm">هر کاربر به طور معمول میتواند ۵ آگهی رایگان و فعال در وبسایت ثبت نماید. برای ثبت آگهی بیشتر نیاز به پرداخت مبلغ می باشد.</p>
       </div>
 
       <Card>
@@ -167,9 +168,8 @@ function PaymentPageContent() {
                 type="button"
                 disabled={!item.enabled || paying}
                 onClick={() => setGateway(item.id as PaymentGateway)}
-                className={`flex w-full items-center gap-3 rounded-lg border p-4 text-start transition-colors ${
-                  selected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                } ${!item.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                className={`flex w-full items-center gap-3 rounded-lg border p-4 text-start transition-colors ${selected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                  } ${!item.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 <CreditCard className="text-muted-foreground size-5 shrink-0" />
                 <div className="flex-1">

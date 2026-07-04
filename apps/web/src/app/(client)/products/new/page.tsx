@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { AuctionListingOptions } from '@/components/form/auction-listing-options';
+import { CarBrandPicker } from '@/components/form/car-brand-picker';
 import { CitySelect } from '@/components/form/city-select';
 import { dateTimeLocalToIso, defaultMinDateTimeLocal } from '@/components/form/datetime-picker';
 import { DigitsInput } from '@/components/form/digits-input';
@@ -253,39 +254,11 @@ export default function NewProductPage() {
           </CardContent>
         </Card>
 
-        {carBrandOptions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">برند خودرو</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {carBrandOptions.map((option) => {
-                  const selected = carBrands.includes(option.value);
-                  return (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={selected ? 'default' : 'outline'}
-                      onClick={() =>
-                        setValue(
-                          'carBrands',
-                          selected
-                            ? carBrands.filter((v) => v !== option.value)
-                            : [...carBrands, option.value],
-                          { shouldValidate: true },
-                        )
-                      }
-                    >
-                      {option.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <CarBrandPicker
+          options={carBrandOptions}
+          value={carBrands}
+          onChange={(brands) => setValue('carBrands', brands, { shouldValidate: true })}
+        />
 
         <Card>
           <CardContent className="space-y-4 pt-6">

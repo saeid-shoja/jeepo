@@ -155,5 +155,7 @@ export const DEFAULT_CAR_BRANDS = [
   { name: 'رنو', slug: 'renault', code: 'RENAULT', parentSlug: null, sortOrder: 13 },
   { name: 'ولوو', slug: 'volvo', code: 'VOLVO', parentSlug: null, sortOrder: 14 },
   { name: 'جیپ', slug: 'jeep', code: 'JEEP', parentSlug: null, sortOrder: 15 },
-  { name: 'سایر', slug: 'other', code: 'OTHER', parentSlug: null, sortOrder: 16 },
+  { name: 'کاپرا', slug: 'capra', code: 'CAPRA', parentSlug: null, sortOrder: 16 },
+  { name: 'موتورسیکلت', slug: 'motorcycle', code: 'MOTORCYCLE', parentSlug: null, sortOrder: 17 },
+  { name: 'سایر', slug: 'other', code: 'OTHER', parentSlug: null, sortOrder: 18 },
 ] as const;

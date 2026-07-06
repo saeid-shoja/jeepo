@@ -70,7 +70,7 @@ export function TelegramNotificationsCard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <Send className="text-primary mt-0.5 size-5 shrink-0" />
-          <div className='formTextSize'>
+          <div className="formTextSize">
             <p className="font-medium">دریافت اطلاعیه در تلگرام</p>
             <p className="text-muted-foreground mt-1">
               ربات را استارت کنید تا اخبار و پیام‌های مدیریت را در تلگرام بگیرید.

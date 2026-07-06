@@ -125,9 +125,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
         onClick={() => setOpen(true)}
       >
         <Pencil className="h-3.5 w-3.5" />
-        <span className='hidden lg:inline'>
-          ویرایش پروفایل
-        </span>
+        <span className="hidden lg:inline">ویرایش پروفایل</span>
       </Button>
 
       <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
@@ -143,7 +141,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="نام نمایشی"
-                className='text-xs'
+                className="text-xs"
               />
             </div>
             <CitySelect value={city} onChange={setCity} label="شهر" />

@@ -55,7 +55,9 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
           <div className="space-y-2">
-            <RequiredLabel htmlFor="identifier" className='text-sm lg:text-base'>شماره موبایل یا ایمیل</RequiredLabel>
+            <RequiredLabel htmlFor="identifier" className="text-sm lg:text-base">
+              شماره موبایل یا ایمیل
+            </RequiredLabel>
             <LoginIdentifierInput
               id="identifier"
               type="text"

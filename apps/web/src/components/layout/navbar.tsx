@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Menu, PlusCircle, Store, User, X } from 'lucide-react';
+import { LogOut, Menu, PlusCircle, User, X } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { SiteLogo } from '@/components/layout/site-logo';
@@ -90,7 +90,11 @@ export function Navbar() {
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="منو"
             >
-              {menuOpen ? <X className="min-h-8 min-w-8 shrink-0" /> : <Menu className="min-h-8 min-w-8 shrink-0" />}
+              {menuOpen ? (
+                <X className="min-h-8 min-w-8 shrink-0" />
+              ) : (
+                <Menu className="min-h-8 min-w-8 shrink-0" />
+              )}
             </Button>
             {loading ? (
               <div className="bg-muted h-9 w-9 animate-pulse rounded-md" />
@@ -101,7 +105,12 @@ export function Navbar() {
                 </Link>
               </Button>
             ) : (
-              <Button variant="outline" size="sm" asChild className="h-8 px-2.5 text-xs border-none">
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-8 px-2.5 text-xs border-none"
+              >
                 <Link href="/login">ورود</Link>
               </Button>
             )}
@@ -111,7 +120,8 @@ export function Navbar() {
             <CartNavButton />
             <Button asChild size="sm" className="px-2 text-xs">
               <Link href="/products/new" aria-label="ثبت آگهی">
-                <PlusCircle className="h-5 w-5" />ثبت آگهی
+                <PlusCircle className="h-5 w-5" />
+                ثبت آگهی
               </Link>
             </Button>
           </div>

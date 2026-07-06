@@ -226,7 +226,7 @@ export default function EditProductPage() {
           applyStrengthened={false}
           showStrengthened={false}
           onGuaranteeChange={(v) => setValue('hasGuarantee', v)}
-          onStrengthenedChange={() => { }}
+          onStrengthenedChange={() => {}}
         />
 
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>

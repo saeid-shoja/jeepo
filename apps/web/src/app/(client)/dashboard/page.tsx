@@ -48,7 +48,7 @@ function DashboardContent() {
     return api.users
       .profile()
       .then(setProfile)
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const tabParam = searchParams.get('tab');
@@ -103,7 +103,7 @@ function DashboardContent() {
                 {profile.city}
               </p>
             )}
-            <div className='flex items-center gap-1'>
+            <div className="flex items-center gap-1">
               <p className="lg:text-2xl font-bold text-primary">
                 {(profile?.activeListingsCount ?? 0).toLocaleString('fa-IR')}
               </p>
@@ -122,9 +122,7 @@ function DashboardContent() {
             />
             <Button onClick={logout} variant="destructive" size="sm">
               <LogOut className="h-4 w-4" />
-              <span className='hidden lg:inline'>
-                خروج
-              </span>
+              <span className="hidden lg:inline">خروج</span>
             </Button>
           </div>
         </div>

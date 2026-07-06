@@ -128,12 +128,12 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(data.isAuction
           ? {
-            auctionStartPrice: data.auctionStartPrice,
-            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-            realPriceMin: data.realPriceMin,
-            realPriceMax: data.realPriceMax,
-            buyNowPrice: data.buyNowPrice,
-          }
+              auctionStartPrice: data.auctionStartPrice,
+              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+              realPriceMin: data.realPriceMin,
+              realPriceMax: data.realPriceMax,
+              buyNowPrice: data.buyNowPrice,
+            }
           : {}),
       });
 

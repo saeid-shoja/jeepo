@@ -128,12 +128,12 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -185,12 +185,12 @@ export default function NewProductPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
       <h1 className="mb-8 text-2xl font-bold">ثبت آگهی جدید</h1>
       <ListingFormTips />
-      <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6" noValidate>
+      <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-4" noValidate>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
               <Input
@@ -261,7 +261,7 @@ export default function NewProductPage() {
         />
 
         <Card>
-          <CardContent className="space-y-4 pt-6">
+          <CardContent className="space-y-2 pt-6">
             <Controller
               name="situation"
               control={control}

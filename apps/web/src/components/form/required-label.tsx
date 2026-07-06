@@ -12,7 +12,7 @@ export function RequiredLabel({
   ...props
 }: RequiredLabelProps) {
   return (
-    <Label className={cn(className)} {...props}>
+    <Label className={cn('lg:text-sm text-xs', className)} {...props}>
       {children}
       {required && <span className="text-destructive">* </span>}
     </Label>

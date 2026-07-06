@@ -124,12 +124,12 @@ export default function EditProductPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
       <h1 className="mb-8 text-2xl font-bold">ویرایش آگهی</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
               <Input id="title" {...register('title')} />
@@ -186,7 +186,7 @@ export default function EditProductPage() {
         />
 
         <Card>
-          <CardContent className="space-y-4 pt-6">
+          <CardContent className="space-y-3 pt-6">
             <Controller
               name="situation"
               control={control}
@@ -226,7 +226,7 @@ export default function EditProductPage() {
           applyStrengthened={false}
           showStrengthened={false}
           onGuaranteeChange={(v) => setValue('hasGuarantee', v)}
-          onStrengthenedChange={() => {}}
+          onStrengthenedChange={() => { }}
         />
 
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>

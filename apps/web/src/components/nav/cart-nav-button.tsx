@@ -10,7 +10,7 @@ export function CartNavButton() {
   const { itemCount } = useCart();
 
   return (
-    <Button variant="card" size="icon" className="relative h-10 w-10" asChild>
+    <Button variant="card" size="icon" className="relative lg:h-10 w-8 lg:w-10" asChild>
       <Link href="/cart" aria-label="سبد خرید">
         <ShoppingCart className="size-4" />
         {itemCount > 0 && (

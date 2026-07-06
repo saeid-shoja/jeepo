@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 export const SITE_LOGO_SRC = '/logo.png';
 
 const sizeClasses = {
+  xs: 'h-9 w-auto',
   sm: 'h-10 w-auto',
   md: 'h-12 w-auto',
   lg: 'h-16 w-auto',

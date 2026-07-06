@@ -52,7 +52,7 @@ export function PriceInput({
       type="text"
       inputMode="numeric"
       dir="ltr"
-      className={cn('text-end', className)}
+      className={cn('text-end formTextSize', className)}
       value={displayValue}
       onChange={handleChange}
       onFocus={() => {

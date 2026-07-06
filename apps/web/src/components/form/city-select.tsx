@@ -35,7 +35,7 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
   return (
     <div className="space-y-3 grid grid-cols-2 gap-3 *:w-full">
       <div>
-        <RequiredLabel className="mb-2 block text-sm" required={required}>
+        <RequiredLabel className="mb-2 block" required={required}>
           استان
         </RequiredLabel>
         <Select
@@ -59,7 +59,7 @@ export function CitySelect({ value, onChange, label = 'شهر', required, error 
         </Select>
       </div>
       <div>
-        <RequiredLabel className="mb-2 block text-sm" required={required}>
+        <RequiredLabel className="mb-2 block" required={required}>
           {label}
         </RequiredLabel>
         <Select value={value} onValueChange={onChange} disabled={!provinceId}>

@@ -125,7 +125,9 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
         onClick={() => setOpen(true)}
       >
         <Pencil className="h-3.5 w-3.5" />
-        ویرایش پروفایل
+        <span className='hidden lg:inline'>
+          ویرایش پروفایل
+        </span>
       </Button>
 
       <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
@@ -133,7 +135,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
           <DialogHeader>
             <DialogTitle>ویرایش پروفایل</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-2 py-2">
             <div className="space-y-2">
               <Label htmlFor="profile-name">نام</Label>
               <Input
@@ -141,6 +143,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="نام نمایشی"
+                className='text-xs'
               />
             </div>
             <CitySelect value={city} onChange={setCity} label="شهر" />
@@ -160,7 +163,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 autoComplete="off"
               />
             </div>
-            <div className="space-y-3 border-t pt-4">
+            <div className="space-y-2 border-t pt-4">
               <p className="text-sm font-medium">تغییر رمز عبور</p>
               <p className="text-muted-foreground text-xs">
                 در صورت عدم نیاز به تغییر رمز، این فیلدها را خالی بگذارید.
@@ -194,7 +197,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-1 sm:gap-0">
             <Button
               type="button"
               variant="outline"

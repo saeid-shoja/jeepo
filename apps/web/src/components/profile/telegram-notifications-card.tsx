@@ -53,9 +53,9 @@ export function TelegramNotificationsCard() {
       <div className="rounded-lg border border-green-300 bg-card p-4">
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-700" />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 formTextSize">
             <p className="font-semibold text-neutral-900">تلگرام متصل است</p>
-            <p className="mt-1 text-sm text-neutral-700">
+            <p className="mt-1 text-neutral-700">
               اطلاعیه‌ها و پیام‌های مدیریت در تب «پیام‌ها» همین صفحه نمایش داده می‌شوند.
               {state.botUsername ? ` (@${state.botUsername})` : ''}
             </p>
@@ -70,15 +70,15 @@ export function TelegramNotificationsCard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <Send className="text-primary mt-0.5 size-5 shrink-0" />
-          <div>
+          <div className='formTextSize'>
             <p className="font-medium">دریافت اطلاعیه در تلگرام</p>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-muted-foreground mt-1">
               ربات را استارت کنید تا اخبار و پیام‌های مدیریت را در تلگرام بگیرید.
             </p>
           </div>
         </div>
         {state.botUrl && (
-          <Button type="button" variant="outline" className="shrink-0 gap-2" asChild>
+          <Button type="button" variant="outline" className="shrink-0 gap-2 formTextSize" asChild>
             <a href={state.botUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="size-4" />
               اتصال تلگرام

@@ -28,6 +28,16 @@ const defaultFilters: ProductsFilters = {
 };
 
 const PRODUCT_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
+const PRODUCTS_PAGE_SIZE = 20;
+
+function getVisiblePages(current: number, total: number): number[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages = new Set<number>([1, total, current, current - 1, current + 1]);
+  return [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
+}
 
 export function ProductsPageClient() {
   const router = useRouter();
@@ -67,7 +77,7 @@ export function ProductsPageClient() {
     (overrides?: { page?: number }) => {
       const p: Record<string, string> = {
         page: String(overrides?.page ?? page),
-        limit: '20',
+        limit: String(PRODUCTS_PAGE_SIZE),
       };
       if (activeTab === 'AUCTION') {
         p.auction = 'true';
@@ -225,17 +235,42 @@ export function ProductsPageClient() {
               </div>
               {totalPages > 1 && (
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <Button
-                      key={p}
-                      variant={page === p ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-9 w-9 p-0"
-                      onClick={() => setPage(p)}
-                    >
-                      {p}
-                    </Button>
-                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1 || loading}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    قبلی
+                  </Button>
+                  {getVisiblePages(page, totalPages).map((p, index, pages) => {
+                    const prev = pages[index - 1];
+                    const showEllipsis = prev != null && p - prev > 1;
+                    return (
+                      <span key={p} className="flex items-center gap-2">
+                        {showEllipsis ? (
+                          <span className="text-muted-foreground px-1 text-sm">…</span>
+                        ) : null}
+                        <Button
+                          variant={page === p ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-9 w-9 p-0"
+                          disabled={loading}
+                          onClick={() => setPage(p)}
+                        >
+                          {p}
+                        </Button>
+                      </span>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages || loading}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    بعدی
+                  </Button>
                 </div>
               )}
             </>

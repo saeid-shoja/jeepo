@@ -41,7 +41,7 @@ export class UpdateAdminUserDto {
   @IsEnum(UserRole, { message: 'نقش کاربر نامعتبر است' })
   role?: UserRole;
 
-  /** Custom free active listing cap. null = reset to platform default (5). */
+  /** Custom free active listing cap. null = reset to platform default (2). */
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @Type(() => Number)

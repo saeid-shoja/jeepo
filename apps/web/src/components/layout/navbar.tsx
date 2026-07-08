@@ -26,7 +26,8 @@ export function Navbar() {
   return (
     <nav className="bg-background/85 sticky top-0 z-50 border-b backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3">
-        <div className="flex items-center flex-row-reverse justify-between gap-2">
+        <div className="flex items-center flex-row-reverse lg:flex-row justify-between gap-2">
+          <SiteLogo priority size="lg" className="hidden lg:inline-flex" />
           <div className="flex min-w-0 items-center gap-3 lg:gap-4">
             <div className="hidden items-center gap-1 lg:flex">
               <Link
@@ -49,10 +50,9 @@ export function Navbar() {
                   <PlusCircle className="h-5 w-5" />
                 </Link>
               </Button>
-              <NavbarSearch className="hidden max-w-md min-w-sm lg:flex" />
+              <NavbarSearch className="hidden max-w-sm min-w-xs lg:flex" />
             </div>
             <SiteLogo priority size="xs" className="lg:hidden" />
-            <SiteLogo priority size="lg" className="hidden lg:inline-flex" />
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">
@@ -64,7 +64,7 @@ export function Navbar() {
               <>
                 <ChatsNavButton />
                 <MessagesNavButton />
-                <Button variant="card" asChild className="w-10">
+                <Button variant="card" asChild className="h-10 w-10">
                   <Link href="/dashboard">
                     <User className="h-5 w-5" />
                   </Link>

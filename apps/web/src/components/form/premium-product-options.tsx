@@ -4,6 +4,7 @@ import {
   BOOST_LISTING_FEE,
   formatPrice,
   GUARANTEE_FEE_LABEL,
+  GUARANTEE_FEE_RATE,
   getGuaranteeFee,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
@@ -110,14 +111,15 @@ export function PremiumProductOptions({
                     می‌شود و خریداران می‌توانند آن را مستقیماً با ضمانت فروشگاه از طریق سایت خریداری
                     کنند. در این حالت مبلغ خرید به حساب فروشگاه واریز شده و پس از ارسال محصول توسط
                     فروشنده و تایید خریدار مبلغ با کسر کارمزد فروشگاه و مالیات به حساب فروشنده واریز
-                    خواهد شد.
+                    خواهد شد. همچنین کارشناسان جیپو آگهی شما را در گروه های تلگرامی مربوط قرار داده و در تسریع فروش کمک خواهند کرد. البته قیمت رقابتی شما کمک کننده نیز خواهد بود.
                   </p>
                   <p>
                     <strong>هزینه:</strong> <strong>{GUARANTEE_FEE_LABEL}</strong>
                     {hasValidPrice && (
                       <>
                         {' '}
-                        (سهم ۲٪ برای این آگهی: <strong>{formatPrice(guaranteeFee)} تومان</strong>)
+                        (سهم {GUARANTEE_FEE_RATE.toLocaleString('fa-IR')}٪ برای این آگهی:{' '}
+                        <strong>{formatPrice(guaranteeFee)} تومان</strong>)
                       </>
                     )}
                   </p>

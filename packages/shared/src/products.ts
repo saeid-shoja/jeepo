@@ -29,7 +29,7 @@ export const PERSIAN_MONTHS = [
 ] as const;
 
 /** Free active client listings per user; each additional listing requires a fee. */
-export const FREE_CLIENT_LISTING_LIMIT = 5;
+export const FREE_CLIENT_LISTING_LIMIT = 2;
 
 /** Effective listing cap: user override or platform default. */
 export function resolveUserListingLimit(maxActiveListings?: number | null): number {
@@ -39,14 +39,15 @@ export function resolveUserListingLimit(maxActiveListings?: number | null): numb
   return FREE_CLIENT_LISTING_LIMIT;
 }
 /** Fee per listing beyond the free quota (Toman). */
-export const EXTRA_LISTING_FEE = 30_000;
+export const EXTRA_LISTING_FEE = 35_000;
 /** Days to pay for a pending listing draft before it is removed. */
 export const LISTING_PAYMENT_GRACE_DAYS = 3;
 
 /** Listing premium fees (Toman) */
-export const GUARANTEE_FEE_RATE = 0.02;
+export const GUARANTEE_FEE_RATE = 0.05;
+export const GUARANTEE_FEE_PERCENT = Math.round(GUARANTEE_FEE_RATE * 100);
 /** User-facing label for guarantee commission (percentage part; purchase fees may apply separately). */
-export const GUARANTEE_FEE_LABEL = '۲٪ قیمت فروش به‌علاوه کارمزد تراکنش';
+export const GUARANTEE_FEE_LABEL = `${GUARANTEE_FEE_PERCENT.toLocaleString('fa-IR')}٪ قیمت فروش به‌علاوه کارمزد تراکنش`;
 /** پله شده — one-time bump to top (updates listedAt) */
 export const BOOST_LISTING_FEE = 100_000;
 /** تقویت شده — pinned on top for 4 days (ignores listedAt while active) */

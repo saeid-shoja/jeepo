@@ -172,8 +172,9 @@ function PaymentPageContent() {
                 type="button"
                 disabled={!item.enabled || paying}
                 onClick={() => setGateway(item.id as PaymentGateway)}
-                className={`flex w-full items-center gap-3 rounded-lg border p-4 text-start transition-colors ${selected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                  } ${!item.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                className={`flex w-full items-center gap-3 rounded-lg border p-4 text-start transition-colors ${
+                  selected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                } ${!item.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
               >
                 <CreditCard className="text-muted-foreground size-5 shrink-0" />
                 <div className="flex-1">

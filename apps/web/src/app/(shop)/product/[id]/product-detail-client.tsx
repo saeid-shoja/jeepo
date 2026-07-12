@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, timeAgo } from '@offroad/shared';
+import { formatPrice, formatProductLocationWithProvince, timeAgo } from '@offroad/shared';
 import {
   ArrowRight,
   Edit3,
@@ -206,11 +206,13 @@ export function ProductDetailClient() {
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          {product.city && (
-            <span className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              {product.city}
+        <div className="flex flex-wrap items-start gap-x-4 gap-y-2 text-sm text-gray-400 sm:items-center">
+          {(product.city || product.neighborhood) && (
+            <span className="inline-flex min-w-0 max-w-full items-start gap-1 sm:items-center">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" aria-hidden />
+              <span className="break-words leading-relaxed">
+                {formatProductLocationWithProvince(product.city, product.neighborhood)}
+              </span>
             </span>
           )}
           {showStock && (

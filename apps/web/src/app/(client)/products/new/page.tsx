@@ -67,6 +67,7 @@ export default function NewProductPage() {
       price: 0,
       categoryId: '',
       city: '',
+      neighborhood: '',
       phone: '',
       situation: 'NEW',
       carBrands: [],
@@ -119,6 +120,7 @@ export default function NewProductPage() {
         categoryId: data.categoryId,
         carBrands: data.carBrands.length ? data.carBrands : undefined,
         city: data.city || undefined,
+        neighborhood: data.neighborhood?.trim() || undefined,
         phone: data.isAuction ? undefined : data.phone || undefined,
         hasGuarantee: data.isAuction ? false : data.hasGuarantee,
         applyStrengthened: data.applyStrengthened,
@@ -278,6 +280,17 @@ export default function NewProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">محله آدرس</Label>
+                <Input
+                  id="neighborhood"
+                  type="text"
+                  maxLength={15}
+                  placeholder="مثلاً ونک"
+                  {...register('neighborhood')}
+                />
+                <FieldError message={errors.neighborhood?.message} />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
                 <DigitsInput

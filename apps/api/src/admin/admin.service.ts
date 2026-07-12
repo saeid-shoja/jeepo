@@ -16,6 +16,7 @@ import { MailService } from '../mail/mail.service';
 import type { Advertiser, ProductStatus, UserRole } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { computeActiveUntil } from '../products/product-lifecycle.constants';
+import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateAdminUserDto, UpdateAdminUserDto } from './dto';
 import type { AdminProductTab } from './dto/find-admin-products-query.dto';
 
@@ -24,6 +25,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private telegramChannel: TelegramChannelService,
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
@@ -293,6 +295,45 @@ export class AdminService {
     };
   }
 
+  async getUserProducts(
+    userId: string,
+    params: { page?: number; limit?: number } = {},
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, phone: true, email: true, city: true },
+    });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where = { userId };
+
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: { category: true },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      user,
+      products: products.map((p: { images: string }) => ({
+        ...p,
+        images: JSON.parse(p.images),
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async updateProductStatus(id: string, status: ProductStatus) {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -339,6 +380,10 @@ export class AdminService {
       await this.mailService
         .sendListingApproved(product.user.email, product.user.name, product.title, productUrl)
         .catch(() => {});
+    }
+
+    if (status === 'ACTIVE' && product?.status === 'PENDING') {
+      this.telegramChannel.announceProductActive(id);
     }
 
     return updated;

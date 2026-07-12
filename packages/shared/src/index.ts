@@ -3,6 +3,7 @@ export * from './auction';
 export * from './car-brands';
 export * from './category-defaults';
 export * from './digits';
+export * from './iran-locations';
 export * from './listing-tips';
 export * from './no-contact-in-text';
 export * from './payments';

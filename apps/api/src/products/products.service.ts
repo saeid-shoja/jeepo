@@ -22,6 +22,7 @@ import { isPurchasableProduct } from '../common/purchasable';
 import { MailService } from '../mail/mail.service';
 import type { Advertiser, ProductSituation } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
 import { computeActiveUntil, computeDeletionAt } from './product-lifecycle.constants';
 
@@ -45,6 +46,7 @@ export class ProductsService {
     private prisma: PrismaService,
     private categoriesService: CategoriesService,
     private mailService: MailService,
+    private telegramChannel: TelegramChannelService,
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
@@ -257,6 +259,7 @@ export class ProductsService {
       isBoosted: data.isBoosted || false,
       strengthenedUntil: null,
       city: data.city,
+      neighborhood: data.neighborhood?.trim() || null,
       phone: data.isAuction ? undefined : data.phone,
       advertiser: data.advertiser ?? 'CLIENT',
       situation: data.situation,
@@ -310,6 +313,10 @@ export class ProductsService {
     });
 
     const mapped = await this.mapProduct(product);
+
+    if (createOptions.status === 'ACTIVE') {
+      this.telegramChannel.announceProductActive(product.id);
+    }
 
     return {
       product: mapped,
@@ -423,6 +430,10 @@ export class ProductsService {
           },
     });
 
+    if (!needsAdminApproval) {
+      this.telegramChannel.announceProductActive(productId);
+    }
+
     return { requiresAdminApproval: needsAdminApproval, alreadyPaid: false };
   }
 
@@ -434,6 +445,8 @@ export class ProductsService {
       where: { id: productId },
       data: { strengthenedUntil: strengthenedEndsAt() },
     });
+
+    this.telegramChannel.announceStrengthened(productId);
   }
 
   async fulfillBoostPayment(productId: string) {
@@ -445,6 +458,8 @@ export class ProductsService {
       where: { id: productId },
       data: { isBoosted: true, listedAt: now },
     });
+
+    this.telegramChannel.announceBoost(productId);
   }
 
   async findAll(params: {
@@ -618,6 +633,7 @@ export class ProductsService {
       }),
       include: productIncludeDetail,
     });
+    this.telegramChannel.announceProductActive(product.id);
     return this.mapProduct(product);
   }
 
@@ -639,6 +655,9 @@ export class ProductsService {
     if (data.auctionEndsAt) updateData.auctionEndsAt = new Date(data.auctionEndsAt);
     if (data.auctionStartPrice != null && product.isAuction) {
       updateData.auctionStartPrice = data.auctionStartPrice;
+    }
+    if (data.neighborhood !== undefined) {
+      updateData.neighborhood = data.neighborhood?.trim() || null;
     }
 
     if (data.carBrands !== undefined) {

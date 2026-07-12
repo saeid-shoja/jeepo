@@ -18,5 +18,8 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "provinces-and-cities": "^1.0.7"
   }
 }

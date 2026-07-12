@@ -1,3 +1,4 @@
+import { PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
@@ -7,6 +8,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   MinLength,
   ValidateIf,
@@ -59,6 +61,18 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   city?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  })
+  @IsString()
+  @MaxLength(PRODUCT_NEIGHBORHOOD_MAX_LENGTH, {
+    message: `محله حداکثر ${PRODUCT_NEIGHBORHOOD_MAX_LENGTH} کاراکتر باشد`,
+  })
+  neighborhood?: string;
 
   @IsOptional()
   @IsString()

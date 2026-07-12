@@ -39,6 +39,7 @@ export interface IProduct {
   isBoosted: boolean;
   status: ProductStatus;
   city?: string;
+  neighborhood?: string;
   phone?: string;
   createdAt: Date;
   updatedAt: Date;

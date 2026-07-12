@@ -3,14 +3,17 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
+export type TelegramMessage = {
+  message_id: number;
+  chat: { id: number; type: string; username?: string };
+  text?: string;
+  message_thread_id?: number;
+  from?: { id: number; username?: string; first_name?: string };
+};
+
 export type TelegramUpdate = {
   update_id: number;
-  message?: {
-    message_id: number;
-    chat: { id: number; type: string };
-    text?: string;
-    from?: { id: number; username?: string; first_name?: string };
-  };
+  message?: TelegramMessage;
 };
 
 @Injectable()
@@ -52,7 +55,9 @@ export class TelegramService {
 
     const data = (await res.json()) as { ok: boolean; description?: string; result?: T };
     if (!data.ok) {
-      this.logger.warn(`Telegram ${method} failed: ${data.description ?? res.status}`);
+      this.logger.warn(
+        `Telegram ${method} failed: ${data.description ?? res.status}${formatApiContext(body)}`,
+      );
       return null;
     }
 
@@ -60,13 +65,144 @@ export class TelegramService {
   }
 
   async sendMessage(chatId: string, text: string): Promise<boolean> {
+    const resolvedChatId = await this.resolveChatId(chatId);
     const result = await this.callApi('sendMessage', {
-      chat_id: chatId,
+      chat_id: resolvedChatId,
       text,
       parse_mode: 'HTML',
       disable_web_page_preview: true,
     });
     return result != null;
+  }
+
+  /** Resolve @username to numeric chat id (required for forum topic posts). */
+  async resolveChatId(chatIdOrUsername: string): Promise<string> {
+    const trimmed = chatIdOrUsername.trim();
+    if (/^-?\d+$/.test(trimmed)) return trimmed;
+
+    const cached = this.resolvedChatIds.get(trimmed);
+    if (cached) return cached;
+
+    const chat = await this.callApi<{ id: number; is_forum?: boolean; title?: string }>(
+      'getChat',
+      { chat_id: trimmed },
+    );
+    if (!chat) return trimmed;
+
+    const numericId = String(chat.id);
+    this.resolvedChatIds.set(trimmed, numericId);
+    this.logger.log(
+      `Telegram chat resolved: ${trimmed} → ${numericId}${chat.is_forum ? ' (forum)' : ''}`,
+    );
+    return numericId;
+  }
+
+  private readonly resolvedChatIds = new Map<string, string>();
+
+  async sendMessageToTopic(
+    chatId: string,
+    topicAnchorMessageId: number,
+    text: string,
+    options?: { disableWebPagePreview?: boolean },
+  ): Promise<boolean> {
+    const resolvedChatId = await this.resolveChatId(chatId);
+    const preview = options?.disableWebPagePreview ?? true;
+
+    // t.me/jeeppo/{id} → message_id for reply; Telegram routes to the correct forum topic.
+    const withReply = await this.callApi('sendMessage', {
+      chat_id: resolvedChatId,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: preview,
+      reply_parameters: { message_id: topicAnchorMessageId },
+    });
+    if (withReply) return true;
+
+    const withThread = await this.callApi('sendMessage', {
+      chat_id: resolvedChatId,
+      message_thread_id: topicAnchorMessageId,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: preview,
+    });
+    return withThread != null;
+  }
+
+  async sendPhotoToTopic(
+    chatId: string,
+    topicAnchorMessageId: number,
+    photo: string,
+    caption: string,
+  ): Promise<boolean> {
+    if (!this.botToken) {
+      this.logger.warn('Telegram skipped (sendPhoto): TELEGRAM_BOT_TOKEN missing');
+      return false;
+    }
+
+    const resolvedChatId = await this.resolveChatId(chatId);
+    const replyParams = JSON.stringify({ message_id: topicAnchorMessageId });
+
+    if (photo.startsWith('http://') || photo.startsWith('https://')) {
+      const withReply = await this.callApi('sendPhoto', {
+        chat_id: resolvedChatId,
+        photo,
+        caption,
+        parse_mode: 'HTML',
+        reply_parameters: { message_id: topicAnchorMessageId },
+      });
+      if (withReply) return true;
+
+      const withThread = await this.callApi('sendPhoto', {
+        chat_id: resolvedChatId,
+        message_thread_id: topicAnchorMessageId,
+        photo,
+        caption,
+        parse_mode: 'HTML',
+      });
+      return withThread != null;
+    }
+
+    const image = parseImageBuffer(photo);
+    if (!image) {
+      return this.sendMessageToTopic(chatId, topicAnchorMessageId, caption);
+    }
+
+    const form = new FormData();
+    form.append('chat_id', resolvedChatId);
+    form.append('caption', caption);
+    form.append('parse_mode', 'HTML');
+    form.append('reply_parameters', replyParams);
+    form.append('photo', new Blob([new Uint8Array(image)], { type: 'image/jpeg' }), 'photo.jpg');
+
+    try {
+      let res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/sendPhoto`, {
+        method: 'POST',
+        body: form,
+      });
+      let data = (await res.json()) as { ok: boolean; description?: string };
+      if (data.ok) return true;
+
+      const formThread = new FormData();
+      formThread.append('chat_id', resolvedChatId);
+      formThread.append('message_thread_id', String(topicAnchorMessageId));
+      formThread.append('caption', caption);
+      formThread.append('parse_mode', 'HTML');
+      formThread.append('photo', new Blob([new Uint8Array(image)], { type: 'image/jpeg' }), 'photo.jpg');
+
+      res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/sendPhoto`, {
+        method: 'POST',
+        body: formThread,
+      });
+      data = (await res.json()) as { ok: boolean; description?: string };
+      if (!data.ok) {
+        this.logger.warn(`Telegram sendPhoto failed: ${data.description ?? res.status}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      this.logger.warn(`Telegram sendPhoto error: ${err instanceof Error ? err.message : err}`);
+      return false;
+    }
   }
 
   async broadcast(
@@ -102,6 +238,39 @@ function escapeTelegramHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function parseImageBuffer(photo: string): Buffer | null {
+  const dataUrlMatch = /^data:image\/[\w+.-]+;base64,(.+)$/i.exec(photo.trim());
+  if (dataUrlMatch) {
+    try {
+      return Buffer.from(dataUrlMatch[1], 'base64');
+    } catch {
+      return null;
+    }
+  }
+  if (/^[A-Za-z0-9+/=]+$/.test(photo.trim()) && photo.length > 100) {
+    try {
+      return Buffer.from(photo.trim(), 'base64');
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export { escapeTelegramHtml };
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function formatApiContext(body: Record<string, unknown>): string {
+  const chatId = body.chat_id;
+  const threadId = body.message_thread_id;
+  const replyParams = body.reply_parameters as { message_id?: number } | undefined;
+  if (chatId == null && threadId == null && replyParams?.message_id == null) return '';
+  const parts: string[] = [];
+  if (chatId != null) parts.push(`chat_id=${chatId}`);
+  if (replyParams?.message_id != null) parts.push(`reply_to=${replyParams.message_id}`);
+  if (threadId != null) parts.push(`message_thread_id=${threadId}`);
+  return ` (${parts.join(', ')})`;
 }

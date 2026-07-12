@@ -48,6 +48,7 @@ export default function EditProductPage() {
       price: 0,
       categoryId: '',
       city: '',
+      neighborhood: '',
       phone: '',
       situation: 'NEW',
       carBrands: [],
@@ -76,6 +77,7 @@ export default function EditProductPage() {
           categoryId: product.categoryId,
           carBrands: (product.carBrands || []).map((b: { value: string }) => b.value),
           city: product.city || '',
+          neighborhood: product.neighborhood || '',
           phone: product.phone || '',
           hasGuarantee: product.hasGuarantee,
           situation: product.situation === 'USED' ? 'USED' : 'NEW',
@@ -103,6 +105,7 @@ export default function EditProductPage() {
         categoryId: data.categoryId,
         carBrands: data.carBrands,
         city: data.city || undefined,
+        neighborhood: data.neighborhood?.trim() || null,
         phone: data.phone || undefined,
         hasGuarantee: data.hasGuarantee,
         situation: data.situation,
@@ -203,6 +206,17 @@ export default function EditProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">محله آدرس</Label>
+                <Input
+                  id="neighborhood"
+                  type="text"
+                  maxLength={15}
+                  placeholder="مثلاً ونک"
+                  {...register('neighborhood')}
+                />
+                <FieldError message={errors.neighborhood?.message} />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
                 <DigitsInput id="phone" type="tel" {...register('phone')} />

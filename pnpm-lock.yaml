@@ -256,6 +256,10 @@ importers:
         version: 5.9.3
 
   packages/shared:
+    dependencies:
+      provinces-and-cities:
+        specifier: ^1.0.7
+        version: 1.0.7
     devDependencies:
       typescript:
         specifier: ^5.7.0
@@ -4758,9 +4762,13 @@ snapshots:
     dependencies:
       consola: 3.4.2
 
-  '@offroad/shared@file:apps/api/vendor/offroad-shared': {}
+  '@offroad/shared@file:apps/api/vendor/offroad-shared':
+    dependencies:
+      provinces-and-cities: 1.0.7
 
-  '@offroad/shared@file:apps/web/vendor/offroad-shared': {}
+  '@offroad/shared@file:apps/web/vendor/offroad-shared':
+    dependencies:
+      provinces-and-cities: 1.0.7
 
   '@prisma/adapter-pg@7.8.0':
     dependencies:

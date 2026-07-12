@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { SITE_URL } from '@offroad/shared';
+import { loadTelegramChannelTopics } from './telegram/telegram-channels';
 
 const ZIBAL_CALLBACK_PATH = '/api/payments/zibal/callback';
 
@@ -58,6 +59,10 @@ function telegramBotUsername(): string {
   return process.env.TELEGRAM_BOT_USERNAME?.trim()?.replace(/^@/, '') ?? '';
 }
 
+function telegramChannelChatId(): string {
+  return process.env.TELEGRAM_CHANNEL_CHAT_ID?.trim() || '@jeeppo';
+}
+
 @Global()
 @Module({
   providers: [
@@ -101,6 +106,14 @@ function telegramBotUsername(): string {
       provide: 'TELEGRAM_WEBHOOK_SECRET',
       useValue: process.env.TELEGRAM_WEBHOOK_SECRET?.trim() ?? '',
     },
+    {
+      provide: 'TELEGRAM_CHANNEL_CHAT_ID',
+      useValue: telegramChannelChatId(),
+    },
+    {
+      provide: 'TELEGRAM_CHANNEL_TOPICS',
+      useValue: loadTelegramChannelTopics(),
+    },
   ],
   exports: [
     'JWT_SECRET',
@@ -113,6 +126,8 @@ function telegramBotUsername(): string {
     'TELEGRAM_BOT_TOKEN',
     'TELEGRAM_BOT_USERNAME',
     'TELEGRAM_WEBHOOK_SECRET',
+    'TELEGRAM_CHANNEL_CHAT_ID',
+    'TELEGRAM_CHANNEL_TOPICS',
   ],
 })
 export class ConfigModule {}

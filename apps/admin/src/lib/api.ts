@@ -68,6 +68,10 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   deleteUser: (id: string) => request<any>(`/admin/users/${id}`, { method: 'DELETE' }),
+  userProducts: (userId: string, params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return request<any>(`/admin/users/${userId}/products${qs}`);
+  },
   products: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<any>(`/admin/products${qs}`);

@@ -1,4 +1,9 @@
-import { containsLinkOrPhone, NO_CONTACT_IN_TEXT_MESSAGE, toEnglishDigits } from '@offroad/shared';
+import {
+  containsLinkOrPhone,
+  NO_CONTACT_IN_TEXT_MESSAGE,
+  PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
+  toEnglishDigits,
+} from '@offroad/shared';
 import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
 import { IRAN_MOBILE_REGEX } from '@/lib/validations/digits';
@@ -15,11 +20,20 @@ const listingTextField = (minLen: number, minMsg: string) =>
     .min(minLen, minMsg)
     .refine((value) => !containsLinkOrPhone(value), NO_CONTACT_IN_TEXT_MESSAGE);
 
+const neighborhoodField = z
+  .string()
+  .trim()
+  .max(
+    PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
+    `محله حداکثر ${PRODUCT_NEIGHBORHOOD_MAX_LENGTH} کاراکتر باشد`,
+  );
+
 const sharedProductFields = {
   title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
   description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
   categoryId: z.string().min(1, 'دسته‌بندی را انتخاب کنید'),
   city: z.string().optional(),
+  neighborhood: neighborhoodField.optional().or(z.literal('')),
   phone: phoneField,
   situation: situationSchema,
   carBrands: z.array(z.string()),

@@ -49,6 +49,18 @@ export class AdminController {
     return this.adminService.deleteUser(id);
   }
 
+  @Get('users/:id/products')
+  getUserProducts(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.getUserProducts(id, {
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 20,
+    });
+  }
+
   @Get('products')
   getAllProducts(@Query() query: FindAdminProductsQueryDto) {
     return this.adminService.getAllProducts({

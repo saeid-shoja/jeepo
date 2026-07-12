@@ -1,7 +1,8 @@
 'use client';
 
 import { FREE_CLIENT_LISTING_LIMIT } from '@offroad/shared';
-import { Calendar, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Package, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -267,7 +268,14 @@ export default function AdminUsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{u.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/dashboard/users/${u.id}/products`}
+                      className="text-primary hover:underline"
+                    >
+                      {u.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-1 text-xs" dir="ltr">
                       <Phone className="h-3 w-3" />
@@ -303,6 +311,13 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
+                      <Link
+                        href={`/dashboard/users/${u.id}/products`}
+                        className="rounded p-1 text-blue-600 hover:bg-blue-50"
+                        title="آگهی‌های کاربر"
+                      >
+                        <Package className="h-4 w-4" />
+                      </Link>
                       <button
                         type="button"
                         onClick={() => openEdit(u)}

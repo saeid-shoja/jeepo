@@ -1,5 +1,6 @@
 import { MOTORCYCLE_ATV_SUBCATEGORIES } from './category-defaults';
 import { toEnglishDigits } from './digits';
+import { findProvinceNameByCity } from './iran-locations';
 
 export const CATEGORIES = [
   ...MOTORCYCLE_ATV_SUBCATEGORIES.map(({ name, slug }) => ({ name, slug })),
@@ -74,6 +75,30 @@ export function listingPaymentDueAt(from = new Date()): Date {
 export function getGuaranteeFee(productPrice: number): number {
   if (!Number.isFinite(productPrice) || productPrice <= 0) return 0;
   return Math.round(productPrice * GUARANTEE_FEE_RATE);
+}
+
+/** Max length for product neighborhood (محله). */
+export const PRODUCT_NEIGHBORHOOD_MAX_LENGTH = 15;
+
+/** Format city + neighborhood for display (e.g. «تهران، ونک»). */
+export function formatProductLocation(
+  city?: string | null,
+  neighborhood?: string | null,
+): string {
+  const cityPart = city?.trim() || '';
+  const neighPart = neighborhood?.trim() || '';
+  if (cityPart && neighPart) return `${cityPart}، ${neighPart}`;
+  return cityPart || neighPart || '';
+}
+
+/** Format province + city + neighborhood (e.g. «تهران، تهران، ونک»). */
+export function formatProductLocationWithProvince(
+  city?: string | null,
+  neighborhood?: string | null,
+): string {
+  const province = findProvinceNameByCity(city);
+  const parts = [province, city?.trim(), neighborhood?.trim()].filter(Boolean);
+  return parts.join('، ');
 }
 
 export function formatPrice(price: number): string {

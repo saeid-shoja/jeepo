@@ -184,6 +184,7 @@ model Product {
   status             ProductStatus      @default(ACTIVE)
   situation          ProductSituation?
   city               String?
+  neighborhood       String?
   phone              String?
   isAuction          Boolean            @default(false)
   auctionStartPrice  Float?

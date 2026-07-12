@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, isStrengthenedActive, timeAgo } from '@offroad/shared';
+import { formatPrice, formatProductLocation, isStrengthenedActive, timeAgo } from '@offroad/shared';
 import { Clock, MapPin, Shield, Sparkles, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ interface ProductCardProps {
     price: number;
     images?: string[];
     city?: string | null;
+    neighborhood?: string | null;
     createdAt: string | Date;
     listedAt?: string | Date;
     hasGuarantee?: boolean;
@@ -113,7 +114,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="text-muted-foreground flex flex-col gap-1 text-[10px]">
             <span className="flex items-center gap-0.5">
               <MapPin className="h-3 w-3 shrink-0" />
-              {product.city || 'نامشخص'}
+              {formatProductLocation(product.city, product.neighborhood) || 'نامشخص'}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-2.5 w-2.5 shrink-0" />

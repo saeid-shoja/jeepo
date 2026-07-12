@@ -9,4 +9,4 @@ import { TelegramChannelService } from './telegram-channel.service';
   providers: [TelegramService, TelegramBotService, TelegramChannelService],
   exports: [TelegramService, TelegramBotService, TelegramChannelService],
 })
-export class TelegramModule { }
+export class TelegramModule {}

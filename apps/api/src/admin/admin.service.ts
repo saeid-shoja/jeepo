@@ -295,10 +295,7 @@ export class AdminService {
     };
   }
 
-  async getUserProducts(
-    userId: string,
-    params: { page?: number; limit?: number } = {},
-  ) {
+  async getUserProducts(userId: string, params: { page?: number; limit?: number } = {}) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, phone: true, email: true, city: true },

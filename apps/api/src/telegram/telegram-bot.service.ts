@@ -14,7 +14,7 @@ export class TelegramBotService {
     private readonly telegram: TelegramService,
     @Inject('TELEGRAM_WEBHOOK_SECRET') private readonly webhookSecret: string,
     @Inject('TELEGRAM_CHANNEL_CHAT_ID') private readonly channelChatId: string,
-  ) { }
+  ) {}
 
   async createLinkForUser(userId: string) {
     if (!this.telegram.isConfigured()) {

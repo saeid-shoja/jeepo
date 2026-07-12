@@ -81,10 +81,7 @@ export function getGuaranteeFee(productPrice: number): number {
 export const PRODUCT_NEIGHBORHOOD_MAX_LENGTH = 15;
 
 /** Format city + neighborhood for display (e.g. «تهران، ونک»). */
-export function formatProductLocation(
-  city?: string | null,
-  neighborhood?: string | null,
-): string {
+export function formatProductLocation(city?: string | null, neighborhood?: string | null): string {
   const cityPart = city?.trim() || '';
   const neighPart = neighborhood?.trim() || '';
   if (cityPart && neighPart) return `${cityPart}، ${neighPart}`;

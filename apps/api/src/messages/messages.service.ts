@@ -19,7 +19,7 @@ export class MessagesService {
     private telegramBot: TelegramBotService,
     private telegram: TelegramService,
     private telegramChannel: TelegramChannelService,
-  ) { }
+  ) {}
 
   private mapUserMessage(message: {
     id: string;

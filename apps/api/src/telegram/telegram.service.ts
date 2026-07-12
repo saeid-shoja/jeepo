@@ -83,10 +83,9 @@ export class TelegramService {
     const cached = this.resolvedChatIds.get(trimmed);
     if (cached) return cached;
 
-    const chat = await this.callApi<{ id: number; is_forum?: boolean; title?: string }>(
-      'getChat',
-      { chat_id: trimmed },
-    );
+    const chat = await this.callApi<{ id: number; is_forum?: boolean; title?: string }>('getChat', {
+      chat_id: trimmed,
+    });
     if (!chat) return trimmed;
 
     const numericId = String(chat.id);
@@ -187,7 +186,11 @@ export class TelegramService {
       formThread.append('message_thread_id', String(topicAnchorMessageId));
       formThread.append('caption', caption);
       formThread.append('parse_mode', 'HTML');
-      formThread.append('photo', new Blob([new Uint8Array(image)], { type: 'image/jpeg' }), 'photo.jpg');
+      formThread.append(
+        'photo',
+        new Blob([new Uint8Array(image)], { type: 'image/jpeg' }),
+        'photo.jpg',
+      );
 
       res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/sendPhoto`, {
         method: 'POST',

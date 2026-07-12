@@ -66,9 +66,7 @@ export default function UserProductsPage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold">
-          آگهی‌های {user?.name ?? 'کاربر'}
-        </h1>
+        <h1 className="text-2xl font-bold">آگهی‌های {user?.name ?? 'کاربر'}</h1>
         {user && (
           <p className="mt-1 text-sm text-gray-500" dir="ltr">
             {user.phone}

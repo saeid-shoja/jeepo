@@ -14,7 +14,7 @@ export class TelegramChannelService {
     @Inject('TELEGRAM_CHANNEL_CHAT_ID') private readonly channelChatId: string,
     @Inject('TELEGRAM_CHANNEL_TOPICS') private readonly topics: TelegramChannelTopics,
     @Inject('WEB_URL') private readonly webUrl: string,
-  ) { }
+  ) {}
 
   isChannelConfigured(): boolean {
     return this.telegram.isConfigured() && Boolean(this.channelChatId);
@@ -142,9 +142,7 @@ export class TelegramChannelService {
   /** Telegram does not linkify localhost — always use public URL in channel posts. */
   private buildProductPublicUrl(productId: string): string {
     const base = this.webUrl.replace(/\/$/, '');
-    const publicBase = /localhost|127\.0\.0\.1/i.test(base)
-      ? SITE_URL.replace(/\/$/, '')
-      : base;
+    const publicBase = /localhost|127\.0\.0\.1/i.test(base) ? SITE_URL.replace(/\/$/, '') : base;
     return `${publicBase}/product/${productId}`;
   }
 
@@ -158,7 +156,10 @@ export class TelegramChannelService {
   }
 }
 
-function topicForKind(kind: TelegramProductAnnouncementKind, topics: TelegramChannelTopics): number {
+function topicForKind(
+  kind: TelegramProductAnnouncementKind,
+  topics: TelegramChannelTopics,
+): number {
   switch (kind) {
     case 'SHOP':
       return topics.SHOP;

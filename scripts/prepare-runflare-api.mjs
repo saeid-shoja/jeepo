@@ -15,10 +15,7 @@ const apiPkgPath = join(apiDir, 'package.json');
 const backupPath = join(apiDir, 'package.json.monorepo.bak');
 
 rmSync(join(sharedDir, 'dist'), { recursive: true, force: true });
-execSync('npm exec --yes --package typescript@5.7.2 -- tsc -p packages/shared/tsconfig.json', {
-  cwd: root,
-  stdio: 'inherit',
-});
+execSync('pnpm --filter @offroad/shared build', { cwd: root, stdio: 'inherit' });
 
 if (!existsSync(join(sharedDir, 'dist/index.js'))) {
   console.error('packages/shared/dist missing after build');
@@ -41,3 +38,4 @@ if (pkg.dependencies?.['@offroad/shared']?.startsWith('workspace:')) {
 }
 
 console.log('apps/api is ready for Runflare (vendor/offroad-shared bundled).');
+console.log('Deploy: cd apps/api && runflare deploy');

@@ -32,12 +32,23 @@ export const PERSIAN_MONTHS = [
 /** Free active client listings per user; each additional listing requires a fee. */
 export const FREE_CLIENT_LISTING_LIMIT = 2;
 
+/** Max active client listings with situation=NEW per user (hard cap). */
+export const FREE_CLIENT_NEW_LISTING_LIMIT = 2;
+
 /** Effective listing cap: user override or platform default. */
 export function resolveUserListingLimit(maxActiveListings?: number | null): number {
   if (maxActiveListings != null && maxActiveListings > 0) {
     return Math.floor(maxActiveListings);
   }
   return FREE_CLIENT_LISTING_LIMIT;
+}
+
+/** Effective NEW-listing cap: user override or platform default. */
+export function resolveUserNewListingLimit(maxActiveNewListings?: number | null): number {
+  if (maxActiveNewListings != null && maxActiveNewListings > 0) {
+    return Math.floor(maxActiveNewListings);
+  }
+  return FREE_CLIENT_NEW_LISTING_LIMIT;
 }
 /** Fee per listing beyond the free quota (Toman). */
 export const EXTRA_LISTING_FEE = 35_000;

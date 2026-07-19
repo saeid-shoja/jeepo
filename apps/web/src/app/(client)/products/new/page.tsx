@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  FREE_CLIENT_NEW_LISTING_LIMIT,
   PAYMENT_PURPOSES,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
@@ -50,6 +51,11 @@ export default function NewProductPage() {
     useState<ListingSubmitResultVariant>('published');
   const listingPaymentResolvedRef = useRef(false);
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
+  const [newQuota, setNewQuota] = useState<{
+    activeNewCount: number;
+    newLimit: number;
+    atNewLimit: boolean;
+  } | null>(null);
 
   const {
     register,
@@ -89,6 +95,27 @@ export default function NewProductPage() {
   const hasGuarantee = watch('hasGuarantee');
   const applyStrengthened = watch('applyStrengthened');
   const carBrands = watch('carBrands');
+  const situation = watch('situation');
+
+  useEffect(() => {
+    if (!user) return;
+    api.products
+      .listingQuota()
+      .then((q) =>
+        setNewQuota({
+          activeNewCount: q.activeNewCount,
+          newLimit: q.newLimit,
+          atNewLimit: q.atNewLimit,
+        }),
+      )
+      .catch(() =>
+        setNewQuota({
+          activeNewCount: 0,
+          newLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
+          atNewLimit: false,
+        }),
+      );
+  }, [user]);
 
   const showSubmitResult = (variant: ListingSubmitResultVariant) => {
     setSubmitResultVariant(variant);
@@ -271,6 +298,17 @@ export default function NewProductPage() {
                 <ProductSituationSelect value={field.value} onChange={field.onChange} />
               )}
             />
+            {situation === 'NEW' && newQuota && (
+              <p
+                className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
+              >
+                آگهی‌های نو فعال: {newQuota.activeNewCount.toLocaleString('fa-IR')} از{' '}
+                {newQuota.newLimit.toLocaleString('fa-IR')}
+                {newQuota.atNewLimit
+                  ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
+                  : ''}
+              </p>
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Controller

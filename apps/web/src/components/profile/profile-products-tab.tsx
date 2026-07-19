@@ -3,6 +3,7 @@
 import {
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
+  FREE_CLIENT_NEW_LISTING_LIMIT,
   LISTING_PAYMENT_GRACE_DAYS,
   PAYMENT_PURPOSES,
 } from '@offroad/shared';
@@ -43,6 +44,8 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
   const [pendingPayment, setPendingPayment] = useState<PendingPaymentState | null>(null);
   const [listingFreeLimit, setListingFreeLimit] = useState(FREE_CLIENT_LISTING_LIMIT);
   const [activeListingsCount, setActiveListingsCount] = useState(0);
+  const [newListingLimit, setNewListingLimit] = useState(FREE_CLIENT_NEW_LISTING_LIMIT);
+  const [activeNewListingsCount, setActiveNewListingsCount] = useState(0);
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteState | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -64,8 +67,13 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
       .then((quota) => {
         setListingFreeLimit(quota.freeLimit);
         setActiveListingsCount(quota.activeCount);
+        setNewListingLimit(quota.newLimit);
+        setActiveNewListingsCount(quota.activeNewCount);
       })
-      .catch(() => setListingFreeLimit(FREE_CLIENT_LISTING_LIMIT));
+      .catch(() => {
+        setListingFreeLimit(FREE_CLIENT_LISTING_LIMIT);
+        setNewListingLimit(FREE_CLIENT_NEW_LISTING_LIMIT);
+      });
   }, []);
 
   useEffect(() => {
@@ -142,6 +150,11 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
 
   return (
     <>
+      <p className="text-muted-foreground mb-3 text-xs sm:text-sm">
+        آگهی فعال: {activeListingsCount.toLocaleString('fa-IR')}/
+        {listingFreeLimit.toLocaleString('fa-IR')} رایگان · آگهی نو:{' '}
+        {activeNewListingsCount.toLocaleString('fa-IR')}/{newListingLimit.toLocaleString('fa-IR')}
+      </p>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {products.map((product: any) => (
           <div key={product.id} className="flex flex-col gap-2">

@@ -12,6 +12,7 @@ import {
   Sparkles,
   Trash2,
   TrendingUp,
+  TriangleAlert,
   User,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -26,6 +27,7 @@ import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog'
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
+import { TransactionSafetyDialog } from '@/components/shop/transaction-safety-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
@@ -46,6 +48,7 @@ export function ProductDetailClient() {
   const [quantity, setQuantity] = useState(1);
   const [contactOpen, setContactOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [safetyOpen, setSafetyOpen] = useState(false);
 
   useEffect(() => {
     if (!id || authLoading) return;
@@ -82,6 +85,7 @@ export function ProductDetailClient() {
   const stockQuantity = product.stockQuantity ?? 1;
   const showStock = !product.isAuction;
   const canChat = canStartProductChat(product, user?.id);
+  const showSafetyWarning = isClientProduct(product);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -221,7 +225,20 @@ export function ProductDetailClient() {
               {stockQuantity > 0 ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود` : 'ناموجود'}
             </span>
           )}
+          {showSafetyWarning && (
+            <Button
+              size={'sm'}
+              onClick={() => setSafetyOpen(true)}
+              className="gap-1 rounded-lg cursor-pointer"
+              title="ریسک معامله"
+            >
+              <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="whitespace-nowrap">خطر معامله</span>
+            </Button>
+          )}
         </div>
+
+        <TransactionSafetyDialog open={safetyOpen} onOpenChange={setSafetyOpen} />
 
         <div>
           <h3 className="mb-2 font-bold">توضیحات</h3>

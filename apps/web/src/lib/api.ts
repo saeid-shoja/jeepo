@@ -135,6 +135,12 @@ export const api = {
         requiresListingFee: boolean;
         listingFee: number;
         paymentGraceDays: number;
+        activeNewCount: number;
+        newLimit: number;
+        defaultNewLimit: number;
+        hasCustomNewLimit: boolean;
+        remainingNew: number;
+        atNewLimit: boolean;
       }>('/products/listing-quota'),
     create: (data: any) =>
       request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),

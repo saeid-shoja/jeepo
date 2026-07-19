@@ -8,12 +8,14 @@ import {
 import {
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
+  FREE_CLIENT_NEW_LISTING_LIMIT,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
   listingPaymentDueAt,
   PAYMENT_PURPOSES,
   type PaymentPurpose,
   resolveUserListingLimit,
+  resolveUserNewListingLimit,
   strengthenedEndsAt,
 } from '@offroad/shared';
 import { CategoriesService } from '../categories/categories.service';
@@ -205,22 +207,42 @@ export class ProductsService {
     });
   }
 
+  async countActiveNewClientListings(userId: string): Promise<number> {
+    return this.prisma.product.count({
+      where: { userId, advertiser: 'CLIENT', status: 'ACTIVE', situation: 'NEW' },
+    });
+  }
+
   private async getListingQuotaState(userId: string) {
-    const [activeCount, user] = await Promise.all([
+    const [activeCount, activeNewCount, user] = await Promise.all([
       this.countActiveClientListings(userId),
+      this.countActiveNewClientListings(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { maxActiveListings: true },
+        select: { maxActiveListings: true, maxActiveNewListings: true },
       }),
     ]);
     const freeLimit = resolveUserListingLimit(user?.maxActiveListings);
+    const newLimit = resolveUserNewListingLimit(user?.maxActiveNewListings);
     const requiresListingFee = activeCount >= freeLimit;
-    return { activeCount, freeLimit, requiresListingFee };
+    return { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee };
+  }
+
+  /** Hard-block when user already has max ACTIVE listings with situation=NEW. */
+  async assertNewListingQuota(userId: string, situation?: string | null) {
+    if (situation !== 'NEW') return;
+    const { activeNewCount, newLimit } = await this.getListingQuotaState(userId);
+    if (activeNewCount >= newLimit) {
+      throw new BadRequestException(
+        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
+      );
+    }
   }
 
   async getListingQuota(userId: string) {
     void this.purgeExpiredListingPaymentDrafts();
-    const { activeCount, freeLimit, requiresListingFee } = await this.getListingQuotaState(userId);
+    const { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee } =
+      await this.getListingQuotaState(userId);
 
     return {
       activeCount,
@@ -231,6 +253,12 @@ export class ProductsService {
       requiresListingFee,
       listingFee: EXTRA_LISTING_FEE,
       paymentGraceDays: 3,
+      activeNewCount,
+      newLimit,
+      defaultNewLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
+      hasCustomNewLimit: newLimit !== FREE_CLIENT_NEW_LISTING_LIMIT,
+      remainingNew: Math.max(0, newLimit - activeNewCount),
+      atNewLimit: activeNewCount >= newLimit,
     };
   }
 
@@ -278,7 +306,9 @@ export class ProductsService {
   async createPublicListing(data: CreateProductDto, userId: string) {
     void this.purgeExpiredListingPaymentDrafts();
     await this.categoriesService.assertLeafCategory(data.categoryId);
-    const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
+    await this.assertNewListingQuota(userId, data.situation);
+    const { requiresListingFee, freeLimit, activeCount, activeNewCount, newLimit } =
+      await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
       data.categoryId,
     );
@@ -324,6 +354,8 @@ export class ProductsService {
       requiresAdminApproval: needsAdminApproval,
       activeCount,
       freeLimit,
+      activeNewCount,
+      newLimit,
       listingFee: requiresListingFee ? EXTRA_LISTING_FEE : 0,
       paymentDueAt: requiresListingFee ? product.listingPaymentDueAt : null,
     };
@@ -412,6 +444,10 @@ export class ProductsService {
     const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
       product.categoryId,
     );
+
+    if (!needsAdminApproval && product.userId) {
+      await this.assertNewListingQuota(product.userId, product.situation);
+    }
 
     await this.prisma.product.update({
       where: { id: productId },
@@ -645,6 +681,16 @@ export class ProductsService {
       throw new ForbiddenException('شما اجازه ویرایش این محصول را ندارید');
     }
 
+    if (
+      product.advertiser === 'CLIENT' &&
+      product.userId &&
+      product.status === 'ACTIVE' &&
+      data.situation === 'NEW' &&
+      product.situation !== 'NEW'
+    ) {
+      await this.assertNewListingQuota(product.userId, 'NEW');
+    }
+
     const updateData: any = { ...data };
     delete updateData.carBrands;
     if (updateData.type != null && updateData.advertiser == null) {
@@ -730,6 +776,10 @@ export class ProductsService {
       product.categoryId,
     );
     const now = new Date();
+
+    if (!requiresListingFee && !needsAdminApproval) {
+      await this.assertNewListingQuota(userId, product.situation);
+    }
 
     if (requiresListingFee) {
       const pending = await this.prisma.product.update({

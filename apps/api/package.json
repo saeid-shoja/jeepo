@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate && nest build && nest start --watch",
-    "predev": "node ../../scripts/sync-shared-vendors.mjs",
-    "prebuild": "node ../../scripts/sync-shared-vendors.mjs && prisma generate",
+    "predev": "node scripts/sync-shared-vendor.mjs",
+    "prebuild": "node scripts/sync-shared-vendor.mjs && prisma generate",
     "build": "nest build",
     "start": "prisma migrate deploy && node dist/main",
     "start:prod": "node dist/main",

@@ -124,3 +124,8 @@
     font-size: 0.875rem;
   }
 }
+
+/* PWA / notched phones */
+.safe-area-pb {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}

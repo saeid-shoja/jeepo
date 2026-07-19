@@ -96,6 +96,8 @@ model User {
   emailVerificationCode      String?
   emailVerificationExpiresAt DateTime?
   maxActiveListings          Int?
+  /** Soft cap for ACTIVE listings with situation=NEW; null = platform default (2). */
+  maxActiveNewListings       Int?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]

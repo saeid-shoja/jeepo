@@ -63,7 +63,7 @@ export function PremiumProductOptions({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">ویژگی‌های ویژه</CardTitle>
+        <CardTitle className="text-base">آپشن های ویژه</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <Dialog>

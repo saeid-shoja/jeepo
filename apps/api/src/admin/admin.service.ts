@@ -8,14 +8,17 @@ import {
 import {
   ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS,
   FREE_CLIENT_LISTING_LIMIT,
+  FREE_CLIENT_NEW_LISTING_LIMIT,
   isAdminApprovalRequiredCategory,
   resolveUserListingLimit,
+  resolveUserNewListingLimit,
 } from '@offroad/shared';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
 import type { Advertiser, ProductStatus, UserRole } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { computeActiveUntil } from '../products/product-lifecycle.constants';
+import { ProductsService } from '../products/products.service';
 import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateAdminUserDto, UpdateAdminUserDto } from './dto';
 import type { AdminProductTab } from './dto/find-admin-products-query.dto';
@@ -26,6 +29,7 @@ export class AdminService {
     private prisma: PrismaService,
     private mailService: MailService,
     private telegramChannel: TelegramChannelService,
+    private productsService: ProductsService,
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
@@ -72,6 +76,7 @@ export class AdminService {
         role: true,
         city: true,
         maxActiveListings: true,
+        maxActiveNewListings: true,
         createdAt: true,
         _count: {
           select: {
@@ -82,6 +87,24 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const userIds = users.map((u) => u.id);
+    const newCounts =
+      userIds.length === 0
+        ? []
+        : await this.prisma.product.groupBy({
+            by: ['userId'],
+            where: {
+              userId: { in: userIds },
+              advertiser: 'CLIENT',
+              status: 'ACTIVE',
+              situation: 'NEW',
+            },
+            _count: { _all: true },
+          });
+    const newCountByUser = new Map(
+      newCounts.map((row) => [row.userId!, row._count._all] as const),
+    );
+
     return users.map((user) => ({
       id: user.id,
       phone: user.phone,
@@ -90,9 +113,13 @@ export class AdminService {
       role: user.role,
       city: user.city,
       maxActiveListings: user.maxActiveListings,
+      maxActiveNewListings: user.maxActiveNewListings,
       activeListingCount: user._count.products,
+      activeNewListingCount: newCountByUser.get(user.id) ?? 0,
       effectiveListingLimit: resolveUserListingLimit(user.maxActiveListings),
+      effectiveNewListingLimit: resolveUserNewListingLimit(user.maxActiveNewListings),
       defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
+      defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: user.createdAt,
     }));
   }
@@ -121,6 +148,7 @@ export class AdminService {
         city: data.city,
         role: data.role ?? 'CLIENT',
         maxActiveListings: data.maxActiveListings ?? null,
+        maxActiveNewListings: data.maxActiveNewListings ?? null,
         emailVerified: true,
         emailVerifiedAt: new Date(),
       },
@@ -167,6 +195,7 @@ export class AdminService {
       role?: UserRole;
       password?: string;
       maxActiveListings?: number | null;
+      maxActiveNewListings?: number | null;
     } = {};
 
     if (data.phone) updateData.phone = data.phone;
@@ -177,6 +206,9 @@ export class AdminService {
     if (data.password) updateData.password = await bcrypt.hash(data.password, 12);
     if (data.maxActiveListings !== undefined) {
       updateData.maxActiveListings = data.maxActiveListings;
+    }
+    if (data.maxActiveNewListings !== undefined) {
+      updateData.maxActiveNewListings = data.maxActiveNewListings;
     }
 
     const updated = await this.prisma.user.update({
@@ -190,12 +222,22 @@ export class AdminService {
         role: true,
         city: true,
         maxActiveListings: true,
+        maxActiveNewListings: true,
         createdAt: true,
         _count: {
           select: {
             products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
           },
         },
+      },
+    });
+
+    const activeNewListingCount = await this.prisma.product.count({
+      where: {
+        userId: updated.id,
+        advertiser: 'CLIENT',
+        status: 'ACTIVE',
+        situation: 'NEW',
       },
     });
 
@@ -207,9 +249,13 @@ export class AdminService {
       role: updated.role,
       city: updated.city,
       maxActiveListings: updated.maxActiveListings,
+      maxActiveNewListings: updated.maxActiveNewListings,
       activeListingCount: updated._count.products,
+      activeNewListingCount,
       effectiveListingLimit: resolveUserListingLimit(updated.maxActiveListings),
+      effectiveNewListingLimit: resolveUserNewListingLimit(updated.maxActiveNewListings),
       defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
+      defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: updated.createdAt,
     };
   }
@@ -337,7 +383,9 @@ export class AdminService {
       select: {
         advertiser: true,
         status: true,
+        situation: true,
         title: true,
+        userId: true,
         user: { select: { name: true, email: true } },
         category: { select: { slug: true } },
       },
@@ -351,6 +399,9 @@ export class AdminService {
     } = { status };
 
     if (status === 'ACTIVE' && product?.advertiser === 'CLIENT') {
+      if (product.status !== 'ACTIVE' && product.userId) {
+        await this.productsService.assertNewListingQuota(product.userId, product.situation);
+      }
       data.activeUntil = computeActiveUntil();
       data.deprecatedAt = null;
       if (product.status === 'DEPRECATED' || product.status === 'PENDING') {

@@ -40,7 +40,7 @@ function BadgeInfo() {
         <div>
           <h3 className={OPTIONS_CARD_TITLE}>خرید و فروش آسان</h3>
           <p className={OPTIONS_CARD_DESC}>
-            مانند دیوار، آگهی خود را ثبت کنید و محصولتان را بفروشید
+            آگهی خود را ثبت کنید و محصولتان را بفروشید
           </p>
         </div>
       </div>

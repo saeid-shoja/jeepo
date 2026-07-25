@@ -42,6 +42,17 @@ import { type NewProductFormValues, newProductSchema } from '@/lib/validations/p
 import { useAuth } from '@/stores/auth-store';
 import { useCategories } from '@/stores/categories-store';
 
+function firstErrorMessage(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
+    return (error as { message: string }).message;
+  }
+  for (const value of Object.values(error as Record<string, unknown>)) {
+    const nested = firstErrorMessage(value);
+    if (nested) return nested;
+  }
+  return undefined;
+}
 export default function NewProductPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -76,7 +87,7 @@ export default function NewProductPage() {
       city: '',
       neighborhood: '',
       phone: '',
-      situation: 'NEW',
+      situation: 'USED',
       carBrands: [],
       images: [],
       hasGuarantee: false,
@@ -100,6 +111,12 @@ export default function NewProductPage() {
   const situation = watch('situation');
 
   const isAdmin = user?.role === 'ADMIN';
+
+  useEffect(() => {
+    if (situation === 'NEW') {
+      setValue('newPrice', 0);
+    }
+  }, [situation, setValue]);
 
   useEffect(() => {
     if (!user || isAdmin) {
@@ -285,7 +302,7 @@ export default function NewProductPage() {
                   )}
                 />
                 <p className="text-muted-foreground text-xs">
-                  قیمت تقریبی نسخه نوی همین محصول را وارد کنید تا خریدار مقایسه کند.
+                  قیمت تقریبی نوی محصول برای محصول کارکرده را وارد کنید.
                 </p>
                 <FieldError message={errors.newPrice?.message} />
               </div>
@@ -386,6 +403,7 @@ export default function NewProductPage() {
                 <ProductImageUpload images={field.value} onChange={field.onChange} />
               )}
             />
+            <FieldError message={firstErrorMessage(errors.images)} />
           </CardContent>
         </Card>
 

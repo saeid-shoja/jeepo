@@ -6,8 +6,8 @@ import type { ProductSituation } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
 
 const OPTIONS: { value: ProductSituation; label: string }[] = [
-  { value: 'NEW', label: 'نو' },
   { value: 'USED', label: 'کارکرده' },
+  { value: 'NEW', label: 'نو' },
 ];
 
 type ProductSituationSelectProps = {

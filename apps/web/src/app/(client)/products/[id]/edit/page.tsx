@@ -26,6 +26,17 @@ import { type EditProductFormValues, editProductSchema } from '@/lib/validations
 import { useAuth } from '@/stores/auth-store';
 import { useCategories } from '@/stores/categories-store';
 
+function firstErrorMessage(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
+    return (error as { message: string }).message;
+  }
+  for (const value of Object.values(error as Record<string, unknown>)) {
+    const nested = firstErrorMessage(value);
+    if (nested) return nested;
+  }
+  return undefined;
+}
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
@@ -51,7 +62,7 @@ export default function EditProductPage() {
       city: '',
       neighborhood: '',
       phone: '',
-      situation: 'NEW',
+      situation: 'USED',
       carBrands: [],
       images: [],
       hasGuarantee: false,
@@ -64,6 +75,12 @@ export default function EditProductPage() {
   const hasGuarantee = watch('hasGuarantee');
   const carBrands = watch('carBrands');
   const situation = watch('situation');
+
+  useEffect(() => {
+    if (situation === 'NEW') {
+      setValue('newPrice', 0);
+    }
+  }, [situation, setValue]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -177,7 +194,7 @@ export default function EditProductPage() {
                   )}
                 />
                 <p className="text-muted-foreground text-xs">
-                  قیمت تقریبی نسخه نوی همین محصول را وارد کنید تا خریدار مقایسه کند.
+                  قیمت تقریبی نوی محصول برای محصول کارکرده را وارد کنید.
                 </p>
                 <FieldError message={errors.newPrice?.message} />
               </div>
@@ -257,6 +274,7 @@ export default function EditProductPage() {
                 <ProductImageUpload images={field.value} onChange={field.onChange} />
               )}
             />
+            <FieldError message={firstErrorMessage(errors.images)} />
           </CardContent>
         </Card>
 

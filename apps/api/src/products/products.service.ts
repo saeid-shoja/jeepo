@@ -221,9 +221,21 @@ export class ProductsService {
       this.countActiveNewClientListings(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { maxActiveListings: true, maxActiveNewListings: true },
+        select: { role: true, maxActiveListings: true, maxActiveNewListings: true },
       }),
     ]);
+
+    /** Admins have no free-listing or NEW-listing caps. */
+    if (user?.role === 'ADMIN') {
+      return {
+        activeCount,
+        activeNewCount,
+        freeLimit: Number.MAX_SAFE_INTEGER,
+        newLimit: Number.MAX_SAFE_INTEGER,
+        requiresListingFee: false,
+      };
+    }
+
     const freeLimit = resolveUserListingLimit(user?.maxActiveListings);
     const newLimit = resolveUserNewListingLimit(user?.maxActiveNewListings);
     const requiresListingFee = activeCount >= freeLimit;

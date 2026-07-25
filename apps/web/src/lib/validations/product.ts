@@ -6,6 +6,13 @@ import {
 } from '@offroad/shared';
 import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
+import {
+  dataUrlByteSize,
+  isWebpDataUrl,
+  PRODUCT_IMAGE_MAX_BYTES,
+  productImageFormatError,
+  productImageSizeError,
+} from '@/lib/product-image';
 import { IRAN_MOBILE_REGEX } from '@/lib/validations/digits';
 
 const situationSchema = z.enum(['NEW', 'USED']);
@@ -28,6 +35,42 @@ const neighborhoodField = z
     `محله حداکثر ${PRODUCT_NEIGHBORHOOD_MAX_LENGTH} کاراکتر باشد`,
   );
 
+function createImagesField(requireWebp: boolean) {
+  return z.array(z.string()).superRefine((images, ctx) => {
+    images.forEach((image, index) => {
+      if (/^https?:\/\//i.test(image)) return;
+
+      const label = `تصویر ${(index + 1).toLocaleString('fa-IR')}`;
+
+      if (!image.startsWith('data:image/')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: productImageFormatError(label),
+          path: [index],
+        });
+        return;
+      }
+
+      if (dataUrlByteSize(image) > PRODUCT_IMAGE_MAX_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: productImageSizeError(label),
+          path: [index],
+        });
+        return;
+      }
+
+      if (requireWebp && !isWebpDataUrl(image)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: productImageFormatError(label),
+          path: [index],
+        });
+      }
+    });
+  });
+}
+
 const sharedProductFields = {
   title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
   description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
@@ -37,7 +80,6 @@ const sharedProductFields = {
   phone: phoneField,
   situation: situationSchema,
   carBrands: z.array(z.string()),
-  images: z.array(z.string()),
   hasGuarantee: z.boolean(),
   applyStrengthened: z.boolean(),
   stockQuantity: z
@@ -52,6 +94,7 @@ const sharedProductFields = {
 export const newProductSchema = z
   .object({
     ...sharedProductFields,
+    images: createImagesField(true),
     price: z.number(),
     isAuction: z.boolean(),
     auctionStartPrice: z.number(),
@@ -141,6 +184,8 @@ const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedPr
 export const editProductSchema = z
   .object({
     ...editProductFields,
+    /** Legacy JPEG/PNG data-URLs allowed until re-uploaded; size is always enforced. */
+    images: createImagesField(false),
     price: z.number().positive('قیمت محصول را وارد کنید'),
     stockQuantity: z
       .number()

@@ -3,14 +3,18 @@
 import { ImagePlus, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { FormError } from '@/components/form/form-message';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  dataUrlByteSize,
+  PRODUCT_IMAGE_MAX_BYTES,
+  PRODUCT_IMAGE_MAX_SIDE_PX,
+  productImageSizeError,
+} from '@/lib/product-image';
 import { cn } from '@/lib/utils';
-
-const MAX_BYTES = 200 * 1024;
-const MAX_SIDE_PX = 1280;
 
 type ProductImageUploadProps = {
   images: string[];
@@ -27,10 +31,21 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Resize and compress so uploads stay small (faster listing submit). */
-async function compressImageFile(file: File): Promise<string> {
+function isAlreadyWebp(file: File): boolean {
+  return file.type === 'image/webp' || /\.webp$/i.test(file.name);
+}
+
+/**
+ * Convert non-WebP images to WebP and compress until under the size cap.
+ * WebP files already under the cap are kept as-is.
+ */
+async function processImageFile(file: File): Promise<string> {
+  if (isAlreadyWebp(file) && file.size <= PRODUCT_IMAGE_MAX_BYTES) {
+    return blobToDataUrl(file);
+  }
+
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_SIDE_PX / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, PRODUCT_IMAGE_MAX_SIDE_PX / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
   const height = Math.round(bitmap.height * scale);
 
@@ -42,16 +57,16 @@ async function compressImageFile(file: File): Promise<string> {
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 
-  for (let quality = 0.85; quality >= 0.45; quality -= 0.05) {
+  for (let quality = 0.9; quality >= 0.4; quality -= 0.05) {
     const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/jpeg', quality);
+      canvas.toBlob(resolve, 'image/webp', quality);
     });
-    if (blob && blob.size <= MAX_BYTES) {
+    if (blob && blob.size <= PRODUCT_IMAGE_MAX_BYTES) {
       return blobToDataUrl(blob);
     }
   }
 
-  throw new Error(`حداکثر حجم هر تصویر ۲۰۰ کیلوبایت است (${file.name})`);
+  throw new Error(productImageSizeError(file.name));
 }
 
 export function ProductImageUpload({ images, onChange, className }: ProductImageUploadProps) {
@@ -68,14 +83,21 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
     try {
       for (const file of Array.from(files)) {
         if (!file.type.startsWith('image/')) {
-          setError('فقط فایل تصویر مجاز است');
+          const msg = 'فقط فایل تصویر مجاز است';
+          setError(msg);
+          toast.error(msg);
           continue;
         }
         try {
-          const dataUrl = await compressImageFile(file);
+          const dataUrl = await processImageFile(file);
+          if (dataUrlByteSize(dataUrl) > PRODUCT_IMAGE_MAX_BYTES) {
+            throw new Error(productImageSizeError(file.name));
+          }
           next.push(dataUrl);
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'بارگذاری تصویر ناموفق بود');
+          const msg = err instanceof Error ? err.message : 'بارگذاری تصویر ناموفق بود';
+          setError(msg);
+          toast.error(msg);
         }
       }
       onChange(next);
@@ -98,21 +120,24 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
             id="product-images"
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.webp"
             multiple
             disabled={processing}
             className="cursor-pointer file:me-3 file:rounded-sm file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground disabled:opacity-60"
             onChange={(e) => void handleFiles(e.target.files)}
           />
           <p className="text-muted-foreground text-xs">
-            {processing ? 'در حال فشرده‌سازی تصویر...' : 'حداکثر ۲۰۰ کیلوبایت برای هر تصویر'}
+            {processing ? 'در حال آپلود...' : 'حداکثر حجم تصویر ۲۰۰ کیلوبایت'}
           </p>
         </div>
 
         {images.length > 0 && (
           <ul className="flex flex-wrap gap-2">
             {images.map((src, i) => (
-              <li key={src} className="bg-muted relative size-20 overflow-hidden rounded-sm border">
+              <li
+                key={`${i}-${src.slice(0, 48)}`}
+                className="bg-muted relative size-20 overflow-hidden rounded-sm border"
+              >
                 <Image
                   width={200}
                   height={200}

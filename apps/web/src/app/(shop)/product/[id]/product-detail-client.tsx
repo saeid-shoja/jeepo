@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, timeAgo } from '@offroad/shared';
+import { formatPrice, formatProductLocationWithProvince, timeAgo } from '@offroad/shared';
 import {
   ArrowRight,
   Edit3,
@@ -12,6 +12,7 @@ import {
   Sparkles,
   Trash2,
   TrendingUp,
+  TriangleAlert,
   User,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -24,8 +25,10 @@ import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { StartProductChatButton } from '@/components/chat/start-product-chat-button';
 import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
+import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
+import { TransactionSafetyDialog } from '@/components/shop/transaction-safety-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
@@ -46,6 +49,8 @@ export function ProductDetailClient() {
   const [quantity, setQuantity] = useState(1);
   const [contactOpen, setContactOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [safetyOpen, setSafetyOpen] = useState(false);
+  const [guaranteeOpen, setGuaranteeOpen] = useState(false);
 
   useEffect(() => {
     if (!id || authLoading) return;
@@ -82,6 +87,7 @@ export function ProductDetailClient() {
   const stockQuantity = product.stockQuantity ?? 1;
   const showStock = !product.isAuction;
   const canChat = canStartProductChat(product, user?.id);
+  const showSafetyWarning = isClientProduct(product);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -169,9 +175,19 @@ export function ProductDetailClient() {
         </div>
 
         {!product.isAuction && (
-          <p className="text-3xl font-bold text-primary">
-            {formatPrice(product.price)} <span className="text-lg">تومان</span>
-          </p>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold text-primary">
+              {formatPrice(product.price)} <span className="text-lg">تومان</span>
+            </p>
+            {product.newPrice != null && product.newPrice > 0 && (
+              <p className="text-sm text-muted-foreground">
+                قیمت نو محصول:{' '}
+                <span className="font-medium text-foreground">
+                  {formatPrice(product.newPrice)} تومان
+                </span>
+              </p>
+            )}
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2">
@@ -184,10 +200,20 @@ export function ProductDetailClient() {
             </span>
           ))}
           {product.hasGuarantee && (
-            <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
+              aria-label="اطلاعات تضمین فروشگاه"
+              onClick={() => setGuaranteeOpen(true)}
+              onMouseEnter={() => {
+                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+                  setGuaranteeOpen(true);
+                }
+              }}
+            >
               <Shield className="h-4 w-4" />
               با تضمین فروشگاه
-            </span>
+            </button>
           )}
           {product.isAuction && (
             <Badge className="bg-violet-600 text-white hover:bg-violet-600">مزایده</Badge>
@@ -206,11 +232,13 @@ export function ProductDetailClient() {
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          {product.city && (
-            <span className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              {product.city}
+        <div className="flex flex-wrap items-start gap-x-4 gap-y-2 text-sm text-gray-400 sm:items-center">
+          {(product.city || product.neighborhood) && (
+            <span className="inline-flex min-w-0 max-w-full items-start gap-1 sm:items-center">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" aria-hidden />
+              <span className="break-words leading-relaxed">
+                {formatProductLocationWithProvince(product.city, product.neighborhood)}
+              </span>
             </span>
           )}
           {showStock && (
@@ -219,7 +247,21 @@ export function ProductDetailClient() {
               {stockQuantity > 0 ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود` : 'ناموجود'}
             </span>
           )}
+          {showSafetyWarning && (
+            <Button
+              size={'sm'}
+              onClick={() => setSafetyOpen(true)}
+              className="gap-1 rounded-lg cursor-pointer"
+              title="ریسک معامله"
+            >
+              <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="whitespace-nowrap">خطر معامله</span>
+            </Button>
+          )}
         </div>
+
+        <TransactionSafetyDialog open={safetyOpen} onOpenChange={setSafetyOpen} />
+        <GuaranteeInfoDialog open={guaranteeOpen} onOpenChange={setGuaranteeOpen} />
 
         <div>
           <h3 className="mb-2 font-bold">توضیحات</h3>

@@ -1,8 +1,9 @@
 import './globals.css';
-import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME_EN, SITE_NAME_FA } from '@offroad/shared';
-import type { Metadata } from 'next';
+import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME_FA } from '@offroad/shared';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { AppShell } from '@/components/layout/app-shell';
+import { PwaRegister } from '@/components/pwa/pwa-register';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Toaster } from '@/components/ui/sonner';
 import {
@@ -24,6 +25,16 @@ const yekanFont = localFont({
 const siteUrl = getSiteUrl();
 const defaultTitle = `${SITE_NAME_FA} | خرید و فروش تجهیزات استوک آفرودی`;
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#d62828' },
+    { media: '(prefers-color-scheme: dark)', color: '#d62828' },
+  ],
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -31,13 +42,18 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME_FA}`,
   },
   description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME_EN,
+  applicationName: SITE_NAME_FA,
   keywords: [...SITE_KEYWORDS],
   authors: [{ name: SITE_NAME_FA, url: siteUrl }],
   creator: SITE_NAME_FA,
   publisher: SITE_NAME_FA,
   formatDetection: { telephone: true, email: true },
   alternates: { canonical: siteUrl },
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME_FA,
+    statusBarStyle: 'default',
+  },
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
@@ -88,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <StoreInitializer />
           <FavoritesSync />
+          <PwaRegister />
           <AppShell>{children}</AppShell>
           <Toaster />
         </ThemeProvider>

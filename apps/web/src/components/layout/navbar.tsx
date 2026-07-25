@@ -26,9 +26,9 @@ export function Navbar() {
   return (
     <nav className="bg-background/85 sticky top-0 z-50 border-b backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-4">
-            <SiteLogo priority size="lg" />
+        <div className="flex items-center flex-row-reverse lg:flex-row justify-between gap-2">
+          <SiteLogo priority size="lg" className="hidden lg:inline-flex" />
+          <div className="flex min-w-0 items-center gap-3 lg:gap-4">
             <div className="hidden items-center gap-1 lg:flex">
               <Link
                 href="/products"
@@ -50,11 +50,12 @@ export function Navbar() {
                   <PlusCircle className="h-5 w-5" />
                 </Link>
               </Button>
-              <NavbarSearch className="hidden max-w-md min-w-sm md:flex" />
+              <NavbarSearch className="hidden max-w-sm min-w-xs lg:flex" />
             </div>
+            <SiteLogo priority size="xs" className="lg:hidden" />
           </div>
 
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             <CartNavButton />
             <ThemeToggle />
             {loading ? (
@@ -81,41 +82,56 @@ export function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
-            <CartNavButton />
-            <LocationPicker />
-            <ThemeToggle />
+          <div className="flex items-center gap-1 sm:gap-2 lg:hidden">
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="منو"
             >
-              {menuOpen ? <X className="min-h-6 min-w-6" /> : <Menu className="min-h-6 min-w-6" />}
+              {menuOpen ? (
+                <X className="min-h-8 min-w-8 shrink-0" />
+              ) : (
+                <Menu className="min-h-8 min-w-8 shrink-0" />
+              )}
+            </Button>
+            {loading ? (
+              <div className="bg-muted h-9 w-9 animate-pulse rounded-md" />
+            ) : user ? (
+              <Button variant="outline" size="icon" asChild className="h-8 w-9 border-none">
+                <Link href="/dashboard" aria-label="پروفایل">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-8 px-2.5 text-xs border-none"
+              >
+                <Link href="/login">ورود</Link>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" asChild className="h-8 px-2 text-xs border-none">
+              <Link href="/products">فروشگاه</Link>
+            </Button>
+            <CartNavButton />
+            <Button asChild size="sm" className="px-2 text-xs">
+              <Link href="/products/new" aria-label="ثبت آگهی">
+                <PlusCircle className="h-5 w-5" />
+                ثبت آگهی
+              </Link>
             </Button>
           </div>
         </div>
-
-        <NavbarSearch className="md:hidden" />
+        <NavbarSearch className="lg:hidden" />
       </div>
 
       {menuOpen && (
-        <div className="bg-background border-t px-4 pb-4 md:hidden min-h-screen">
+        <div className="bg-background border-t px-4 pb-4 lg:hidden min-h-screen">
           <div className="flex max-h-[80vh] flex-col gap-1 overflow-y-auto pt-2">
-            <Link
-              href="/"
-              onClick={closeMenu}
-              className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
-            >
-              فروشگاه
-            </Link>
-            <Link
-              href="/products"
-              onClick={closeMenu}
-              className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
-            >
-              بازارچه
-            </Link>
             <Link
               href="/products?advertiserType=AUCTION"
               onClick={closeMenu}
@@ -126,21 +142,13 @@ export function Navbar() {
             <hr className="my-2" />
             <CategoriesNavLinks onNavigate={closeMenu} />
             <hr className="my-2" />
+            <div className="flex items-center justify-between rounded-sm px-3 py-2">
+              <LocationPicker />
+              <ThemeToggle />
+            </div>
+            <hr className="my-2" />
             {user ? (
               <>
-                <Button asChild className="justify-start">
-                  <Link href="/products/new" onClick={closeMenu}>
-                    <PlusCircle className="h-4 w-4" />
-                    ثبت آگهی
-                  </Link>
-                </Button>
-                <Link
-                  href="/dashboard"
-                  onClick={closeMenu}
-                  className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
-                >
-                  پنل کاربری
-                </Link>
                 <MessagesMobileLink onNavigate={closeMenu} />
                 <ChatsMobileLink onNavigate={closeMenu} />
                 <button
@@ -155,20 +163,7 @@ export function Navbar() {
                   خروج
                 </button>
               </>
-            ) : (
-              <>
-                <Button variant="outline" asChild className="justify-start">
-                  <Link href="/login" onClick={closeMenu}>
-                    ورود
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/register" onClick={closeMenu}>
-                    ثبت نام
-                  </Link>
-                </Button>
-              </>
-            )}
+            ) : null}
           </div>
         </div>
       )}

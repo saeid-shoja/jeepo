@@ -1,5 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { SITE_URL } from '@offroad/shared';
+import { loadTelegramChannelTopics } from './telegram/telegram-channels';
+
+const ZIBAL_CALLBACK_PATH = '/api/payments/zibal/callback';
 
 function apiPublicUrl(): string {
   const fromEnv = process.env.API_PUBLIC_URL?.trim();
@@ -21,11 +24,31 @@ function zibalMerchant(): string {
   return 'zibal';
 }
 
+function buildZibalCallbackUrl(baseUrl: string): string {
+  return `${baseUrl.replace(/\/$/, '')}${ZIBAL_CALLBACK_PATH}`;
+}
+
+function normalizeZibalCallbackUrl(url: string): string {
+  const trimmed = url.trim().replace(/\/$/, '');
+  try {
+    const parsed = new URL(trimmed);
+    if (!parsed.pathname || parsed.pathname === '/') {
+      parsed.pathname = ZIBAL_CALLBACK_PATH;
+      parsed.search = '';
+      parsed.hash = '';
+      return parsed.toString().replace(/\/$/, '');
+    }
+  } catch {
+    return trimmed;
+  }
+  return trimmed;
+}
+
 /** Zibal live merchants require callback on the same domain registered in the Zibal panel (e.g. jeepo.ir). */
 function zibalCallbackUrl(): string {
   const override = process.env.ZIBAL_CALLBACK_URL?.trim();
-  if (override) return override.replace(/\/$/, '');
-  return `${apiPublicUrl()}/api/payments/zibal/callback`;
+  if (override) return normalizeZibalCallbackUrl(override);
+  return buildZibalCallbackUrl(apiPublicUrl());
 }
 
 function telegramBotToken(): string {
@@ -34,6 +57,10 @@ function telegramBotToken(): string {
 
 function telegramBotUsername(): string {
   return process.env.TELEGRAM_BOT_USERNAME?.trim()?.replace(/^@/, '') ?? '';
+}
+
+function telegramChannelChatId(): string {
+  return process.env.TELEGRAM_CHANNEL_CHAT_ID?.trim() || '@jeeppo';
 }
 
 @Global()
@@ -79,6 +106,14 @@ function telegramBotUsername(): string {
       provide: 'TELEGRAM_WEBHOOK_SECRET',
       useValue: process.env.TELEGRAM_WEBHOOK_SECRET?.trim() ?? '',
     },
+    {
+      provide: 'TELEGRAM_CHANNEL_CHAT_ID',
+      useValue: telegramChannelChatId(),
+    },
+    {
+      provide: 'TELEGRAM_CHANNEL_TOPICS',
+      useValue: loadTelegramChannelTopics(),
+    },
   ],
   exports: [
     'JWT_SECRET',
@@ -91,6 +126,8 @@ function telegramBotUsername(): string {
     'TELEGRAM_BOT_TOKEN',
     'TELEGRAM_BOT_USERNAME',
     'TELEGRAM_WEBHOOK_SECRET',
+    'TELEGRAM_CHANNEL_CHAT_ID',
+    'TELEGRAM_CHANNEL_TOPICS',
   ],
 })
 export class ConfigModule {}

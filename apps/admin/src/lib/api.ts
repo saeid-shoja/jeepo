@@ -46,6 +46,7 @@ export const adminApi = {
     city?: string;
     role?: string;
     maxActiveListings?: number;
+    maxActiveNewListings?: number;
   }) =>
     request<any>('/admin/users', {
       method: 'POST',
@@ -61,6 +62,7 @@ export const adminApi = {
       city?: string | null;
       role?: string;
       maxActiveListings?: number | null;
+      maxActiveNewListings?: number | null;
     },
   ) =>
     request<any>(`/admin/users/${id}`, {
@@ -68,6 +70,10 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   deleteUser: (id: string) => request<any>(`/admin/users/${id}`, { method: 'DELETE' }),
+  userProducts: (userId: string, params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return request<any>(`/admin/users/${userId}/products${qs}`);
+  },
   products: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<any>(`/admin/products${qs}`);
@@ -76,6 +82,17 @@ export const adminApi = {
     request<any>(`/admin/products/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }),
+  announceBestPrice: (productIds: string[]) =>
+    request<{
+      sent: number;
+      failed: number;
+      skipped: number;
+      failedProducts: Array<{ id: string; title: string }>;
+      skippedIds: string[];
+    }>('/admin/products/announce-best-price', {
+      method: 'POST',
+      body: JSON.stringify({ productIds }),
     }),
   sendMessage: (data: {
     title: string;

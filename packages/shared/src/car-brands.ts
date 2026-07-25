@@ -14,6 +14,8 @@ export const CAR_BRAND_VALUES = [
   'RENAULT',
   'VOLVO',
   'JEEP',
+  'CAPRA',
+  'MOTORCYCLE',
   'OTHER',
 ] as const;
 
@@ -35,6 +37,8 @@ export const CAR_BRAND_LABELS: Record<CarBrand, string> = {
   RENAULT: 'رنو',
   VOLVO: 'ولوو',
   JEEP: 'جیپ',
+  CAPRA: 'کاپرا',
+  MOTORCYCLE: 'موتورسیکلت',
   OTHER: 'سایر',
 };
 

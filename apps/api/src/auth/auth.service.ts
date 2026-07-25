@@ -88,8 +88,9 @@ export class AuthService {
     };
   }
 
-  private async assertRegistrationAvailable(
-    tx: Pick<PrismaService, 'user' | 'pendingRegistration'>,
+  /** Reject only when phone/email already belong to a verified account. */
+  private async assertUserNotRegistered(
+    tx: Pick<PrismaService, 'user'>,
     phone: string,
     email: string,
   ) {
@@ -103,18 +104,6 @@ export class AuthService {
     }
     if (existingEmail) {
       throw new ConflictException('این ایمیل قبلاً ثبت شده است');
-    }
-
-    const [pendingPhone, pendingEmail] = await Promise.all([
-      tx.pendingRegistration.findUnique({ where: { phone } }),
-      tx.pendingRegistration.findUnique({ where: { email } }),
-    ]);
-
-    if (pendingPhone && pendingPhone.email !== email) {
-      throw new ConflictException('این شماره موبایل در حال ثبت‌نام است');
-    }
-    if (pendingEmail && pendingEmail.phone !== phone) {
-      throw new ConflictException('این ایمیل در حال ثبت‌نام است');
     }
   }
 
@@ -150,8 +139,9 @@ export class AuthService {
     const now = new Date();
 
     await this.prisma.$transaction(async (tx) => {
-      await this.assertRegistrationAvailable(tx, phone, email);
+      await this.assertUserNotRegistered(tx, phone, email);
 
+      // Drop stale or mismatched pending rows so the user can restart or resume.
       await tx.pendingRegistration.deleteMany({
         where: { OR: [{ phone }, { email }] },
       });
@@ -210,7 +200,7 @@ export class AuthService {
     }
 
     const user = await this.prisma.$transaction(async (tx) => {
-      await this.assertRegistrationAvailable(tx, pending.phone, pending.email);
+      await this.assertUserNotRegistered(tx, pending.phone, pending.email);
 
       const created = await tx.user.create({
         data: {

@@ -3,6 +3,7 @@ import type { MessageTarget, UserMessageType } from '../prisma/generated/client'
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
+import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateMessageDto } from './dto';
 
 const MESSAGE_TYPE_LABELS: Record<UserMessageType, string> = {
@@ -17,6 +18,7 @@ export class MessagesService {
     private prisma: PrismaService,
     private telegramBot: TelegramBotService,
     private telegram: TelegramService,
+    private telegramChannel: TelegramChannelService,
   ) {}
 
   private mapUserMessage(message: {
@@ -145,6 +147,8 @@ export class MessagesService {
         }
       }
     }
+
+    this.telegramChannel.announceNews(title, body);
 
     return {
       id: batch.id,

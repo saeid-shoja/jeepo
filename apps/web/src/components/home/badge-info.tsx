@@ -39,9 +39,7 @@ function BadgeInfo() {
         <PackageSearch className={OPTIONS_CARD_ICON} />
         <div>
           <h3 className={OPTIONS_CARD_TITLE}>خرید و فروش آسان</h3>
-          <p className={OPTIONS_CARD_DESC}>
-            مانند دیوار، آگهی خود را ثبت کنید و محصولتان را بفروشید
-          </p>
+          <p className={OPTIONS_CARD_DESC}>آگهی خود را ثبت کنید و محصولتان را بفروشید</p>
         </div>
       </div>
     </section>

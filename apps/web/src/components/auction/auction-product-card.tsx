@@ -1,6 +1,6 @@
 'use client';
 
-import { formatAuctionCountdown, formatPrice } from '@offroad/shared';
+import { formatAuctionCountdown, formatPrice, formatProductLocation } from '@offroad/shared';
 import { Clock, Gavel, MapPin, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ type AuctionProductCardProps = {
     auctionCurrentPrice?: number;
     images?: string[];
     city?: string | null;
+    neighborhood?: string | null;
     auctionEndsAt?: string | null;
     bidCount?: number;
     auctionActive?: boolean;
@@ -84,10 +85,10 @@ export function AuctionProductCard({ product }: AuctionProductCardProps) {
               <Clock className="h-3.5 w-3.5 shrink-0" />
               {countdown || '—'}
             </span>
-            {product.city && (
+            {(product.city || product.neighborhood) && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
-                {product.city}
+                {formatProductLocation(product.city, product.neighborhood)}
               </span>
             )}
           </div>

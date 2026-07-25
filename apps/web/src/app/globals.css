@@ -107,3 +107,25 @@
     @apply flex justify-center items-center;
   }
 }
+
+.formTextSize {
+  font-size: 0.75rem;
+}
+
+.formTextSize::placeholder {
+  font-size: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .formTextSize {
+    font-size: 0.875rem;
+  }
+  .formTextSize::placeholder {
+    font-size: 0.875rem;
+  }
+}
+
+/* PWA / notched phones */
+.safe-area-pb {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}

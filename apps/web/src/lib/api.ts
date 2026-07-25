@@ -135,6 +135,12 @@ export const api = {
         requiresListingFee: boolean;
         listingFee: number;
         paymentGraceDays: number;
+        activeNewCount: number;
+        newLimit: number;
+        defaultNewLimit: number;
+        hasCustomNewLimit: boolean;
+        remainingNew: number;
+        atNewLimit: boolean;
       }>('/products/listing-quota'),
     create: (data: any) =>
       request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
@@ -247,11 +253,67 @@ export const api = {
       request<{ updated: number }>(`/product-chats/${id}/read`, { method: 'PATCH' }),
   },
 
+  payments: {
+    prepare: (data: { productId: string; purpose: string; nextPurpose?: string }) =>
+      request<{
+        product: {
+          id: string;
+          title: string;
+          price: number;
+          image: string | null;
+          status: string;
+          listingPaymentDueAt: string | null;
+        };
+        purpose: string;
+        purposeLabel: string;
+        amount: number;
+        nextPurpose: string | null;
+        gateways: Array<{ id: string; label: string; enabled: boolean }>;
+      }>('/payments/prepare', { method: 'POST', body: JSON.stringify(data) }),
+    initiate: (data: {
+      productId: string;
+      purpose: string;
+      gateway: string;
+      nextPurpose?: string;
+    }) =>
+      request<{
+        paymentSessionId: string;
+        paymentUrl: string;
+        trackId: string;
+        amount: number;
+        purpose: string;
+        productId: string;
+      }>('/payments/initiate', { method: 'POST', body: JSON.stringify(data) }),
+    getSession: (id: string) =>
+      request<{
+        id: string;
+        status: string;
+        purpose: string;
+        purposeLabel: string;
+        gateway: string;
+        amount: number;
+        nextPurpose: string | null;
+        paidAt: string | null;
+        product: {
+          id: string;
+          title: string;
+          price: number;
+          image: string | null;
+          status: string;
+        };
+      }>(`/payments/sessions/${id}`),
+  },
+
   users: {
     profile: () => request<any>('/users/profile'),
     products: () => request<any[]>('/users/products'),
     updateProfile: (data: any) =>
       request<any>('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      request<{ message: string }>('/users/profile/password', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
     messages: () => request<any[]>('/users/messages'),
     messagesUnreadCount: () => request<{ count: number }>('/users/messages/unread-count'),
     markMessageRead: (id: string) =>

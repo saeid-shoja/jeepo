@@ -66,7 +66,7 @@ function MobileHeroSlide({ slide, priority }: { slide: Slide; priority?: boolean
         <div className="mx-auto w-full max-w-7xl">
           <h1 className="max-w-2xl text-xl font-bold text-white sm:text-2xl">{slide.title}</h1>
           {slide.description && (
-            <p className="text-card mt-3 max-w-xl text-sm sm:mt-4 sm:text-base">
+            <p className="text-white lg:text-card mt-3 max-w-xl text-sm sm:mt-4 sm:text-base">
               {slide.description}
             </p>
           )}

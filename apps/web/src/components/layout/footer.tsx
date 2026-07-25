@@ -3,6 +3,7 @@ import { Mail, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
 import { EnamadTrustSeal } from '@/components/layout/enamad-trust-seal';
 import { SiteLogo } from '@/components/layout/site-logo';
+import { PwaInstallButton } from '@/components/pwa/pwa-install-button';
 import { Separator } from '@/components/ui/separator';
 
 const shopLinks = [
@@ -83,6 +84,9 @@ export function SiteFooter() {
                 <MapPin className="h-4 w-4 shrink-0" />
                 تهران، ایران
               </p>
+            </div>
+            <div className="pt-1">
+              <PwaInstallButton />
             </div>
           </div>
 

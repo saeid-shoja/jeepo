@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { CarBrandPicker } from '@/components/form/car-brand-picker';
 import { CitySelect } from '@/components/form/city-select';
 import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
@@ -19,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { toastFormValidationErrors } from '@/lib/toast-form-errors';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { type EditProductFormValues, editProductSchema } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
@@ -47,18 +49,21 @@ export default function EditProductPage() {
       price: 0,
       categoryId: '',
       city: '',
+      neighborhood: '',
       phone: '',
       situation: 'NEW',
       carBrands: [],
       images: [],
       hasGuarantee: false,
       stockQuantity: 1,
+      newPrice: 0,
     },
   });
 
   const price = watch('price');
   const hasGuarantee = watch('hasGuarantee');
   const carBrands = watch('carBrands');
+  const situation = watch('situation');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -72,9 +77,11 @@ export default function EditProductPage() {
           title: product.title,
           description: product.description,
           price: product.price,
+          newPrice: product.newPrice ?? 0,
           categoryId: product.categoryId,
           carBrands: (product.carBrands || []).map((b: { value: string }) => b.value),
           city: product.city || '',
+          neighborhood: product.neighborhood || '',
           phone: product.phone || '',
           hasGuarantee: product.hasGuarantee,
           situation: product.situation === 'USED' ? 'USED' : 'NEW',
@@ -99,9 +106,11 @@ export default function EditProductPage() {
         title: data.title,
         description: data.description,
         price: data.price,
+        newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
         categoryId: data.categoryId,
         carBrands: data.carBrands,
         city: data.city || undefined,
+        neighborhood: data.neighborhood?.trim() || null,
         phone: data.phone || undefined,
         hasGuarantee: data.hasGuarantee,
         situation: data.situation,
@@ -123,12 +132,16 @@ export default function EditProductPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
       <h1 className="mb-8 text-2xl font-bold">ویرایش آگهی</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      <form
+        onSubmit={handleSubmit(onSubmit, toastFormValidationErrors)}
+        className="space-y-4"
+        noValidate
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
               <Input id="title" {...register('title')} />
@@ -152,6 +165,23 @@ export default function EditProductPage() {
               />
               <FieldError message={errors.price?.message} />
             </div>
+
+            {situation === 'USED' && (
+              <div className="space-y-2">
+                <Label htmlFor="newPrice">قیمت نو محصول (تومان)</Label>
+                <Controller
+                  name="newPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput id="newPrice" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <p className="text-muted-foreground text-xs">
+                  قیمت تقریبی نسخه نوی همین محصول را وارد کنید تا خریدار مقایسه کند.
+                </p>
+                <FieldError message={errors.newPrice?.message} />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
@@ -178,42 +208,14 @@ export default function EditProductPage() {
           </CardContent>
         </Card>
 
-        {carBrandOptions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">برند خودرو</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {carBrandOptions.map((option) => {
-                  const selected = carBrands.includes(option.value);
-                  return (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={selected ? 'default' : 'outline'}
-                      onClick={() =>
-                        setValue(
-                          'carBrands',
-                          selected
-                            ? carBrands.filter((v) => v !== option.value)
-                            : [...carBrands, option.value],
-                          { shouldValidate: true },
-                        )
-                      }
-                    >
-                      {option.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <CarBrandPicker
+          options={carBrandOptions}
+          value={carBrands}
+          onChange={(brands) => setValue('carBrands', brands, { shouldValidate: true })}
+        />
 
         <Card>
-          <CardContent className="space-y-4 pt-6">
+          <CardContent className="space-y-3 pt-6">
             <Controller
               name="situation"
               control={control}
@@ -230,6 +232,17 @@ export default function EditProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">محله آدرس</Label>
+                <Input
+                  id="neighborhood"
+                  type="text"
+                  maxLength={15}
+                  placeholder="مثلاً ونک"
+                  {...register('neighborhood')}
+                />
+                <FieldError message={errors.neighborhood?.message} />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
                 <DigitsInput id="phone" type="tel" {...register('phone')} />

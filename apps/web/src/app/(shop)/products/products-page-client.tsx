@@ -28,6 +28,21 @@ const defaultFilters: ProductsFilters = {
 };
 
 const PRODUCT_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
+const PRODUCTS_PAGE_SIZE = 20;
+
+function getVisiblePages(current: number, total: number): number[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages = new Set<number>([1, total, current, current - 1, current + 1]);
+  return [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
+}
+
+function parsePageParam(raw: string | null): number {
+  const n = Number.parseInt(raw ?? '1', 10);
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
 
 export function ProductsPageClient() {
   const router = useRouter();
@@ -39,13 +54,13 @@ export function ProductsPageClient() {
     return 'CLIENT';
   }, [searchParams]);
   const urlSearch = searchParams.get('search') ?? '';
+  const page = useMemo(() => parsePageParam(searchParams.get('page')), [searchParams]);
 
   const [products, setProducts] = useState<any[]>([]);
   const { libraries, loading: categoriesLoading } = useCategories();
   const { selectedCities, hasFilter } = useLocationFilter();
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<ProductsFilters>(defaultFilters);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<'CLIENT' | 'SHOP' | 'AUCTION'>(
     advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION',
@@ -53,21 +68,36 @@ export function ProductsPageClient() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
 
+  const setListPage = useCallback(
+    (nextPage: number, method: 'push' | 'replace' = 'push') => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextPage <= 1) params.delete('page');
+      else params.set('page', String(nextPage));
+      const qs = params.toString();
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      if (method === 'push') router.push(href, { scroll: true });
+      else router.replace(href, { scroll: true });
+    },
+    [pathname, router, searchParams],
+  );
+
   useEffect(() => {
     setSearchQuery(urlSearch);
-    setPage(1);
   }, [urlSearch]);
 
   useEffect(() => {
     setActiveTab(advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION');
-    setPage(1);
   }, [advertiserType]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [page]);
 
   const buildParams = useCallback(
     (overrides?: { page?: number }) => {
       const p: Record<string, string> = {
         page: String(overrides?.page ?? page),
-        limit: '20',
+        limit: String(PRODUCTS_PAGE_SIZE),
       };
       if (activeTab === 'AUCTION') {
         p.auction = 'true';
@@ -89,7 +119,7 @@ export function ProductsPageClient() {
   );
 
   const fetchProducts = useCallback(
-    (pageNum = page) => {
+    (pageNum: number) => {
       setLoading(true);
       api.products
         .list(buildParams({ page: pageNum }))
@@ -99,7 +129,7 @@ export function ProductsPageClient() {
         })
         .finally(() => setLoading(false));
     },
-    [buildParams, page],
+    [buildParams],
   );
 
   useEffect(() => {
@@ -108,16 +138,22 @@ export function ProductsPageClient() {
   }, [page, categoriesLoading, fetchProducts]);
 
   const handleApplyFilters = () => {
-    setPage(1);
     setMobileFiltersOpen(false);
-    fetchProducts(1);
+    if (page !== 1) {
+      setListPage(1, 'replace');
+    } else {
+      fetchProducts(1);
+    }
   };
 
   const handleResetFilters = () => {
     setFilters(defaultFilters);
-    setPage(1);
     setMobileFiltersOpen(false);
-    fetchProducts(1);
+    if (page !== 1) {
+      setListPage(1, 'replace');
+    } else {
+      fetchProducts(1);
+    }
   };
 
   const filterSidebar = (
@@ -132,10 +168,10 @@ export function ProductsPageClient() {
 
   const setTab = (tab: 'CLIENT' | 'SHOP' | 'AUCTION') => {
     setActiveTab(tab);
-    setPage(1);
     const params = new URLSearchParams(searchParams.toString());
     params.set('advertiserType', tab);
-    router.replace(`${pathname}?${params.toString()}`);
+    params.delete('page');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: true });
   };
 
   return (
@@ -225,17 +261,42 @@ export function ProductsPageClient() {
               </div>
               {totalPages > 1 && (
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <Button
-                      key={p}
-                      variant={page === p ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-9 w-9 p-0"
-                      onClick={() => setPage(p)}
-                    >
-                      {p}
-                    </Button>
-                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1 || loading}
+                    onClick={() => setListPage(Math.max(1, page - 1))}
+                  >
+                    قبلی
+                  </Button>
+                  {getVisiblePages(page, totalPages).map((p, index, pages) => {
+                    const prev = pages[index - 1];
+                    const showEllipsis = prev != null && p - prev > 1;
+                    return (
+                      <span key={p} className="flex items-center gap-2">
+                        {showEllipsis ? (
+                          <span className="text-muted-foreground px-1 text-sm">…</span>
+                        ) : null}
+                        <Button
+                          variant={page === p ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-9 w-9 p-0"
+                          disabled={loading}
+                          onClick={() => setListPage(p)}
+                        >
+                          {p}
+                        </Button>
+                      </span>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages || loading}
+                    onClick={() => setListPage(Math.min(totalPages, page + 1))}
+                  >
+                    بعدی
+                  </Button>
                 </div>
               )}
             </>

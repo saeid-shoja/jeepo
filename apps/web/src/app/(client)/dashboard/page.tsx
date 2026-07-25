@@ -88,21 +88,33 @@ function DashboardContent() {
     <div className="container space-y-6">
       <div className="rounded-lg border bg-card p-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <User className="h-8 w-8" />
+          <div className="flex h-10 w-10 lg:h-16 lg:w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <User className="h-5 w-5 lg:h-8 lg:w-8" />
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold">{profile?.name || user.name}</h1>
-            <p className="flex items-center gap-1 text-sm text-gray-500">
+            <h1 className="text-base lg:text-xl font-bold">{profile?.name || user.name}</h1>
+            <p className="flex items-center gap-1 text-xs lg:text-sm text-gray-500">
               <Phone className="h-3 w-3" />
               {user.phone}
             </p>
             {profile?.city && (
-              <p className="flex items-center gap-1 text-sm text-gray-500">
+              <p className="flex items-center gap-1 text-xs lg:text-sm text-gray-500">
                 <MapPin className="h-3 w-3" />
                 {profile.city}
               </p>
             )}
+            <div className="flex items-center gap-1">
+              <p className="lg:text-2xl font-bold text-primary">
+                {(profile?.activeListingsCount ?? 0).toLocaleString('fa-IR')}
+              </p>
+              <p className="text-xs text-gray-500">آگهی فعال</p>
+              {profile != null &&
+                (profile.totalListingsCount ?? 0) > (profile.activeListingsCount ?? 0) && (
+                  <p className="text-[10px] text-gray-400">
+                    از {(profile.totalListingsCount ?? 0).toLocaleString('fa-IR')} آگهی
+                  </p>
+                )}
+            </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <ProfileEditDialog
@@ -111,50 +123,37 @@ function DashboardContent() {
             />
             <Button onClick={logout} variant="destructive" size="sm">
               <LogOut className="h-4 w-4" />
-              خروج
+              <span className="hidden lg:inline">خروج</span>
             </Button>
           </div>
         </div>
         {profile && (
-          <div className="mt-4 flex items-center justify-between border-t pt-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-primary">
-                {(profile.activeListingsCount ?? 0).toLocaleString('fa-IR')}
-              </p>
-              <p className="text-xs text-gray-500">آگهی فعال</p>
-              {profile.totalListingsCount > profile.activeListingsCount && (
-                <p className="text-[10px] text-gray-400">
-                  از {(profile.totalListingsCount ?? 0).toLocaleString('fa-IR')} آگهی
-                </p>
+          <div className="flex flex-wrap items-center gap-1 border-t mt-4 pt-3">
+            <Link
+              href="/chats"
+              className="flex items-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
+            >
+              <MessageCircle className="h-4 w-4" />
+              گفتگوها
+              {chatsUnreadCount > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1 text-[10px]">
+                  {chatsUnreadCount > 99 ? '99+' : chatsUnreadCount.toLocaleString('fa-IR')}
+                </Badge>
               )}
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Link
-                href="/chats"
-                className="flex items-center gap-1 rounded-sm border px-4 py-2 text-sm hover:bg-primary"
-              >
-                <MessageCircle className="h-4 w-4" />
-                گفتگوها
-                {chatsUnreadCount > 0 && (
-                  <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1 text-[10px]">
-                    {chatsUnreadCount > 99 ? '99+' : chatsUnreadCount.toLocaleString('fa-IR')}
-                  </Badge>
-                )}
-              </Link>
-              <Link
-                href="/orders"
-                className="flex items-center gap-1 rounded-sm border px-4 py-2 text-sm hover:bg-primary"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                سفارش‌های من
-              </Link>
-              <Link
-                href="/products/new"
-                className="rounded-sm bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
-              >
-                ثبت آگهی جدید
-              </Link>
-            </div>
+            </Link>
+            <Link
+              href="/orders"
+              className="flex items-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              سفارش‌های من
+            </Link>
+            <Link
+              href="/products/new"
+              className="rounded-sm bg-primary px-2.5 py-2 formTextSize text-white hover:bg-primary-dark"
+            >
+              ثبت آگهی جدید
+            </Link>
           </div>
         )}
       </div>

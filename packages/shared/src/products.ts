@@ -1,5 +1,6 @@
 import { MOTORCYCLE_ATV_SUBCATEGORIES } from './category-defaults';
 import { toEnglishDigits } from './digits';
+import { findProvinceNameByCity } from './iran-locations';
 
 export const CATEGORIES = [
   ...MOTORCYCLE_ATV_SUBCATEGORIES.map(({ name, slug }) => ({ name, slug })),
@@ -29,7 +30,10 @@ export const PERSIAN_MONTHS = [
 ] as const;
 
 /** Free active client listings per user; each additional listing requires a fee. */
-export const FREE_CLIENT_LISTING_LIMIT = 5;
+export const FREE_CLIENT_LISTING_LIMIT = 2;
+
+/** Max active client listings with situation=NEW per user (hard cap). */
+export const FREE_CLIENT_NEW_LISTING_LIMIT = 2;
 
 /** Effective listing cap: user override or platform default. */
 export function resolveUserListingLimit(maxActiveListings?: number | null): number {
@@ -38,15 +42,24 @@ export function resolveUserListingLimit(maxActiveListings?: number | null): numb
   }
   return FREE_CLIENT_LISTING_LIMIT;
 }
+
+/** Effective NEW-listing cap: user override or platform default. */
+export function resolveUserNewListingLimit(maxActiveNewListings?: number | null): number {
+  if (maxActiveNewListings != null && maxActiveNewListings > 0) {
+    return Math.floor(maxActiveNewListings);
+  }
+  return FREE_CLIENT_NEW_LISTING_LIMIT;
+}
 /** Fee per listing beyond the free quota (Toman). */
-export const EXTRA_LISTING_FEE = 30_000;
+export const EXTRA_LISTING_FEE = 35_000;
 /** Days to pay for a pending listing draft before it is removed. */
 export const LISTING_PAYMENT_GRACE_DAYS = 3;
 
 /** Listing premium fees (Toman) */
-export const GUARANTEE_FEE_RATE = 0.02;
+export const GUARANTEE_FEE_RATE = 0.05;
+export const GUARANTEE_FEE_PERCENT = Math.round(GUARANTEE_FEE_RATE * 100);
 /** User-facing label for guarantee commission (percentage part; purchase fees may apply separately). */
-export const GUARANTEE_FEE_LABEL = '۲٪ قیمت فروش به‌علاوه کارمزد تراکنش';
+export const GUARANTEE_FEE_LABEL = `${GUARANTEE_FEE_PERCENT.toLocaleString('fa-IR')}٪ قیمت فروش به‌علاوه کارمزد تراکنش`;
 /** پله شده — one-time bump to top (updates listedAt) */
 export const BOOST_LISTING_FEE = 100_000;
 /** تقویت شده — pinned on top for 4 days (ignores listedAt while active) */
@@ -73,6 +86,27 @@ export function listingPaymentDueAt(from = new Date()): Date {
 export function getGuaranteeFee(productPrice: number): number {
   if (!Number.isFinite(productPrice) || productPrice <= 0) return 0;
   return Math.round(productPrice * GUARANTEE_FEE_RATE);
+}
+
+/** Max length for product neighborhood (محله). */
+export const PRODUCT_NEIGHBORHOOD_MAX_LENGTH = 15;
+
+/** Format city + neighborhood for display (e.g. «تهران، ونک»). */
+export function formatProductLocation(city?: string | null, neighborhood?: string | null): string {
+  const cityPart = city?.trim() || '';
+  const neighPart = neighborhood?.trim() || '';
+  if (cityPart && neighPart) return `${cityPart}، ${neighPart}`;
+  return cityPart || neighPart || '';
+}
+
+/** Format province + city + neighborhood (e.g. «تهران، تهران، ونک»). */
+export function formatProductLocationWithProvince(
+  city?: string | null,
+  neighborhood?: string | null,
+): string {
+  const province = findProvinceNameByCity(city);
+  const parts = [province, city?.trim(), neighborhood?.trim()].filter(Boolean);
+  return parts.join('، ');
 }
 
 export function formatPrice(price: number): string {

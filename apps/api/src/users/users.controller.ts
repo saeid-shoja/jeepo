@@ -4,7 +4,7 @@ import { FavoritesService } from '../favorites/favorites.service';
 import { MessagesService } from '../messages/messages.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
-import { UpdateProfileDto } from './dto';
+import { ChangePasswordDto, UpdateProfileDto } from './dto';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -36,6 +36,11 @@ export class UsersController {
   @Patch('profile')
   updateProfile(@Request() req: { user: { userId: string } }, @Body() body: UpdateProfileDto) {
     return this.usersService.updateProfile(req.user.userId, body);
+  }
+
+  @Patch('profile/password')
+  changePassword(@Request() req: { user: { userId: string } }, @Body() body: ChangePasswordDto) {
+    return this.usersService.changePassword(req.user.userId, body);
   }
 
   @Get('messages')

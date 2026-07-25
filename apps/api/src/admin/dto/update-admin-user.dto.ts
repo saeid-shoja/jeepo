@@ -41,7 +41,7 @@ export class UpdateAdminUserDto {
   @IsEnum(UserRole, { message: 'نقش کاربر نامعتبر است' })
   role?: UserRole;
 
-  /** Custom free active listing cap. null = reset to platform default (5). */
+  /** Custom free active listing cap. null = reset to platform default (2). */
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @Type(() => Number)
@@ -49,4 +49,13 @@ export class UpdateAdminUserDto {
   @Min(1, { message: 'حداقل ۱ آگهی فعال مجاز است' })
   @Max(100, { message: 'حداکثر ۱۰۰ آگهی فعال قابل تنظیم است' })
   maxActiveListings?: number | null;
+
+  /** Custom ACTIVE+NEW listing cap. null = reset to platform default (2). */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @Type(() => Number)
+  @IsInt({ message: 'حداکثر آگهی نو باید عدد صحیح باشد' })
+  @Min(1, { message: 'حداقل ۱ آگهی نو فعال مجاز است' })
+  @Max(100, { message: 'حداکثر ۱۰۰ آگهی نو فعال قابل تنظیم است' })
+  maxActiveNewListings?: number | null;
 }

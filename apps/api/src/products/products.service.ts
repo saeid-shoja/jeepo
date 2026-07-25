@@ -8,9 +8,14 @@ import {
 import {
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
+  FREE_CLIENT_NEW_LISTING_LIMIT,
+  getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
   listingPaymentDueAt,
+  PAYMENT_PURPOSES,
+  type PaymentPurpose,
   resolveUserListingLimit,
+  resolveUserNewListingLimit,
   strengthenedEndsAt,
 } from '@offroad/shared';
 import { CategoriesService } from '../categories/categories.service';
@@ -19,6 +24,7 @@ import { isPurchasableProduct } from '../common/purchasable';
 import { MailService } from '../mail/mail.service';
 import type { Advertiser, ProductSituation } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
 import { computeActiveUntil, computeDeletionAt } from './product-lifecycle.constants';
 
@@ -42,6 +48,7 @@ export class ProductsService {
     private prisma: PrismaService,
     private categoriesService: CategoriesService,
     private mailService: MailService,
+    private telegramChannel: TelegramChannelService,
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
@@ -149,8 +156,9 @@ export class ProductsService {
       awaitingAdminApproval:
         product.status === 'PENDING' &&
         (product as { listingFeePaid?: boolean }).listingFeePaid !== false &&
-        product.category?.slug != null &&
-        isAdminApprovalRequiredCategory(product.category.slug),
+        (Boolean((product as { hasGuarantee?: boolean }).hasGuarantee) ||
+          (product.category?.slug != null &&
+            isAdminApprovalRequiredCategory(product.category.slug))),
       stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
     };
 
@@ -189,6 +197,7 @@ export class ProductsService {
         status: 'PENDING',
         listingFeePaid: false,
         listingPaymentDueAt: { lte: new Date() },
+        orderItems: { none: {} },
       },
     });
     return result.count;
@@ -200,22 +209,42 @@ export class ProductsService {
     });
   }
 
+  async countActiveNewClientListings(userId: string): Promise<number> {
+    return this.prisma.product.count({
+      where: { userId, advertiser: 'CLIENT', status: 'ACTIVE', situation: 'NEW' },
+    });
+  }
+
   private async getListingQuotaState(userId: string) {
-    const [activeCount, user] = await Promise.all([
+    const [activeCount, activeNewCount, user] = await Promise.all([
       this.countActiveClientListings(userId),
+      this.countActiveNewClientListings(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { maxActiveListings: true },
+        select: { maxActiveListings: true, maxActiveNewListings: true },
       }),
     ]);
     const freeLimit = resolveUserListingLimit(user?.maxActiveListings);
+    const newLimit = resolveUserNewListingLimit(user?.maxActiveNewListings);
     const requiresListingFee = activeCount >= freeLimit;
-    return { activeCount, freeLimit, requiresListingFee };
+    return { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee };
+  }
+
+  /** Hard-block when user already has max ACTIVE listings with situation=NEW. */
+  async assertNewListingQuota(userId: string, situation?: string | null) {
+    if (situation !== 'NEW') return;
+    const { activeNewCount, newLimit } = await this.getListingQuotaState(userId);
+    if (activeNewCount >= newLimit) {
+      throw new BadRequestException(
+        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
+      );
+    }
   }
 
   async getListingQuota(userId: string) {
     void this.purgeExpiredListingPaymentDrafts();
-    const { activeCount, freeLimit, requiresListingFee } = await this.getListingQuotaState(userId);
+    const { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee } =
+      await this.getListingQuotaState(userId);
 
     return {
       activeCount,
@@ -226,7 +255,60 @@ export class ProductsService {
       requiresListingFee,
       listingFee: EXTRA_LISTING_FEE,
       paymentGraceDays: 3,
+      activeNewCount,
+      newLimit,
+      defaultNewLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
+      hasCustomNewLimit: newLimit !== FREE_CLIENT_NEW_LISTING_LIMIT,
+      remainingNew: Math.max(0, newLimit - activeNewCount),
+      atNewLimit: activeNewCount >= newLimit,
     };
+  }
+
+  private async listingNeedsAdminApproval(opts: {
+    categoryId: string;
+    hasGuarantee?: boolean;
+    isAuction?: boolean;
+  }): Promise<boolean> {
+    if (!opts.isAuction && opts.hasGuarantee) return true;
+    return this.categoriesService.categoryRequiresAdminApproval(opts.categoryId);
+  }
+
+  private async notifyAdminGuaranteeListing(productId: string): Promise<void> {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        category: true,
+        user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+      },
+    });
+    if (!product?.hasGuarantee || !product.user) return;
+
+    const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${product.id}`;
+    await this.mailService
+      .sendGuaranteeListingPending({
+        product: {
+          id: product.id,
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          newPrice: (product as { newPrice?: number | null }).newPrice ?? null,
+          city: product.city,
+          neighborhood: product.neighborhood,
+          categoryName: product.category?.name ?? null,
+          phone: product.phone,
+          situation: product.situation,
+          stockQuantity: product.stockQuantity,
+          url: productUrl,
+        },
+        seller: {
+          id: product.user.id,
+          name: product.user.name,
+          phone: product.user.phone,
+          email: product.user.email,
+          city: product.user.city,
+        },
+      })
+      .catch(() => {});
   }
 
   private async buildCreateData(
@@ -243,17 +325,21 @@ export class ProductsService {
     const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
     const now = new Date();
     const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
+    const newPrice =
+      data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
 
     return {
       title: data.title,
       description: data.description,
       price: listingPrice,
+      newPrice,
       images: JSON.stringify(data.images || []),
       categoryId: data.categoryId,
       hasGuarantee: data.isAuction ? false : data.hasGuarantee || false,
       isBoosted: data.isBoosted || false,
-      strengthenedUntil: data.applyStrengthened ? strengthenedEndsAt() : null,
+      strengthenedUntil: null,
       city: data.city,
+      neighborhood: data.neighborhood?.trim() || null,
       phone: data.isAuction ? undefined : data.phone,
       advertiser: data.advertiser ?? 'CLIENT',
       situation: data.situation,
@@ -269,13 +355,44 @@ export class ProductsService {
     };
   }
 
-  async createPublicListing(data: CreateProductDto, userId: string) {
+  async createPublicListing(data: CreateProductDto, userId: string, role?: string) {
     void this.purgeExpiredListingPaymentDrafts();
     await this.categoriesService.assertLeafCategory(data.categoryId);
-    const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
-    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
-      data.categoryId,
-    );
+
+    /** Admin-created listings belong to the shop catalog, not the user marketplace. */
+    if (role === 'ADMIN') {
+      const product = await this.prisma.product.create({
+        data: await this.buildCreateData({ ...data, advertiser: 'SHOP' }, userId, {
+          status: 'ACTIVE',
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+        }),
+        include: productIncludeDetail,
+      });
+
+      this.telegramChannel.announceProductActive(product.id);
+
+      return {
+        product: await this.mapProduct(product),
+        requiresListingFee: false,
+        requiresAdminApproval: false,
+        activeCount: 0,
+        freeLimit: 0,
+        activeNewCount: 0,
+        newLimit: 0,
+        listingFee: 0,
+        paymentDueAt: null,
+      };
+    }
+
+    await this.assertNewListingQuota(userId, data.situation);
+    const { requiresListingFee, freeLimit, activeCount, activeNewCount, newLimit } =
+      await this.getListingQuotaState(userId);
+    const needsAdminApproval = await this.listingNeedsAdminApproval({
+      categoryId: data.categoryId,
+      hasGuarantee: data.hasGuarantee,
+      isAuction: data.isAuction,
+    });
 
     const createOptions = needsAdminApproval
       ? requiresListingFee
@@ -308,43 +425,118 @@ export class ProductsService {
 
     const mapped = await this.mapProduct(product);
 
+    if (createOptions.status === 'ACTIVE') {
+      this.telegramChannel.announceProductActive(product.id);
+    }
+
+    if (product.hasGuarantee && createOptions.listingFeePaid) {
+      void this.notifyAdminGuaranteeListing(product.id);
+    }
+
     return {
       product: mapped,
       requiresListingFee,
       requiresAdminApproval: needsAdminApproval,
       activeCount,
       freeLimit,
+      activeNewCount,
+      newLimit,
       listingFee: requiresListingFee ? EXTRA_LISTING_FEE : 0,
       paymentDueAt: requiresListingFee ? product.listingPaymentDueAt : null,
     };
   }
 
   async payListingFee(productId: string, userId: string) {
+    await this.assertPaymentPurposeAllowed(productId, userId, PAYMENT_PURPOSES.LISTING_FEE);
+    throw new BadRequestException(
+      'برای پرداخت هزینه ثبت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+    );
+  }
+
+  async getPaymentProductContext(productId: string, userId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        status: true,
+        isAuction: true,
+        listingFeePaid: true,
+        listingPaymentDueAt: true,
+        userId: true,
+        advertiser: true,
+        images: true,
+      },
+    });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+    this.assertClientListingOwner(product, userId);
+    return product;
+  }
+
+  async assertPaymentPurposeAllowed(productId: string, userId: string, purpose: PaymentPurpose) {
+    const product = await this.getPaymentProductContext(productId, userId);
+
+    switch (purpose) {
+      case PAYMENT_PURPOSES.LISTING_FEE:
+        if (product.listingFeePaid) {
+          throw new BadRequestException('هزینه ثبت این آگهی قبلاً پرداخت شده است');
+        }
+        if (product.status !== 'PENDING') {
+          throw new BadRequestException('این آگهی در انتظار پرداخت نیست');
+        }
+        if (product.listingPaymentDueAt && product.listingPaymentDueAt.getTime() <= Date.now()) {
+          throw new BadRequestException('مهلت پرداخت این آگهی به پایان رسیده است');
+        }
+        break;
+      case PAYMENT_PURPOSES.LISTING_STRENGTHENED:
+        if (product.status !== 'ACTIVE') {
+          throw new BadRequestException('فقط آگهی‌های فعال قابل تقویت هستند');
+        }
+        if (product.isAuction) {
+          throw new BadRequestException('مزایده‌ها قابل تقویت نیستند');
+        }
+        break;
+      case PAYMENT_PURPOSES.LISTING_BOOST:
+        if (product.status !== 'ACTIVE') {
+          throw new BadRequestException('فقط آگهی‌های فعال قابل پله‌شدن هستند');
+        }
+        if (product.isAuction) {
+          throw new BadRequestException('مزایده‌ها قابل پله‌شدن نیستند');
+        }
+        break;
+      default:
+        throw new BadRequestException('نوع پرداخت نامعتبر است');
+    }
+
+    return product;
+  }
+
+  getPaymentAmountForPurpose(purpose: PaymentPurpose): number {
+    return getPaymentPurposeAmount(purpose);
+  }
+
+  async fulfillListingFeePayment(productId: string) {
     await this.purgeExpiredListingPaymentDrafts();
 
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!product) throw new NotFoundException('محصول یافت نشد');
-
-    this.assertClientListingOwner(product, userId);
-
     if (product.listingFeePaid) {
-      throw new BadRequestException('هزینه ثبت این آگهی قبلاً پرداخت شده است');
-    }
-
-    if (product.status !== 'PENDING') {
-      throw new BadRequestException('این آگهی در انتظار پرداخت نیست');
-    }
-
-    if (product.listingPaymentDueAt && product.listingPaymentDueAt.getTime() <= Date.now()) {
-      throw new BadRequestException('مهلت پرداخت این آگهی به پایان رسیده است');
+      return { requiresAdminApproval: false, alreadyPaid: true };
     }
 
     const now = new Date();
-    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
-      product.categoryId,
-    );
+    const needsAdminApproval = await this.listingNeedsAdminApproval({
+      categoryId: product.categoryId,
+      hasGuarantee: product.hasGuarantee,
+      isAuction: product.isAuction,
+    });
 
-    const updated = await this.prisma.product.update({
+    if (!needsAdminApproval && product.userId) {
+      await this.assertNewListingQuota(product.userId, product.situation);
+    }
+
+    await this.prisma.product.update({
       where: { id: productId },
       data: needsAdminApproval
         ? {
@@ -359,14 +551,40 @@ export class ProductsService {
             activeUntil: computeActiveUntil(now),
             listedAt: now,
           },
-      include: productIncludeDetail,
     });
 
-    const mapped = await this.mapProduct(updated);
-    return {
-      ...mapped,
-      requiresAdminApproval: needsAdminApproval,
-    };
+    if (!needsAdminApproval) {
+      this.telegramChannel.announceProductActive(productId);
+    } else if (product.hasGuarantee) {
+      void this.notifyAdminGuaranteeListing(productId);
+    }
+
+    return { requiresAdminApproval: needsAdminApproval, alreadyPaid: false };
+  }
+
+  async fulfillStrengthenedPayment(productId: string) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+
+    await this.prisma.product.update({
+      where: { id: productId },
+      data: { strengthenedUntil: strengthenedEndsAt() },
+    });
+
+    this.telegramChannel.announceStrengthened(productId);
+  }
+
+  async fulfillBoostPayment(productId: string) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+
+    const now = new Date();
+    await this.prisma.product.update({
+      where: { id: productId },
+      data: { isBoosted: true, listedAt: now },
+    });
+
+    this.telegramChannel.announceBoost(productId);
   }
 
   async findAll(params: {
@@ -530,16 +748,18 @@ export class ProductsService {
     };
   }
 
-  async create(data: CreateProductDto, userId?: string) {
+  async create(data: CreateProductDto, userId?: string, role?: string) {
     await this.categoriesService.assertLeafCategory(data.categoryId);
+    const advertiser = role === 'ADMIN' ? 'SHOP' : (data.advertiser ?? 'CLIENT');
     const product = await this.prisma.product.create({
-      data: await this.buildCreateData(data, userId || '', {
+      data: await this.buildCreateData({ ...data, advertiser }, userId || '', {
         status: 'ACTIVE',
         listingFeePaid: true,
         listingPaymentDueAt: null,
       }),
       include: productIncludeDetail,
     });
+    this.telegramChannel.announceProductActive(product.id);
     return this.mapProduct(product);
   }
 
@@ -549,6 +769,16 @@ export class ProductsService {
 
     if (product.advertiser === 'CLIENT' && product.userId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('شما اجازه ویرایش این محصول را ندارید');
+    }
+
+    if (
+      product.advertiser === 'CLIENT' &&
+      product.userId &&
+      product.status === 'ACTIVE' &&
+      data.situation === 'NEW' &&
+      product.situation !== 'NEW'
+    ) {
+      await this.assertNewListingQuota(product.userId, 'NEW');
     }
 
     const updateData: any = { ...data };
@@ -561,6 +791,28 @@ export class ProductsService {
     if (data.auctionEndsAt) updateData.auctionEndsAt = new Date(data.auctionEndsAt);
     if (data.auctionStartPrice != null && product.isAuction) {
       updateData.auctionStartPrice = data.auctionStartPrice;
+    }
+    if (data.neighborhood !== undefined) {
+      updateData.neighborhood = data.neighborhood?.trim() || null;
+    }
+
+    if (data.newPrice !== undefined) {
+      updateData.newPrice =
+        data.newPrice == null || Number(data.newPrice) <= 0 ? null : Number(data.newPrice);
+    }
+
+    const enablingGuarantee =
+      product.advertiser === 'CLIENT' &&
+      data.hasGuarantee === true &&
+      !product.hasGuarantee &&
+      product.status === 'ACTIVE' &&
+      !product.isAuction;
+
+    if (enablingGuarantee) {
+      updateData.status = 'PENDING';
+      updateData.listingFeePaid = true;
+      updateData.listingPaymentDueAt = null;
+      updateData.activeUntil = null;
     }
 
     if (data.carBrands !== undefined) {
@@ -586,46 +838,26 @@ export class ProductsService {
       data: updateData,
       include: productIncludeDetail,
     });
+
+    if (enablingGuarantee) {
+      void this.notifyAdminGuaranteeListing(id);
+    }
+
     return this.mapProduct(updated);
   }
 
   async applyStrengthened(id: string, userId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
-    this.assertClientListingOwner(product, userId);
-    if (product.status !== 'ACTIVE') {
-      throw new BadRequestException('فقط آگهی‌های فعال قابل تقویت هستند');
-    }
-    if (product.isAuction) {
-      throw new BadRequestException('مزایده‌ها قابل تقویت نیستند');
-    }
-
-    const updated = await this.prisma.product.update({
-      where: { id },
-      data: { strengthenedUntil: strengthenedEndsAt() },
-      include: productIncludeDetail,
-    });
-    return this.mapProduct(updated);
+    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_STRENGTHENED);
+    throw new BadRequestException(
+      'برای پرداخت تقویت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+    );
   }
 
   async applyBoost(id: string, userId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
-    this.assertClientListingOwner(product, userId);
-    if (product.status !== 'ACTIVE') {
-      throw new BadRequestException('فقط آگهی‌های فعال قابل پله‌شدن هستند');
-    }
-    if (product.isAuction) {
-      throw new BadRequestException('مزایده‌ها قابل پله‌شدن نیستند');
-    }
-
-    const now = new Date();
-    const updated = await this.prisma.product.update({
-      where: { id },
-      data: { isBoosted: true, listedAt: now },
-      include: productIncludeDetail,
-    });
-    return this.mapProduct(updated);
+    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_BOOST);
+    throw new BadRequestException(
+      'برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+    );
   }
 
   async remove(id: string, userId?: string, userRole?: string) {
@@ -634,6 +866,13 @@ export class ProductsService {
 
     if (product.advertiser === 'CLIENT' && product.userId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('شما اجازه حذف این محصول را ندارید');
+    }
+
+    const orderItemCount = await this.prisma.orderItem.count({ where: { productId: id } });
+    if (orderItemCount > 0) {
+      throw new BadRequestException(
+        'این محصول در سفارش ثبت شده و قابل حذف نیست. می‌توانید وضعیت آن را به ناموجود یا غیرفعال تغییر دهید.',
+      );
     }
 
     return this.prisma.product.delete({ where: { id } });
@@ -654,10 +893,16 @@ export class ProductsService {
     }
 
     const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
-    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
-      product.categoryId,
-    );
+    const needsAdminApproval = await this.listingNeedsAdminApproval({
+      categoryId: product.categoryId,
+      hasGuarantee: product.hasGuarantee,
+      isAuction: product.isAuction,
+    });
     const now = new Date();
+
+    if (!requiresListingFee && !needsAdminApproval) {
+      await this.assertNewListingQuota(userId, product.situation);
+    }
 
     if (requiresListingFee) {
       const pending = await this.prisma.product.update({
@@ -701,6 +946,10 @@ export class ProductsService {
           },
       include: productIncludeDetail,
     });
+
+    if (needsAdminApproval && product.hasGuarantee) {
+      void this.notifyAdminGuaranteeListing(id);
+    }
 
     return {
       product: await this.mapProduct(updated),

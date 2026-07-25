@@ -46,13 +46,19 @@ export class ProductsController {
   }
 
   @Post()
-  create(@Body() body: CreateProductDto, @Request() req: { user: { userId: string } }) {
-    return this.productsService.create(body, req.user.userId);
+  create(
+    @Body() body: CreateProductDto,
+    @Request() req: { user: { userId: string; role: string } },
+  ) {
+    return this.productsService.create(body, req.user.userId, req.user.role);
   }
 
   @Post('public')
-  createPublic(@Body() body: CreateProductDto, @Request() req: { user: { userId: string } }) {
-    return this.productsService.createPublicListing(body, req.user.userId);
+  createPublic(
+    @Body() body: CreateProductDto,
+    @Request() req: { user: { userId: string; role: string } },
+  ) {
+    return this.productsService.createPublicListing(body, req.user.userId, req.user.role);
   }
 
   @Post(':id/report')

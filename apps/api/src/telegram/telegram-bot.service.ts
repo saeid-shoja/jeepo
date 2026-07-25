@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SITE_NAME_FA } from '@offroad/shared';
 import { PrismaService } from '../prisma/prisma.service';
-import { TelegramService, type TelegramUpdate } from './telegram.service';
+import { type TelegramMessage, TelegramService, type TelegramUpdate } from './telegram.service';
 
 const LINK_TTL_MS = 30 * 60 * 1000;
 
@@ -13,6 +13,7 @@ export class TelegramBotService {
     private readonly prisma: PrismaService,
     private readonly telegram: TelegramService,
     @Inject('TELEGRAM_WEBHOOK_SECRET') private readonly webhookSecret: string,
+    @Inject('TELEGRAM_CHANNEL_CHAT_ID') private readonly channelChatId: string,
   ) {}
 
   async createLinkForUser(userId: string) {
@@ -98,7 +99,15 @@ export class TelegramBotService {
     }
 
     const message = update.message;
-    if (!message?.text || !message.chat?.id) {
+    if (!message?.chat?.id) {
+      return { ok: true };
+    }
+
+    if (await this.handleChannelTopicCommand(message)) {
+      return { ok: true };
+    }
+
+    if (!message.text) {
       return { ok: true };
     }
 
@@ -164,5 +173,34 @@ export class TelegramBotService {
     );
 
     return { ok: true };
+  }
+
+  /** Reply with message_thread_id when admin sends /topicid inside a @jeeppo forum topic. */
+  private async handleChannelTopicCommand(message: TelegramMessage): Promise<boolean> {
+    if (!this.channelChatId || !message.text) return false;
+
+    const normalized = message.text.trim().split(/\s+/)[0]?.split('@')[0];
+    if (normalized !== '/topicid') return false;
+
+    const resolvedChannelId = await this.telegram.resolveChatId(this.channelChatId);
+    if (String(message.chat.id) !== resolvedChannelId) return false;
+
+    const threadId = message.message_thread_id;
+    if (!threadId) {
+      await this.telegram.sendMessage(
+        resolvedChannelId,
+        'این دستور را داخل یک تاپیک بفرستید (نه در صفحهٔ اصلی گروه).',
+      );
+      return true;
+    }
+
+    await this.telegram.sendMessageToTopic(
+      resolvedChannelId,
+      threadId,
+      `✅ <b>message_thread_id این تاپیک:</b> <code>${threadId}</code>\n\nبرای اعلان‌ها در <code>apps/api/.env</code>:\n<code>TELEGRAM_TOPIC_NEWS=${threadId}</code>\n\nسایر تاپیک‌ها:\nTELEGRAM_TOPIC_STRENGTHENED / TELEGRAM_TOPIC_BOOST / TELEGRAM_TOPIC_GUARANTEE / TELEGRAM_TOPIC_BEST_PRICE / TELEGRAM_TOPIC_SHOP / TELEGRAM_TOPIC_AUCTION`,
+    );
+
+    this.logger.log(`Topic id reported for thread ${threadId} in ${resolvedChannelId}`);
+    return true;
   }
 }

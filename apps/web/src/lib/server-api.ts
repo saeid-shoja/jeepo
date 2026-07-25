@@ -31,6 +31,7 @@ export type ServerProduct = {
   hasGuarantee?: boolean;
   purchasable?: boolean;
   city?: string;
+  neighborhood?: string;
   updatedAt: string;
   createdAt: string;
   category?: { id: string; name: string; slug: string };

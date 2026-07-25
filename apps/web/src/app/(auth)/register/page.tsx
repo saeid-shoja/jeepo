@@ -169,7 +169,7 @@ function RegisterPageContent() {
       <CardContent>
         <form
           onSubmit={detailsForm.handleSubmit(onRegisterSubmit)}
-          className="space-y-4"
+          className="space-y-3"
           noValidate
         >
           <div className="space-y-2">
@@ -240,14 +240,14 @@ function RegisterPageContent() {
             {detailsForm.formState.isSubmitting ? 'در حال ثبت نام...' : 'ادامه و دریافت کد تأیید'}
           </Button>
         </form>
-        <div className="w-full flex justify-between items-center mt-4">
-          <p className="text-muted-foreground text-center text-sm">
+        <div className="w-full flex justify-between items-center mt-4 lg:text-sm text-xs">
+          <p className="text-muted-foreground text-center">
             قبلاً ثبت نام کرده‌اید؟{' '}
             <Link href="/login" className="text-primary hover:underline">
               ورود
             </Link>
           </p>
-          <Link href="/" className="text-primary hover:underline text-sm">
+          <Link href="/" className="text-primary hover:underline">
             بازگشت به صفحه اصلی
           </Link>
         </div>

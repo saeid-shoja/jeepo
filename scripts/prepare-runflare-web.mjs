@@ -14,7 +14,11 @@ const vendorDir = join(webDir, 'vendor/offroad-shared');
 const webPkgPath = join(webDir, 'package.json');
 const backupPath = join(webDir, 'package.json.monorepo.bak');
 
-execSync('pnpm --filter @offroad/shared build', { cwd: root, stdio: 'inherit' });
+rmSync(join(sharedDir, 'dist'), { recursive: true, force: true });
+execSync('npm exec --yes --package typescript@5.7.2 -- tsc -p packages/shared/tsconfig.json', {
+  cwd: root,
+  stdio: 'inherit',
+});
 
 if (!existsSync(join(sharedDir, 'dist/index.js'))) {
   console.error('packages/shared/dist missing after build');

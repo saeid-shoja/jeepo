@@ -26,7 +26,7 @@ export const DigitsInput = React.forwardRef<HTMLInputElement, DigitsInputProps>(
     <Input
       ref={ref}
       dir={dir}
-      className={cn('text-end', className)}
+      className={cn('text-end formTextSize', className)}
       {...props}
       onChange={(e) => {
         patchChangeValue(e, toEnglishDigits);
@@ -42,7 +42,7 @@ export const LoginIdentifierInput = React.forwardRef<HTMLInputElement, DigitsInp
     <Input
       ref={ref}
       dir={dir}
-      className={cn('text-end', className)}
+      className={cn('text-end formTextSize', className)}
       {...props}
       onChange={(e) => {
         patchChangeValue(e, normalizeLoginIdentifier);
@@ -58,7 +58,7 @@ export const TelegramIdInput = React.forwardRef<HTMLInputElement, DigitsInputPro
     <Input
       ref={ref}
       dir={dir}
-      className={cn('text-end', className)}
+      className={cn('text-end formTextSize', className)}
       {...props}
       onChange={(e) => {
         patchChangeValue(e, normalizeTelegramIdInput);

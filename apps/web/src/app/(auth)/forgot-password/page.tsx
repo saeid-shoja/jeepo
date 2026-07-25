@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
         <p className="text-muted-foreground mb-4 text-center text-sm">
           ایمیل ثبت‌نام‌شده خود را وارد کنید. رمز عبور جدید به ایمیل شما ارسال می‌شود.
         </p>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">ایمیل</Label>
             <Input

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
 
@@ -30,6 +31,9 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [telegramId, setTelegramId] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -37,6 +41,9 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       setName(profile?.name ?? '');
       setCity(profile?.city ?? '');
       setTelegramId(profile?.telegramId ? `@${profile.telegramId.replace(/^@/, '')}` : '');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     }
   }, [open, profile?.name, profile?.city, profile?.telegramId]);
 
@@ -59,8 +66,33 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
 
     const normalizedTelegram = trimmedTelegram ? trimmedTelegram.replace(/^@/, '') : null;
 
+    const wantsPasswordChange =
+      currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0;
+
+    if (wantsPasswordChange) {
+      if (!currentPassword) {
+        toast.error('رمز عبور فعلی را وارد کنید');
+        return;
+      }
+      if (newPassword.length < 6) {
+        toast.error('رمز عبور جدید باید حداقل ۶ کاراکتر باشد');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        toast.error('تکرار رمز عبور جدید با رمز جدید یکسان نیست');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
+      if (wantsPasswordChange) {
+        await api.users.changePassword({
+          currentPassword,
+          newPassword,
+        });
+      }
+
       const updated = await api.users.updateProfile({
         name: trimmedName,
         city: city || undefined,
@@ -72,7 +104,9 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
         telegramId: updated.telegramId ?? null,
       });
       onUpdated(updated);
-      toast.success('پروفایل به‌روزرسانی شد');
+      toast.success(
+        wantsPasswordChange ? 'پروفایل و رمز عبور به‌روزرسانی شد' : 'پروفایل به‌روزرسانی شد',
+      );
       setOpen(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'به‌روزرسانی پروفایل ناموفق بود');
@@ -91,7 +125,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
         onClick={() => setOpen(true)}
       >
         <Pencil className="h-3.5 w-3.5" />
-        ویرایش پروفایل
+        <span className="hidden lg:inline">ویرایش پروفایل</span>
       </Button>
 
       <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
@@ -99,7 +133,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
           <DialogHeader>
             <DialogTitle>ویرایش پروفایل</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-2 py-2">
             <div className="space-y-2">
               <Label htmlFor="profile-name">نام</Label>
               <Input
@@ -107,6 +141,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="نام نمایشی"
+                className="text-xs"
               />
             </div>
             <CitySelect value={city} onChange={setCity} label="شهر" />
@@ -126,8 +161,41 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 autoComplete="off"
               />
             </div>
+            <div className="space-y-2 border-t pt-4">
+              <p className="text-sm font-medium">تغییر رمز عبور</p>
+              <p className="text-muted-foreground text-xs">
+                در صورت عدم نیاز به تغییر رمز، این فیلدها را خالی بگذارید.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="profile-current-password">رمز عبور فعلی</Label>
+                <PasswordInput
+                  id="profile-current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-new-password">رمز عبور جدید</Label>
+                <PasswordInput
+                  id="profile-new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-confirm-password">تکرار رمز عبور جدید</Label>
+                <PasswordInput
+                  id="profile-confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-1 sm:gap-0">
             <Button
               type="button"
               variant="outline"

@@ -29,6 +29,7 @@ export interface IProduct {
   title: string;
   description: string;
   price: number;
+  newPrice?: number | null;
   images: string[];
   categoryId: string;
   category?: ICategory;
@@ -39,6 +40,7 @@ export interface IProduct {
   isBoosted: boolean;
   status: ProductStatus;
   city?: string;
+  neighborhood?: string;
   phone?: string;
   createdAt: Date;
   updatedAt: Date;

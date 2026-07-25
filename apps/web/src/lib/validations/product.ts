@@ -1,4 +1,9 @@
-import { containsLinkOrPhone, NO_CONTACT_IN_TEXT_MESSAGE, toEnglishDigits } from '@offroad/shared';
+import {
+  containsLinkOrPhone,
+  NO_CONTACT_IN_TEXT_MESSAGE,
+  PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
+  toEnglishDigits,
+} from '@offroad/shared';
 import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
 import { IRAN_MOBILE_REGEX } from '@/lib/validations/digits';
@@ -15,11 +20,20 @@ const listingTextField = (minLen: number, minMsg: string) =>
     .min(minLen, minMsg)
     .refine((value) => !containsLinkOrPhone(value), NO_CONTACT_IN_TEXT_MESSAGE);
 
+const neighborhoodField = z
+  .string()
+  .trim()
+  .max(
+    PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
+    `محله حداکثر ${PRODUCT_NEIGHBORHOOD_MAX_LENGTH} کاراکتر باشد`,
+  );
+
 const sharedProductFields = {
   title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
   description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
   categoryId: z.string().min(1, 'دسته‌بندی را انتخاب کنید'),
   city: z.string().optional(),
+  neighborhood: neighborhoodField.optional().or(z.literal('')),
   phone: phoneField,
   situation: situationSchema,
   carBrands: z.array(z.string()),
@@ -31,6 +45,8 @@ const sharedProductFields = {
     .int('تعداد باید عدد صحیح باشد')
     .min(1, 'حداقل ۱ عدد')
     .max(9999, 'حداکثر ۹۹۹۹ عدد'),
+  /** Approximate retail / new price; required when situation is USED (non-auction). */
+  newPrice: z.number(),
 };
 
 export const newProductSchema = z
@@ -51,6 +67,13 @@ export const newProductSchema = z
           code: z.ZodIssueCode.custom,
           message: 'قیمت محصول را وارد کنید',
           path: ['price'],
+        });
+      }
+      if (data.situation === 'USED' && data.newPrice <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'قیمت تقریبی نو محصول را وارد کنید',
+          path: ['newPrice'],
         });
       }
       return;
@@ -115,15 +138,25 @@ export const newProductSchema = z
 
 const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedProductFields;
 
-export const editProductSchema = z.object({
-  ...editProductFields,
-  price: z.number().positive('قیمت محصول را وارد کنید'),
-  stockQuantity: z
-    .number()
-    .int('تعداد باید عدد صحیح باشد')
-    .min(1, 'حداقل ۱ عدد')
-    .max(9999, 'حداکثر ۹۹۹۹ عدد'),
-});
+export const editProductSchema = z
+  .object({
+    ...editProductFields,
+    price: z.number().positive('قیمت محصول را وارد کنید'),
+    stockQuantity: z
+      .number()
+      .int('تعداد باید عدد صحیح باشد')
+      .min(1, 'حداقل ۱ عدد')
+      .max(9999, 'حداکثر ۹۹۹۹ عدد'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.situation === 'USED' && data.newPrice <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'قیمت تقریبی نو محصول را وارد کنید',
+        path: ['newPrice'],
+      });
+    }
+  });
 
 export type NewProductFormValues = z.infer<typeof newProductSchema>;
 export type EditProductFormValues = z.infer<typeof editProductSchema>;

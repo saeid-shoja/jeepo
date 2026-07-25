@@ -1,7 +1,8 @@
 'use client';
 
-import { FREE_CLIENT_LISTING_LIMIT } from '@offroad/shared';
-import { Calendar, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
+import { FREE_CLIENT_LISTING_LIMIT, FREE_CLIENT_NEW_LISTING_LIMIT } from '@offroad/shared';
+import { Calendar, MapPin, Package, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -15,9 +16,13 @@ type UserRow = {
   role: string;
   city?: string | null;
   maxActiveListings?: number | null;
+  maxActiveNewListings?: number | null;
   activeListingCount?: number;
+  activeNewListingCount?: number;
   effectiveListingLimit?: number;
+  effectiveNewListingLimit?: number;
   defaultListingLimit?: number;
+  defaultNewListingLimit?: number;
   createdAt: string;
 };
 
@@ -29,6 +34,7 @@ const emptyForm = {
   city: '',
   role: 'CLIENT',
   maxActiveListings: '',
+  maxActiveNewListings: '',
 };
 
 export default function AdminUsersPage() {
@@ -67,6 +73,8 @@ export default function AdminUsersPage() {
       city: user.city ?? '',
       role: user.role,
       maxActiveListings: user.maxActiveListings != null ? String(user.maxActiveListings) : '',
+      maxActiveNewListings:
+        user.maxActiveNewListings != null ? String(user.maxActiveNewListings) : '',
     });
     setShowForm(true);
   };
@@ -87,10 +95,14 @@ export default function AdminUsersPage() {
         payload.maxActiveListings = form.maxActiveListings.trim()
           ? Number(form.maxActiveListings)
           : null;
+        payload.maxActiveNewListings = form.maxActiveNewListings.trim()
+          ? Number(form.maxActiveNewListings)
+          : null;
         await adminApi.updateUser(editingId, payload);
       } else {
         const createPayload: Parameters<typeof adminApi.createUser>[0] & {
           maxActiveListings?: number;
+          maxActiveNewListings?: number;
         } = {
           phone: form.phone.trim(),
           email: form.email.trim(),
@@ -101,6 +113,9 @@ export default function AdminUsersPage() {
         };
         if (form.maxActiveListings.trim()) {
           createPayload.maxActiveListings = Number(form.maxActiveListings);
+        }
+        if (form.maxActiveNewListings.trim()) {
+          createPayload.maxActiveNewListings = Number(form.maxActiveNewListings);
         }
         await adminApi.createUser(createPayload);
       }
@@ -129,6 +144,13 @@ export default function AdminUsersPage() {
     const active = user.activeListingCount ?? 0;
     const limit = user.effectiveListingLimit ?? FREE_CLIENT_LISTING_LIMIT;
     const custom = user.maxActiveListings != null;
+    return `${active.toLocaleString('fa-IR')}/${limit.toLocaleString('fa-IR')}${custom ? ' (ویژه)' : ''}`;
+  };
+
+  const formatNewListingQuota = (user: UserRow) => {
+    const active = user.activeNewListingCount ?? 0;
+    const limit = user.effectiveNewListingLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT;
+    const custom = user.maxActiveNewListings != null;
     return `${active.toLocaleString('fa-IR')}/${limit.toLocaleString('fa-IR')}${custom ? ' (ویژه)' : ''}`;
   };
 
@@ -211,7 +233,7 @@ export default function AdminUsersPage() {
                 <option value="ADMIN">مدیر</option>
               </select>
             </label>
-            <label className="block text-sm sm:col-span-2">
+            <label className="block text-sm">
               <span className="mb-1 block text-gray-600">حداکثر آگهی فعال رایگان</span>
               <input
                 type="number"
@@ -224,8 +246,23 @@ export default function AdminUsersPage() {
                 dir="ltr"
               />
               <span className="mt-1 block text-xs text-gray-500">
-                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT} آگهی). برای استثنا، عدد بیشتر وارد کنید
-                (مثلاً ۱۰).
+                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT}). بیش از سقف = هزینه ثبت.
+              </span>
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-gray-600">حداکثر آگهی فعال «نو»</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={form.maxActiveNewListings}
+                onChange={(e) => setForm((f) => ({ ...f, maxActiveNewListings: e.target.value }))}
+                placeholder={`پیش‌فرض (${FREE_CLIENT_NEW_LISTING_LIMIT})`}
+                className="w-full rounded-sm border px-3 py-2 ltr text-left"
+                dir="ltr"
+              />
+              <span className="mt-1 block text-xs text-gray-500">
+                خالی = پیش‌فرض ({FREE_CLIENT_NEW_LISTING_LIMIT}). سقف سخت برای وضعیت نو.
               </span>
             </label>
           </div>
@@ -259,6 +296,7 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-right">ایمیل</th>
                 <th className="px-4 py-3 text-right">شهر</th>
                 <th className="px-4 py-3 text-right">آگهی فعال</th>
+                <th className="px-4 py-3 text-right">آگهی نو</th>
                 <th className="px-4 py-3 text-right">نقش</th>
                 <th className="px-4 py-3 text-right">تاریخ ثبت نام</th>
                 <th className="px-4 py-3 text-right">عملیات</th>
@@ -267,7 +305,14 @@ export default function AdminUsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{u.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/dashboard/users/${u.id}/products`}
+                      className="text-primary hover:underline"
+                    >
+                      {u.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-1 text-xs" dir="ltr">
                       <Phone className="h-3 w-3" />
@@ -288,6 +333,7 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs">{formatListingQuota(u)}</td>
+                  <td className="px-4 py-3 text-xs">{formatNewListingQuota(u)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}
@@ -303,6 +349,13 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
+                      <Link
+                        href={`/dashboard/users/${u.id}/products`}
+                        className="rounded p-1 text-blue-600 hover:bg-blue-50"
+                        title="آگهی‌های کاربر"
+                      >
+                        <Package className="h-4 w-4" />
+                      </Link>
                       <button
                         type="button"
                         onClick={() => openEdit(u)}

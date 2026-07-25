@@ -2,9 +2,8 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  EXTRA_LISTING_FEE,
-  FREE_CLIENT_LISTING_LIMIT,
-  LISTING_PAYMENT_GRACE_DAYS,
+  FREE_CLIENT_NEW_LISTING_LIMIT,
+  PAYMENT_PURPOSES,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
 } from '@offroad/shared';
@@ -14,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { AuctionListingOptions } from '@/components/form/auction-listing-options';
+import { CarBrandPicker } from '@/components/form/car-brand-picker';
 import { CitySelect } from '@/components/form/city-select';
 import { dateTimeLocalToIso, defaultMinDateTimeLocal } from '@/components/form/datetime-picker';
 import { DigitsInput } from '@/components/form/digits-input';
@@ -35,6 +35,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { buildPaymentPageUrl } from '@/lib/payment-url';
+import { toastFormValidationErrors } from '@/lib/toast-form-errors';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { type NewProductFormValues, newProductSchema } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
@@ -45,18 +47,16 @@ export default function NewProductPage() {
   const router = useRouter();
   const { carBrands: carBrandOptions } = useCategories();
   const [strengthenedPaymentOpen, setStrengthenedPaymentOpen] = useState(false);
-  const [listingPaymentOpen, setListingPaymentOpen] = useState(false);
   const [submitResultOpen, setSubmitResultOpen] = useState(false);
   const [submitResultVariant, setSubmitResultVariant] =
     useState<ListingSubmitResultVariant>('published');
-  const [pendingListingId, setPendingListingId] = useState<string | null>(null);
-  const [listingFee, setListingFee] = useState(EXTRA_LISTING_FEE);
-  const [listingPaymentDueAt, setListingPaymentDueAt] = useState<string | null>(null);
-  const [payingListingFee, setPayingListingFee] = useState(false);
-  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
-  const [listingFreeLimit, setListingFreeLimit] = useState(FREE_CLIENT_LISTING_LIMIT);
-  const [activeListingsCount, setActiveListingsCount] = useState(0);
   const listingPaymentResolvedRef = useRef(false);
+  const [isSubmittingListing, setIsSubmittingListing] = useState(false);
+  const [newQuota, setNewQuota] = useState<{
+    activeNewCount: number;
+    newLimit: number;
+    atNewLimit: boolean;
+  } | null>(null);
 
   const {
     register,
@@ -74,6 +74,7 @@ export default function NewProductPage() {
       price: 0,
       categoryId: '',
       city: '',
+      neighborhood: '',
       phone: '',
       situation: 'NEW',
       carBrands: [],
@@ -87,6 +88,7 @@ export default function NewProductPage() {
       realPriceMax: 0,
       buyNowPrice: 0,
       stockQuantity: 1,
+      newPrice: 0,
     },
   });
 
@@ -95,6 +97,32 @@ export default function NewProductPage() {
   const hasGuarantee = watch('hasGuarantee');
   const applyStrengthened = watch('applyStrengthened');
   const carBrands = watch('carBrands');
+  const situation = watch('situation');
+
+  const isAdmin = user?.role === 'ADMIN';
+
+  useEffect(() => {
+    if (!user || isAdmin) {
+      setNewQuota(null);
+      return;
+    }
+    api.products
+      .listingQuota()
+      .then((q) =>
+        setNewQuota({
+          activeNewCount: q.activeNewCount ?? 0,
+          newLimit: q.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT,
+          atNewLimit: Boolean(q.atNewLimit),
+        }),
+      )
+      .catch(() =>
+        setNewQuota({
+          activeNewCount: 0,
+          newLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
+          atNewLimit: false,
+        }),
+      );
+  }, [user, isAdmin]);
 
   const showSubmitResult = (variant: ListingSubmitResultVariant) => {
     setSubmitResultVariant(variant);
@@ -103,7 +131,7 @@ export default function NewProductPage() {
 
   const goToDashboard = () => {
     setSubmitResultOpen(false);
-    router.push('/dashboard');
+    router.push(isAdmin ? '/products?advertiserType=SHOP' : '/dashboard');
   };
 
   useEffect(() => {
@@ -111,17 +139,6 @@ export default function NewProductPage() {
       router.push('/login');
     }
   }, [user, authLoading, router]);
-
-  useEffect(() => {
-    if (!user) return;
-    api.products
-      .listingQuota()
-      .then((quota) => {
-        setListingFreeLimit(quota.freeLimit);
-        setActiveListingsCount(quota.activeCount);
-      })
-      .catch(() => setListingFreeLimit(FREE_CLIENT_LISTING_LIMIT));
-  }, [user]);
 
   useEffect(() => {
     if (price <= 0 && hasGuarantee) setValue('hasGuarantee', false);
@@ -134,9 +151,14 @@ export default function NewProductPage() {
         title: data.title,
         description: data.description,
         price: data.isAuction ? data.auctionStartPrice : data.price,
+        newPrice:
+          !data.isAuction && data.situation === 'USED' && data.newPrice > 0
+            ? data.newPrice
+            : undefined,
         categoryId: data.categoryId,
         carBrands: data.carBrands.length ? data.carBrands : undefined,
         city: data.city || undefined,
+        neighborhood: data.neighborhood?.trim() || undefined,
         phone: data.isAuction ? undefined : data.phone || undefined,
         hasGuarantee: data.isAuction ? false : data.hasGuarantee,
         applyStrengthened: data.applyStrengthened,
@@ -156,16 +178,22 @@ export default function NewProductPage() {
       });
 
       if (result.requiresListingFee) {
-        listingPaymentResolvedRef.current = false;
-        setPendingListingId(result.product.id);
-        setListingFee(result.listingFee);
-        setListingPaymentDueAt(result.paymentDueAt);
-        if (result.freeLimit) setListingFreeLimit(result.freeLimit);
-        if (result.activeCount != null) setActiveListingsCount(result.activeCount);
-        setListingPaymentOpen(true);
-        toast.info(
-          `شما ${(result.activeCount ?? activeListingsCount).toLocaleString('fa-IR')} آگهی فعال دارید (سقف رایگان: ${(result.freeLimit ?? listingFreeLimit).toLocaleString('fa-IR')}). برای انتشار آگهی جدید باید ${EXTRA_LISTING_FEE.toLocaleString('fa-IR')} تومان بپردازید. تا ${LISTING_PAYMENT_GRACE_DAYS} روز فرصت دارید.`,
+        listingPaymentResolvedRef.current = true;
+        const nextPurpose =
+          data.applyStrengthened && !data.isAuction
+            ? PAYMENT_PURPOSES.LISTING_STRENGTHENED
+            : undefined;
+        toast.info('آگهی ثبت شد. برای انتشار، هزینه ثبت را پرداخت کنید.');
+        router.push(
+          buildPaymentPageUrl(result.product.id, PAYMENT_PURPOSES.LISTING_FEE, nextPurpose),
         );
+        return;
+      }
+
+      if (data.applyStrengthened && !data.isAuction) {
+        listingPaymentResolvedRef.current = true;
+        toast.info('آگهی ثبت شد. برای فعال‌سازی تقویت، پرداخت را تکمیل کنید.');
+        router.push(buildPaymentPageUrl(result.product.id, PAYMENT_PURPOSES.LISTING_STRENGTHENED));
         return;
       }
 
@@ -183,30 +211,6 @@ export default function NewProductPage() {
     }
   };
 
-  const handlePayListingFee = async () => {
-    if (!pendingListingId) return;
-    setPayingListingFee(true);
-    try {
-      const res = await api.products.payListingFee(pendingListingId);
-      listingPaymentResolvedRef.current = true;
-      setListingPaymentOpen(false);
-      showSubmitResult(res.requiresAdminApproval ? 'pending_review' : 'published');
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'پرداخت ناموفق بود');
-    } finally {
-      setPayingListingFee(false);
-    }
-  };
-
-  const handleListingPaymentDismiss = () => {
-    if (listingPaymentResolvedRef.current) return;
-    setListingPaymentOpen(false);
-    toast.info(
-      `آگهی در پیش‌نویس‌های شما ذخیره شد. تا ${LISTING_PAYMENT_GRACE_DAYS} روز برای پرداخت فرصت دارید.`,
-    );
-    router.push('/dashboard');
-  };
-
   const onValidSubmit = async (data: NewProductFormValues) => {
     if (!data.isAuction && data.applyStrengthened) {
       setStrengthenedPaymentOpen(true);
@@ -219,14 +223,24 @@ export default function NewProductPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
-      <h1 className="mb-8 text-2xl font-bold">ثبت آگهی جدید</h1>
-      <ListingFormTips />
-      <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-6" noValidate>
+      <h1 className="mb-8 text-2xl font-bold">{isAdmin ? 'ثبت محصول فروشگاه' : 'ثبت آگهی جدید'}</h1>
+      {isAdmin ? (
+        <p className="text-muted-foreground mb-6 text-sm">
+          این محصول در بخش «فروشگاه» نمایش داده می‌شود، نه در آگهی‌های کاربران.
+        </p>
+      ) : (
+        <ListingFormTips />
+      )}
+      <form
+        onSubmit={handleSubmit(onValidSubmit, toastFormValidationErrors)}
+        className="space-y-4"
+        noValidate
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
               <Input
@@ -260,6 +274,23 @@ export default function NewProductPage() {
               <FieldError message={errors.price?.message} />
             </div>
 
+            {!isAuction && situation === 'USED' && (
+              <div className="space-y-2">
+                <Label htmlFor="newPrice">قیمت نو محصول (تومان)</Label>
+                <Controller
+                  name="newPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput id="newPrice" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <p className="text-muted-foreground text-xs">
+                  قیمت تقریبی نسخه نوی همین محصول را وارد کنید تا خریدار مقایسه کند.
+                </p>
+                <FieldError message={errors.newPrice?.message} />
+              </div>
+            )}
+
             {!isAuction && (
               <div className="space-y-2">
                 <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
@@ -290,42 +321,14 @@ export default function NewProductPage() {
           </CardContent>
         </Card>
 
-        {carBrandOptions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">برند خودرو</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {carBrandOptions.map((option) => {
-                  const selected = carBrands.includes(option.value);
-                  return (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={selected ? 'default' : 'outline'}
-                      onClick={() =>
-                        setValue(
-                          'carBrands',
-                          selected
-                            ? carBrands.filter((v) => v !== option.value)
-                            : [...carBrands, option.value],
-                          { shouldValidate: true },
-                        )
-                      }
-                    >
-                      {option.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <CarBrandPicker
+          options={carBrandOptions}
+          value={carBrands}
+          onChange={(brands) => setValue('carBrands', brands, { shouldValidate: true })}
+        />
 
         <Card>
-          <CardContent className="space-y-4 pt-6">
+          <CardContent className="space-y-2 pt-6">
             <Controller
               name="situation"
               control={control}
@@ -333,6 +336,17 @@ export default function NewProductPage() {
                 <ProductSituationSelect value={field.value} onChange={field.onChange} />
               )}
             />
+            {situation === 'NEW' && newQuota && !isAdmin && (
+              <p
+                className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
+              >
+                آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
+                {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
+                {newQuota.atNewLimit
+                  ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
+                  : ''}
+              </p>
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Controller
@@ -342,6 +356,17 @@ export default function NewProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">محله آدرس</Label>
+                <Input
+                  id="neighborhood"
+                  type="text"
+                  maxLength={15}
+                  placeholder="مثلاً ونک"
+                  {...register('neighborhood')}
+                />
+                <FieldError message={errors.neighborhood?.message} />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">شماره تماس</Label>
                 <DigitsInput
@@ -420,28 +445,11 @@ export default function NewProductPage() {
         open={strengthenedPaymentOpen}
         onOpenChange={setStrengthenedPaymentOpen}
         loading={isSubmittingListing}
-        title="پرداخت هزینه تقویت آگهی"
-        description={`آگهی شما به مدت ${STRENGTHENED_DURATION_DAYS} روز در بالای لیست‌ها نمایش داده می‌شود.`}
+        title="تقویت آگهی"
+        description={`پس از ثبت آگهی، هزینه تقویت (${STRENGTHENED_DURATION_DAYS} روز نمایش در بالای لیست) از طریق درگاه پرداخت دریافت می‌شود.`}
         fee={STRENGTHENED_LISTING_FEE}
+        confirmLabel="ثبت آگهی و ادامه"
         onConfirm={() => submitListing(getValues())}
-      />
-
-      <ListingPremiumPaymentDialog
-        open={listingPaymentOpen}
-        onOpenChange={(open) => {
-          if (!open && !payingListingFee) {
-            handleListingPaymentDismiss();
-          }
-        }}
-        loading={payingListingFee}
-        title="پرداخت هزینه ثبت آگهی"
-        description={`شما ${activeListingsCount.toLocaleString('fa-IR')} آگهی فعال دارید و سقف رایگان ${listingFreeLimit.toLocaleString('fa-IR')} است. برای انتشار این آگهی باید هزینه ثبت بپردازید.${
-          listingPaymentDueAt
-            ? ` تا ${new Date(listingPaymentDueAt).toLocaleDateString('fa-IR')} (${LISTING_PAYMENT_GRACE_DAYS} روز) جهت پرداخت فرصت دارید بعد از این تاریخ آگهی از پیش نویس های شما حذف خواهد شد..`
-            : ''
-        }`}
-        fee={listingFee}
-        onConfirm={() => void handlePayListingFee()}
       />
 
       <ListingSubmitResultDialog

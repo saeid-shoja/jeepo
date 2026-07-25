@@ -15,6 +15,4 @@ if (existsSync(backupPath)) {
   rmSync(backupPath);
 }
 
-rmSync(join(webDir, 'vendor'), { recursive: true, force: true });
-rmSync(join(webDir, 'package-lock.json'), { force: true });
-console.log('apps/web restored for monorepo development.');
+console.log('apps/web package.json restored. Runflare vendor and package-lock were kept.');

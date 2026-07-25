@@ -42,4 +42,11 @@ export class CreateAdminUserDto {
   @Min(1, { message: 'حداقل ۱ آگهی فعال مجاز است' })
   @Max(100, { message: 'حداکثر ۱۰۰ آگهی فعال قابل تنظیم است' })
   maxActiveListings?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'حداکثر آگهی نو باید عدد صحیح باشد' })
+  @Min(1, { message: 'حداقل ۱ آگهی نو فعال مجاز است' })
+  @Max(100, { message: 'حداکثر ۱۰۰ آگهی نو فعال قابل تنظیم است' })
+  maxActiveNewListings?: number;
 }

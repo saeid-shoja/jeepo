@@ -7,6 +7,7 @@ import { SWAGGER_BEARER_KEY } from '../swagger';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { AdminService } from './admin.service';
 import {
+  AnnounceBestPriceDto,
   CreateAdminUserDto,
   FindAdminProductsQueryDto,
   UpdateAdminUserDto,
@@ -49,6 +50,18 @@ export class AdminController {
     return this.adminService.deleteUser(id);
   }
 
+  @Get('users/:id/products')
+  getUserProducts(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.getUserProducts(id, {
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 20,
+    });
+  }
+
   @Get('products')
   getAllProducts(@Query() query: FindAdminProductsQueryDto) {
     return this.adminService.getAllProducts({
@@ -63,6 +76,11 @@ export class AdminController {
   @Patch('products/:id/status')
   updateProductStatus(@Param('id') id: string, @Body() body: UpdateProductStatusDto) {
     return this.adminService.updateProductStatus(id, body.status);
+  }
+
+  @Post('products/announce-best-price')
+  announceBestPrice(@Body() body: AnnounceBestPriceDto) {
+    return this.adminService.announceBestPrice(body.productIds);
   }
 
   @Post('messages')

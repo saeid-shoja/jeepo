@@ -118,16 +118,19 @@ export function ProductsPageClient() {
     [activeTab, page, searchQuery, filters, selectedCities],
   );
 
-  const fetchProducts = useCallback((pageNum: number) => {
-    setLoading(true);
-    api.products
-      .list(buildParams({ page: pageNum }))
-      .then((res) => {
-        setProducts(res.products);
-        setTotalPages(res.totalPages);
-      })
-      .finally(() => setLoading(false));
-  }, [buildParams]);
+  const fetchProducts = useCallback(
+    (pageNum: number) => {
+      setLoading(true);
+      api.products
+        .list(buildParams({ page: pageNum }))
+        .then((res) => {
+          setProducts(res.products);
+          setTotalPages(res.totalPages);
+        })
+        .finally(() => setLoading(false));
+    },
+    [buildParams],
+  );
 
   useEffect(() => {
     if (categoriesLoading) return;

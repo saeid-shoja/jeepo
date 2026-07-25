@@ -28,7 +28,9 @@ export function GuaranteeInfoDialog({ open, onOpenChange }: GuaranteeInfoDialogP
             <Shield className="size-5 shrink-0 text-green-600" aria-hidden />
             {copy.title}
           </DialogTitle>
-          <DialogDescription className="sr-only">توضیحات تضمین فروشگاه برای خریدار</DialogDescription>
+          <DialogDescription className="sr-only">
+            توضیحات تضمین فروشگاه برای خریدار
+          </DialogDescription>
         </DialogHeader>
 
         <ul className="list-disc space-y-2 pr-5 text-sm leading-relaxed text-foreground">

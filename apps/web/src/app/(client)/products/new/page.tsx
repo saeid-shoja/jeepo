@@ -223,9 +223,7 @@ export default function NewProductPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
-      <h1 className="mb-8 text-2xl font-bold">
-        {isAdmin ? 'ثبت محصول فروشگاه' : 'ثبت آگهی جدید'}
-      </h1>
+      <h1 className="mb-8 text-2xl font-bold">{isAdmin ? 'ثبت محصول فروشگاه' : 'ثبت آگهی جدید'}</h1>
       {isAdmin ? (
         <p className="text-muted-foreground mb-6 text-sm">
           این محصول در بخش «فروشگاه» نمایش داده می‌شود، نه در آگهی‌های کاربران.

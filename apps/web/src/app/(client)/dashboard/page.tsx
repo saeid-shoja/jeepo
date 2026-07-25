@@ -110,10 +110,10 @@ function DashboardContent() {
               <p className="text-xs text-gray-500">آگهی فعال</p>
               {profile != null &&
                 (profile.totalListingsCount ?? 0) > (profile.activeListingsCount ?? 0) && (
-                <p className="text-[10px] text-gray-400">
-                  از {(profile.totalListingsCount ?? 0).toLocaleString('fa-IR')} آگهی
-                </p>
-              )}
+                  <p className="text-[10px] text-gray-400">
+                    از {(profile.totalListingsCount ?? 0).toLocaleString('fa-IR')} آگهی
+                  </p>
+                )}
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">

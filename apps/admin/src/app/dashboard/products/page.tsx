@@ -1,16 +1,7 @@
 'use client';
 
 import { formatPrice, isAdminApprovalRequiredCategory } from '@offroad/shared';
-import {
-  CheckCircle,
-  Gavel,
-  Shield,
-  Store,
-  Tag,
-  TrendingUp,
-  User,
-  XCircle,
-} from 'lucide-react';
+import { CheckCircle, Gavel, Shield, Store, Tag, TrendingUp, User, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
@@ -50,10 +41,7 @@ export default function AdminProductsPage() {
     setSelectedIds(new Set());
   }, [tab, page]);
 
-  const activeProducts = useMemo(
-    () => products.filter((p) => p.status === 'ACTIVE'),
-    [products],
-  );
+  const activeProducts = useMemo(() => products.filter((p) => p.status === 'ACTIVE'), [products]);
   const allActiveSelected =
     activeProducts.length > 0 && activeProducts.every((p) => selectedIds.has(p.id));
 
@@ -105,9 +93,7 @@ export default function AdminProductsPage() {
     try {
       const result = await adminApi.announceBestPrice(ids);
       if (result.sent > 0) {
-        toast.success(
-          `${result.sent.toLocaleString('fa-IR')} محصول به تاپیک قیمت مناسب ارسال شد`,
-        );
+        toast.success(`${result.sent.toLocaleString('fa-IR')} محصول به تاپیک قیمت مناسب ارسال شد`);
       }
       if (result.failed > 0) {
         toast.error(`ارسال ${result.failed.toLocaleString('fa-IR')} محصول ناموفق بود`);

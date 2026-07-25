@@ -83,6 +83,17 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
+  announceBestPrice: (productIds: string[]) =>
+    request<{
+      sent: number;
+      failed: number;
+      skipped: number;
+      failedProducts: Array<{ id: string; title: string }>;
+      skippedIds: string[];
+    }>('/admin/products/announce-best-price', {
+      method: 'POST',
+      body: JSON.stringify({ productIds }),
+    }),
   sendMessage: (data: {
     title: string;
     body: string;

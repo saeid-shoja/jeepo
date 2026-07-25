@@ -39,6 +39,11 @@ function getVisiblePages(current: number, total: number): number[] {
   return [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
 }
 
+function parsePageParam(raw: string | null): number {
+  const n = Number.parseInt(raw ?? '1', 10);
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
 export function ProductsPageClient() {
   const router = useRouter();
   const pathname = usePathname();
@@ -49,13 +54,13 @@ export function ProductsPageClient() {
     return 'CLIENT';
   }, [searchParams]);
   const urlSearch = searchParams.get('search') ?? '';
+  const page = useMemo(() => parsePageParam(searchParams.get('page')), [searchParams]);
 
   const [products, setProducts] = useState<any[]>([]);
   const { libraries, loading: categoriesLoading } = useCategories();
   const { selectedCities, hasFilter } = useLocationFilter();
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<ProductsFilters>(defaultFilters);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<'CLIENT' | 'SHOP' | 'AUCTION'>(
     advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION',
@@ -63,15 +68,30 @@ export function ProductsPageClient() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
 
+  const setListPage = useCallback(
+    (nextPage: number, method: 'push' | 'replace' = 'push') => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextPage <= 1) params.delete('page');
+      else params.set('page', String(nextPage));
+      const qs = params.toString();
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      if (method === 'push') router.push(href, { scroll: true });
+      else router.replace(href, { scroll: true });
+    },
+    [pathname, router, searchParams],
+  );
+
   useEffect(() => {
     setSearchQuery(urlSearch);
-    setPage(1);
   }, [urlSearch]);
 
   useEffect(() => {
     setActiveTab(advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION');
-    setPage(1);
   }, [advertiserType]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [page]);
 
   const buildParams = useCallback(
     (overrides?: { page?: number }) => {
@@ -98,19 +118,16 @@ export function ProductsPageClient() {
     [activeTab, page, searchQuery, filters, selectedCities],
   );
 
-  const fetchProducts = useCallback(
-    (pageNum = page) => {
-      setLoading(true);
-      api.products
-        .list(buildParams({ page: pageNum }))
-        .then((res) => {
-          setProducts(res.products);
-          setTotalPages(res.totalPages);
-        })
-        .finally(() => setLoading(false));
-    },
-    [buildParams, page],
-  );
+  const fetchProducts = useCallback((pageNum: number) => {
+    setLoading(true);
+    api.products
+      .list(buildParams({ page: pageNum }))
+      .then((res) => {
+        setProducts(res.products);
+        setTotalPages(res.totalPages);
+      })
+      .finally(() => setLoading(false));
+  }, [buildParams]);
 
   useEffect(() => {
     if (categoriesLoading) return;
@@ -118,16 +135,22 @@ export function ProductsPageClient() {
   }, [page, categoriesLoading, fetchProducts]);
 
   const handleApplyFilters = () => {
-    setPage(1);
     setMobileFiltersOpen(false);
-    fetchProducts(1);
+    if (page !== 1) {
+      setListPage(1, 'replace');
+    } else {
+      fetchProducts(1);
+    }
   };
 
   const handleResetFilters = () => {
     setFilters(defaultFilters);
-    setPage(1);
     setMobileFiltersOpen(false);
-    fetchProducts(1);
+    if (page !== 1) {
+      setListPage(1, 'replace');
+    } else {
+      fetchProducts(1);
+    }
   };
 
   const filterSidebar = (
@@ -142,10 +165,10 @@ export function ProductsPageClient() {
 
   const setTab = (tab: 'CLIENT' | 'SHOP' | 'AUCTION') => {
     setActiveTab(tab);
-    setPage(1);
     const params = new URLSearchParams(searchParams.toString());
     params.set('advertiserType', tab);
-    router.replace(`${pathname}?${params.toString()}`);
+    params.delete('page');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: true });
   };
 
   return (
@@ -239,7 +262,7 @@ export function ProductsPageClient() {
                     variant="outline"
                     size="sm"
                     disabled={page <= 1 || loading}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setListPage(Math.max(1, page - 1))}
                   >
                     قبلی
                   </Button>
@@ -256,7 +279,7 @@ export function ProductsPageClient() {
                           size="sm"
                           className="h-9 w-9 p-0"
                           disabled={loading}
-                          onClick={() => setPage(p)}
+                          onClick={() => setListPage(p)}
                         >
                           {p}
                         </Button>
@@ -267,7 +290,7 @@ export function ProductsPageClient() {
                     variant="outline"
                     size="sm"
                     disabled={page >= totalPages || loading}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() => setListPage(Math.min(totalPages, page + 1))}
                   >
                     بعدی
                   </Button>

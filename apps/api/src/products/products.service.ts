@@ -156,8 +156,9 @@ export class ProductsService {
       awaitingAdminApproval:
         product.status === 'PENDING' &&
         (product as { listingFeePaid?: boolean }).listingFeePaid !== false &&
-        product.category?.slug != null &&
-        isAdminApprovalRequiredCategory(product.category.slug),
+        (Boolean((product as { hasGuarantee?: boolean }).hasGuarantee) ||
+          (product.category?.slug != null &&
+            isAdminApprovalRequiredCategory(product.category.slug))),
       stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
     };
 
@@ -196,6 +197,7 @@ export class ProductsService {
         status: 'PENDING',
         listingFeePaid: false,
         listingPaymentDueAt: { lte: new Date() },
+        orderItems: { none: {} },
       },
     });
     return result.count;
@@ -262,6 +264,53 @@ export class ProductsService {
     };
   }
 
+  private async listingNeedsAdminApproval(opts: {
+    categoryId: string;
+    hasGuarantee?: boolean;
+    isAuction?: boolean;
+  }): Promise<boolean> {
+    if (!opts.isAuction && opts.hasGuarantee) return true;
+    return this.categoriesService.categoryRequiresAdminApproval(opts.categoryId);
+  }
+
+  private async notifyAdminGuaranteeListing(productId: string): Promise<void> {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        category: true,
+        user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+      },
+    });
+    if (!product?.hasGuarantee || !product.user) return;
+
+    const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${product.id}`;
+    await this.mailService
+      .sendGuaranteeListingPending({
+        product: {
+          id: product.id,
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          newPrice: (product as { newPrice?: number | null }).newPrice ?? null,
+          city: product.city,
+          neighborhood: product.neighborhood,
+          categoryName: product.category?.name ?? null,
+          phone: product.phone,
+          situation: product.situation,
+          stockQuantity: product.stockQuantity,
+          url: productUrl,
+        },
+        seller: {
+          id: product.user.id,
+          name: product.user.name,
+          phone: product.user.phone,
+          email: product.user.email,
+          city: product.user.city,
+        },
+      })
+      .catch(() => {});
+  }
+
   private async buildCreateData(
     data: CreateProductDto,
     userId: string,
@@ -276,11 +325,14 @@ export class ProductsService {
     const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
     const now = new Date();
     const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
+    const newPrice =
+      data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
 
     return {
       title: data.title,
       description: data.description,
       price: listingPrice,
+      newPrice,
       images: JSON.stringify(data.images || []),
       categoryId: data.categoryId,
       hasGuarantee: data.isAuction ? false : data.hasGuarantee || false,
@@ -303,15 +355,44 @@ export class ProductsService {
     };
   }
 
-  async createPublicListing(data: CreateProductDto, userId: string) {
+  async createPublicListing(data: CreateProductDto, userId: string, role?: string) {
     void this.purgeExpiredListingPaymentDrafts();
     await this.categoriesService.assertLeafCategory(data.categoryId);
+
+    /** Admin-created listings belong to the shop catalog, not the user marketplace. */
+    if (role === 'ADMIN') {
+      const product = await this.prisma.product.create({
+        data: await this.buildCreateData({ ...data, advertiser: 'SHOP' }, userId, {
+          status: 'ACTIVE',
+          listingFeePaid: true,
+          listingPaymentDueAt: null,
+        }),
+        include: productIncludeDetail,
+      });
+
+      this.telegramChannel.announceProductActive(product.id);
+
+      return {
+        product: await this.mapProduct(product),
+        requiresListingFee: false,
+        requiresAdminApproval: false,
+        activeCount: 0,
+        freeLimit: 0,
+        activeNewCount: 0,
+        newLimit: 0,
+        listingFee: 0,
+        paymentDueAt: null,
+      };
+    }
+
     await this.assertNewListingQuota(userId, data.situation);
     const { requiresListingFee, freeLimit, activeCount, activeNewCount, newLimit } =
       await this.getListingQuotaState(userId);
-    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
-      data.categoryId,
-    );
+    const needsAdminApproval = await this.listingNeedsAdminApproval({
+      categoryId: data.categoryId,
+      hasGuarantee: data.hasGuarantee,
+      isAuction: data.isAuction,
+    });
 
     const createOptions = needsAdminApproval
       ? requiresListingFee
@@ -346,6 +427,10 @@ export class ProductsService {
 
     if (createOptions.status === 'ACTIVE') {
       this.telegramChannel.announceProductActive(product.id);
+    }
+
+    if (product.hasGuarantee && createOptions.listingFeePaid) {
+      void this.notifyAdminGuaranteeListing(product.id);
     }
 
     return {
@@ -441,9 +526,11 @@ export class ProductsService {
     }
 
     const now = new Date();
-    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
-      product.categoryId,
-    );
+    const needsAdminApproval = await this.listingNeedsAdminApproval({
+      categoryId: product.categoryId,
+      hasGuarantee: product.hasGuarantee,
+      isAuction: product.isAuction,
+    });
 
     if (!needsAdminApproval && product.userId) {
       await this.assertNewListingQuota(product.userId, product.situation);
@@ -468,6 +555,8 @@ export class ProductsService {
 
     if (!needsAdminApproval) {
       this.telegramChannel.announceProductActive(productId);
+    } else if (product.hasGuarantee) {
+      void this.notifyAdminGuaranteeListing(productId);
     }
 
     return { requiresAdminApproval: needsAdminApproval, alreadyPaid: false };
@@ -659,10 +748,11 @@ export class ProductsService {
     };
   }
 
-  async create(data: CreateProductDto, userId?: string) {
+  async create(data: CreateProductDto, userId?: string, role?: string) {
     await this.categoriesService.assertLeafCategory(data.categoryId);
+    const advertiser = role === 'ADMIN' ? 'SHOP' : (data.advertiser ?? 'CLIENT');
     const product = await this.prisma.product.create({
-      data: await this.buildCreateData(data, userId || '', {
+      data: await this.buildCreateData({ ...data, advertiser }, userId || '', {
         status: 'ACTIVE',
         listingFeePaid: true,
         listingPaymentDueAt: null,
@@ -706,6 +796,25 @@ export class ProductsService {
       updateData.neighborhood = data.neighborhood?.trim() || null;
     }
 
+    if (data.newPrice !== undefined) {
+      updateData.newPrice =
+        data.newPrice == null || Number(data.newPrice) <= 0 ? null : Number(data.newPrice);
+    }
+
+    const enablingGuarantee =
+      product.advertiser === 'CLIENT' &&
+      data.hasGuarantee === true &&
+      !product.hasGuarantee &&
+      product.status === 'ACTIVE' &&
+      !product.isAuction;
+
+    if (enablingGuarantee) {
+      updateData.status = 'PENDING';
+      updateData.listingFeePaid = true;
+      updateData.listingPaymentDueAt = null;
+      updateData.activeUntil = null;
+    }
+
     if (data.carBrands !== undefined) {
       const brands = await this.categoriesService.parseCarBrandCodes(data.carBrands);
       await this.prisma.productCarBrand.deleteMany({ where: { productId: id } });
@@ -729,6 +838,11 @@ export class ProductsService {
       data: updateData,
       include: productIncludeDetail,
     });
+
+    if (enablingGuarantee) {
+      void this.notifyAdminGuaranteeListing(id);
+    }
+
     return this.mapProduct(updated);
   }
 
@@ -754,6 +868,13 @@ export class ProductsService {
       throw new ForbiddenException('شما اجازه حذف این محصول را ندارید');
     }
 
+    const orderItemCount = await this.prisma.orderItem.count({ where: { productId: id } });
+    if (orderItemCount > 0) {
+      throw new BadRequestException(
+        'این محصول در سفارش ثبت شده و قابل حذف نیست. می‌توانید وضعیت آن را به ناموجود یا غیرفعال تغییر دهید.',
+      );
+    }
+
     return this.prisma.product.delete({ where: { id } });
   }
 
@@ -772,9 +893,11 @@ export class ProductsService {
     }
 
     const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
-    const needsAdminApproval = await this.categoriesService.categoryRequiresAdminApproval(
-      product.categoryId,
-    );
+    const needsAdminApproval = await this.listingNeedsAdminApproval({
+      categoryId: product.categoryId,
+      hasGuarantee: product.hasGuarantee,
+      isAuction: product.isAuction,
+    });
     const now = new Date();
 
     if (!requiresListingFee && !needsAdminApproval) {
@@ -823,6 +946,10 @@ export class ProductsService {
           },
       include: productIncludeDetail,
     });
+
+    if (needsAdminApproval && product.hasGuarantee) {
+      void this.notifyAdminGuaranteeListing(id);
+    }
 
     return {
       product: await this.mapProduct(updated),

@@ -8,6 +8,8 @@ export const DEFAULT_TELEGRAM_CHANNEL_TOPICS = {
   BOOST: 3,
   /** دارای تضمین */
   GUARANTEE: 4,
+  /** بهترین قیمت */
+  BEST_PRICE: 5,
   /** محصول فروشگاه */
   SHOP: 6,
   /** مزایده */
@@ -23,7 +25,8 @@ export type TelegramProductAnnouncementKind =
   | 'GUARANTEE'
   | 'AUCTION'
   | 'STRENGTHENED'
-  | 'BOOST';
+  | 'BOOST'
+  | 'BEST_PRICE';
 
 export function loadTelegramChannelTopics(): TelegramChannelTopics {
   const pick = (envKey: string, fallback: number): number => {
@@ -37,6 +40,7 @@ export function loadTelegramChannelTopics(): TelegramChannelTopics {
     STRENGTHENED: pick('TELEGRAM_TOPIC_STRENGTHENED', DEFAULT_TELEGRAM_CHANNEL_TOPICS.STRENGTHENED),
     BOOST: pick('TELEGRAM_TOPIC_BOOST', DEFAULT_TELEGRAM_CHANNEL_TOPICS.BOOST),
     GUARANTEE: pick('TELEGRAM_TOPIC_GUARANTEE', DEFAULT_TELEGRAM_CHANNEL_TOPICS.GUARANTEE),
+    BEST_PRICE: pick('TELEGRAM_TOPIC_BEST_PRICE', DEFAULT_TELEGRAM_CHANNEL_TOPICS.BEST_PRICE),
     SHOP: pick('TELEGRAM_TOPIC_SHOP', DEFAULT_TELEGRAM_CHANNEL_TOPICS.SHOP),
     AUCTION: pick('TELEGRAM_TOPIC_AUCTION', DEFAULT_TELEGRAM_CHANNEL_TOPICS.AUCTION),
   };

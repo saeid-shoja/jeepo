@@ -5,6 +5,7 @@ import {
   formatPrice,
   GUARANTEE_FEE_LABEL,
   GUARANTEE_FEE_RATE,
+  GUARANTEE_LISTING_RULES,
   getGuaranteeFee,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
@@ -98,10 +99,20 @@ export function PremiumProductOptions({
                   پس از فروش در سایت: {formatPrice(guaranteeFee)} تومان ({GUARANTEE_FEE_LABEL})
                 </p>
               )}
+              {hasGuarantee && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-50">
+                  <p className="mb-2 font-semibold">توجه — شرایط تأیید آگهی تضمین‌شده:</p>
+                  <ul className="list-disc space-y-1 pr-4">
+                    {GUARANTEE_LISTING_RULES.map((rule) => (
+                      <li key={rule}>{rule}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <ReadMoreButton />
             </div>
           </div>
-          <DialogContent className="p-10">
+          <DialogContent className="max-h-[85vh] overflow-y-auto p-6 sm:p-10">
             <DialogHeader>
               <DialogTitle>آگهی تضمین شده</DialogTitle>
               <DialogDescription asChild>
@@ -114,6 +125,14 @@ export function PremiumProductOptions({
                     خواهد شد. همچنین کارشناسان جیپو آگهی شما را در گروه های تلگرامی مربوط قرار داده
                     و در تسریع فروش کمک خواهند کرد. البته قیمت رقابتی شما کمک کننده نیز خواهد بود.
                   </p>
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-50">
+                    <p className="mb-2 font-semibold">شرایط اجباری تأیید:</p>
+                    <ul className="list-disc space-y-1 pr-4">
+                      {GUARANTEE_LISTING_RULES.map((rule) => (
+                        <li key={rule}>{rule}</li>
+                      ))}
+                    </ul>
+                  </div>
                   <p>
                     <strong>هزینه:</strong> <strong>{GUARANTEE_FEE_LABEL}</strong>
                     {hasValidPrice && (
@@ -128,6 +147,10 @@ export function PremiumProductOptions({
                     <strong>زمان پرداخت:</strong> این مبلغ پس از{' '}
                     <strong>فروش موفق محصول در وب‌سایت</strong> از شما دریافت می‌شود، نه هنگام ثبت
                     آگهی.
+                  </p>
+                  <p>
+                    <strong>انتشار:</strong> آگهی با تضمین فروشگاه ابتدا در وضعیت انتظار تأیید باقی
+                    می‌ماند و پس از بررسی ادمین منتشر می‌شود.
                   </p>
                 </div>
               </DialogDescription>

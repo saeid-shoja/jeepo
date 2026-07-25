@@ -308,6 +308,65 @@ export class MailService {
     await this.send(to, `آگهی شما منتشر شد — ${SITE_NAME_FA}`, html);
   }
 
+  async sendGuaranteeListingPending(payload: {
+    product: {
+      id: string;
+      title: string;
+      description: string;
+      price: number;
+      newPrice?: number | null;
+      city: string | null;
+      neighborhood?: string | null;
+      categoryName: string | null;
+      phone?: string | null;
+      situation?: string | null;
+      stockQuantity?: number;
+      url: string;
+    };
+    seller: {
+      id: string;
+      name: string;
+      phone: string;
+      email: string | null;
+      city: string | null;
+    };
+  }): Promise<void> {
+    const html = `
+      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
+        <h2 style="margin:0 0 12px">آگهی با تضمین فروشگاه — در انتظار تأیید</h2>
+        <p>یک آگهی با گزینه «تضمین فروشگاه» ثبت شده و تا تأیید ادمین در فروشگاه نمایش داده نمی‌شود.</p>
+        <h3 style="margin:16px 0 8px;font-size:16px">اطلاعات آگهی</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
+          <tr><td style="padding:4px 0;color:#666;width:140px">عنوان</td><td>${escapeHtml(payload.product.title)}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">شناسه</td><td dir="ltr">${escapeHtml(payload.product.id)}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">دسته</td><td>${escapeHtml(payload.product.categoryName ?? '—')}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">قیمت</td><td>${formatPrice(payload.product.price)} تومان</td></tr>
+          <tr><td style="padding:4px 0;color:#666">قیمت نو</td><td>${payload.product.newPrice != null ? `${formatPrice(payload.product.newPrice)} تومان` : '—'}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">وضعیت کالا</td><td>${escapeHtml(payload.product.situation ?? '—')}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">موجودی</td><td>${payload.product.stockQuantity ?? 1}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">شهر / محله</td><td>${escapeHtml([payload.product.city, payload.product.neighborhood].filter(Boolean).join(' — ') || '—')}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">تلفن آگهی</td><td dir="ltr">${escapeHtml(payload.product.phone ?? '—')}</td></tr>
+          <tr><td style="padding:4px 0;color:#666">لینک</td><td><a href="${escapeHtml(payload.product.url)}">${escapeHtml(payload.product.url)}</a></td></tr>
+        </table>
+        <h3 style="margin:16px 0 8px;font-size:16px">توضیحات</h3>
+        <p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(payload.product.description)}</p>
+        ${formatParty('فروشنده', {
+          name: payload.seller.name,
+          phone: payload.seller.phone,
+          email: payload.seller.email,
+          city: payload.seller.city,
+        })}
+        <p style="color:#666;font-size:14px;margin-top:20px">زمان: ${new Date().toLocaleString('fa-IR')}</p>
+      </div>
+    `;
+
+    await this.send(
+      SITE_EMAIL,
+      `تضمین فروشگاه — تأیید آگهی: ${payload.product.title.slice(0, 40)}`,
+      html,
+    );
+  }
+
   async sendProductReport(payload: {
     reportTitle: string;
     reportDescription: string;

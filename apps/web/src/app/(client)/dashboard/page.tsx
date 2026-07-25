@@ -108,7 +108,8 @@ function DashboardContent() {
                 {(profile?.activeListingsCount ?? 0).toLocaleString('fa-IR')}
               </p>
               <p className="text-xs text-gray-500">آگهی فعال</p>
-              {profile?.totalListingsCount > profile?.activeListingsCount && (
+              {profile != null &&
+                (profile.totalListingsCount ?? 0) > (profile.activeListingsCount ?? 0) && (
                 <p className="text-[10px] text-gray-400">
                   از {(profile.totalListingsCount ?? 0).toLocaleString('fa-IR')} آگهی
                 </p>

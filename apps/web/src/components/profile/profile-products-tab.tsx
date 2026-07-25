@@ -65,14 +65,16 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
     return api.products
       .listingQuota()
       .then((quota) => {
-        setListingFreeLimit(quota.freeLimit);
-        setActiveListingsCount(quota.activeCount);
-        setNewListingLimit(quota.newLimit);
-        setActiveNewListingsCount(quota.activeNewCount);
+        setListingFreeLimit(quota.freeLimit ?? FREE_CLIENT_LISTING_LIMIT);
+        setActiveListingsCount(quota.activeCount ?? 0);
+        setNewListingLimit(quota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT);
+        setActiveNewListingsCount(quota.activeNewCount ?? 0);
       })
       .catch(() => {
         setListingFreeLimit(FREE_CLIENT_LISTING_LIMIT);
+        setActiveListingsCount(0);
         setNewListingLimit(FREE_CLIENT_NEW_LISTING_LIMIT);
+        setActiveNewListingsCount(0);
       });
   }, []);
 
@@ -151,9 +153,10 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
   return (
     <>
       <p className="text-muted-foreground mb-3 text-xs sm:text-sm">
-        آگهی فعال: {activeListingsCount.toLocaleString('fa-IR')}/
-        {listingFreeLimit.toLocaleString('fa-IR')} رایگان · آگهی نو:{' '}
-        {activeNewListingsCount.toLocaleString('fa-IR')}/{newListingLimit.toLocaleString('fa-IR')}
+        آگهی فعال: {(activeListingsCount ?? 0).toLocaleString('fa-IR')}/
+        {(listingFreeLimit ?? FREE_CLIENT_LISTING_LIMIT).toLocaleString('fa-IR')} رایگان · آگهی نو:{' '}
+        {(activeNewListingsCount ?? 0).toLocaleString('fa-IR')}/
+        {(newListingLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
       </p>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {products.map((product: any) => (

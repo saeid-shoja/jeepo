@@ -101,9 +101,7 @@ export class AdminService {
             },
             _count: { _all: true },
           });
-    const newCountByUser = new Map(
-      newCounts.map((row) => [row.userId!, row._count._all] as const),
-    );
+    const newCountByUser = new Map(newCounts.map((row) => [row.userId!, row._count._all] as const));
 
     return users.map((user) => ({
       id: user.id,
@@ -291,9 +289,11 @@ export class AdminService {
         break;
       case 'pending_approval':
         where.status = 'PENDING';
-        where.category = {
-          slug: { in: [...ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS] },
-        };
+        where.listingFeePaid = true;
+        where.OR = [
+          { category: { slug: { in: [...ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS] } } },
+          { hasGuarantee: true },
+        ];
         break;
       case 'auction':
         where.isAuction = true;
@@ -386,6 +386,7 @@ export class AdminService {
         situation: true,
         title: true,
         userId: true,
+        hasGuarantee: true,
         user: { select: { name: true, email: true } },
         category: { select: { slug: true } },
       },
@@ -417,13 +418,14 @@ export class AdminService {
     });
 
     const categorySlug = product?.category?.slug;
-    if (
+    const needsSellerApprovalEmail =
       status === 'ACTIVE' &&
       product?.status === 'PENDING' &&
-      categorySlug &&
-      isAdminApprovalRequiredCategory(categorySlug) &&
-      product.user?.email
-    ) {
+      product.user?.email &&
+      (Boolean(product.hasGuarantee) ||
+        (categorySlug != null && isAdminApprovalRequiredCategory(categorySlug)));
+
+    if (needsSellerApprovalEmail && product.user?.email) {
       const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${id}`;
       await this.mailService
         .sendListingApproved(product.user.email, product.user.name, product.title, productUrl)
@@ -435,5 +437,44 @@ export class AdminService {
     }
 
     return updated;
+  }
+
+  async announceBestPrice(productIds: string[]) {
+    if (!this.telegramChannel.isChannelConfigured()) {
+      throw new BadRequestException('کانال تلگرام پیکربندی نشده است');
+    }
+
+    const uniqueIds = [...new Set(productIds.map((id) => id.trim()).filter(Boolean))];
+    if (uniqueIds.length === 0) {
+      throw new BadRequestException('حداقل یک محصول را انتخاب کنید');
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: uniqueIds }, status: 'ACTIVE' },
+      select: { id: true, title: true },
+    });
+
+    const foundIds = new Set(products.map((p) => p.id));
+    const skipped = uniqueIds.filter((id) => !foundIds.has(id));
+
+    let sent = 0;
+    const failed: Array<{ id: string; title: string }> = [];
+
+    for (const product of products) {
+      try {
+        await this.telegramChannel.announceBestPrice(product.id);
+        sent += 1;
+      } catch {
+        failed.push({ id: product.id, title: product.title });
+      }
+    }
+
+    return {
+      sent,
+      failed: failed.length,
+      skipped: skipped.length,
+      failedProducts: failed,
+      skippedIds: skipped,
+    };
   }
 }

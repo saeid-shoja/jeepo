@@ -29,6 +29,7 @@ export interface IProduct {
   title: string;
   description: string;
   price: number;
+  newPrice?: number | null;
   images: string[];
   categoryId: string;
   category?: ICategory;

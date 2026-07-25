@@ -197,7 +197,7 @@ export class TelegramBotService {
     await this.telegram.sendMessageToTopic(
       resolvedChannelId,
       threadId,
-      `✅ <b>message_thread_id این تاپیک:</b> <code>${threadId}</code>\n\nبرای اعلان‌ها در <code>apps/api/.env</code>:\n<code>TELEGRAM_TOPIC_NEWS=${threadId}</code>\n\nسایر تاپیک‌ها:\nTELEGRAM_TOPIC_STRENGTHENED / TELEGRAM_TOPIC_BOOST / TELEGRAM_TOPIC_GUARANTEE / TELEGRAM_TOPIC_SHOP / TELEGRAM_TOPIC_AUCTION`,
+      `✅ <b>message_thread_id این تاپیک:</b> <code>${threadId}</code>\n\nبرای اعلان‌ها در <code>apps/api/.env</code>:\n<code>TELEGRAM_TOPIC_NEWS=${threadId}</code>\n\nسایر تاپیک‌ها:\nTELEGRAM_TOPIC_STRENGTHENED / TELEGRAM_TOPIC_BOOST / TELEGRAM_TOPIC_GUARANTEE / TELEGRAM_TOPIC_BEST_PRICE / TELEGRAM_TOPIC_SHOP / TELEGRAM_TOPIC_AUCTION`,
     );
 
     this.logger.log(`Topic id reported for thread ${threadId} in ${resolvedChannelId}`);

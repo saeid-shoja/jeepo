@@ -41,6 +41,7 @@ export class ProductLifecycleService implements OnModuleInit {
         status: 'PENDING',
         listingFeePaid: false,
         listingPaymentDueAt: { lte: new Date() },
+        orderItems: { none: {} },
       },
     });
     return result.count;
@@ -83,6 +84,7 @@ export class ProductLifecycleService implements OnModuleInit {
         advertiser: 'CLIENT',
         status: 'DEPRECATED',
         deprecatedAt: { lte: cutoff },
+        orderItems: { none: {} },
       },
       select: { id: true },
     });

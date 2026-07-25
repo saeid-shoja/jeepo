@@ -11,6 +11,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { NoContactInText } from '../../common/no-contact-in-text.validator';
 import { ProductSituation, ProductStatus } from '../../prisma/generated/client';
@@ -33,6 +34,13 @@ export class UpdateProductDto {
   @IsNumber()
   @Min(0, { message: 'قیمت نمی‌تواند منفی باشد' })
   price?: number;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1, { message: 'قیمت نو محصول باید بیشتر از صفر باشد' })
+  newPrice?: number | null;
 
   @IsOptional()
   @IsString()

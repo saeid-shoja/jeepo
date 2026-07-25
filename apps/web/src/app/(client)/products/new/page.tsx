@@ -36,6 +36,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { buildPaymentPageUrl } from '@/lib/payment-url';
+import { toastFormValidationErrors } from '@/lib/toast-form-errors';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { type NewProductFormValues, newProductSchema } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
@@ -87,6 +88,7 @@ export default function NewProductPage() {
       realPriceMax: 0,
       buyNowPrice: 0,
       stockQuantity: 1,
+      newPrice: 0,
     },
   });
 
@@ -97,15 +99,20 @@ export default function NewProductPage() {
   const carBrands = watch('carBrands');
   const situation = watch('situation');
 
+  const isAdmin = user?.role === 'ADMIN';
+
   useEffect(() => {
-    if (!user) return;
+    if (!user || isAdmin) {
+      setNewQuota(null);
+      return;
+    }
     api.products
       .listingQuota()
       .then((q) =>
         setNewQuota({
-          activeNewCount: q.activeNewCount,
-          newLimit: q.newLimit,
-          atNewLimit: q.atNewLimit,
+          activeNewCount: q.activeNewCount ?? 0,
+          newLimit: q.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT,
+          atNewLimit: Boolean(q.atNewLimit),
         }),
       )
       .catch(() =>
@@ -115,7 +122,7 @@ export default function NewProductPage() {
           atNewLimit: false,
         }),
       );
-  }, [user]);
+  }, [user, isAdmin]);
 
   const showSubmitResult = (variant: ListingSubmitResultVariant) => {
     setSubmitResultVariant(variant);
@@ -124,7 +131,7 @@ export default function NewProductPage() {
 
   const goToDashboard = () => {
     setSubmitResultOpen(false);
-    router.push('/dashboard');
+    router.push(isAdmin ? '/products?advertiserType=SHOP' : '/dashboard');
   };
 
   useEffect(() => {
@@ -144,6 +151,10 @@ export default function NewProductPage() {
         title: data.title,
         description: data.description,
         price: data.isAuction ? data.auctionStartPrice : data.price,
+        newPrice:
+          !data.isAuction && data.situation === 'USED' && data.newPrice > 0
+            ? data.newPrice
+            : undefined,
         categoryId: data.categoryId,
         carBrands: data.carBrands.length ? data.carBrands : undefined,
         city: data.city || undefined,
@@ -212,9 +223,21 @@ export default function NewProductPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
-      <h1 className="mb-8 text-2xl font-bold">ثبت آگهی جدید</h1>
-      <ListingFormTips />
-      <form onSubmit={handleSubmit(onValidSubmit)} className="space-y-4" noValidate>
+      <h1 className="mb-8 text-2xl font-bold">
+        {isAdmin ? 'ثبت محصول فروشگاه' : 'ثبت آگهی جدید'}
+      </h1>
+      {isAdmin ? (
+        <p className="text-muted-foreground mb-6 text-sm">
+          این محصول در بخش «فروشگاه» نمایش داده می‌شود، نه در آگهی‌های کاربران.
+        </p>
+      ) : (
+        <ListingFormTips />
+      )}
+      <form
+        onSubmit={handleSubmit(onValidSubmit, toastFormValidationErrors)}
+        className="space-y-4"
+        noValidate
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
@@ -252,6 +275,23 @@ export default function NewProductPage() {
               />
               <FieldError message={errors.price?.message} />
             </div>
+
+            {!isAuction && situation === 'USED' && (
+              <div className="space-y-2">
+                <Label htmlFor="newPrice">قیمت نو محصول (تومان)</Label>
+                <Controller
+                  name="newPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput id="newPrice" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <p className="text-muted-foreground text-xs">
+                  قیمت تقریبی نسخه نوی همین محصول را وارد کنید تا خریدار مقایسه کند.
+                </p>
+                <FieldError message={errors.newPrice?.message} />
+              </div>
+            )}
 
             {!isAuction && (
               <div className="space-y-2">
@@ -298,12 +338,12 @@ export default function NewProductPage() {
                 <ProductSituationSelect value={field.value} onChange={field.onChange} />
               )}
             />
-            {situation === 'NEW' && newQuota && (
+            {situation === 'NEW' && newQuota && !isAdmin && (
               <p
                 className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
               >
-                آگهی‌های نو فعال: {newQuota.activeNewCount.toLocaleString('fa-IR')} از{' '}
-                {newQuota.newLimit.toLocaleString('fa-IR')}
+                آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
+                {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
                 {newQuota.atNewLimit
                   ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
                   : ''}

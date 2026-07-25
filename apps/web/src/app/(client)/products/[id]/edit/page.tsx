@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { toastFormValidationErrors } from '@/lib/toast-form-errors';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { type EditProductFormValues, editProductSchema } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
@@ -55,12 +56,14 @@ export default function EditProductPage() {
       images: [],
       hasGuarantee: false,
       stockQuantity: 1,
+      newPrice: 0,
     },
   });
 
   const price = watch('price');
   const hasGuarantee = watch('hasGuarantee');
   const carBrands = watch('carBrands');
+  const situation = watch('situation');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -74,6 +77,7 @@ export default function EditProductPage() {
           title: product.title,
           description: product.description,
           price: product.price,
+          newPrice: product.newPrice ?? 0,
           categoryId: product.categoryId,
           carBrands: (product.carBrands || []).map((b: { value: string }) => b.value),
           city: product.city || '',
@@ -102,6 +106,7 @@ export default function EditProductPage() {
         title: data.title,
         description: data.description,
         price: data.price,
+        newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
         categoryId: data.categoryId,
         carBrands: data.carBrands,
         city: data.city || undefined,
@@ -127,7 +132,11 @@ export default function EditProductPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
       <h1 className="mb-8 text-2xl font-bold">ویرایش آگهی</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form
+        onSubmit={handleSubmit(onSubmit, toastFormValidationErrors)}
+        className="space-y-4"
+        noValidate
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
@@ -156,6 +165,23 @@ export default function EditProductPage() {
               />
               <FieldError message={errors.price?.message} />
             </div>
+
+            {situation === 'USED' && (
+              <div className="space-y-2">
+                <Label htmlFor="newPrice">قیمت نو محصول (تومان)</Label>
+                <Controller
+                  name="newPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput id="newPrice" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <p className="text-muted-foreground text-xs">
+                  قیمت تقریبی نسخه نوی همین محصول را وارد کنید تا خریدار مقایسه کند.
+                </p>
+                <FieldError message={errors.newPrice?.message} />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>

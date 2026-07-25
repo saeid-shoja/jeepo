@@ -25,6 +25,7 @@ import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { StartProductChatButton } from '@/components/chat/start-product-chat-button';
 import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
+import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
 import { TransactionSafetyDialog } from '@/components/shop/transaction-safety-dialog';
@@ -49,6 +50,7 @@ export function ProductDetailClient() {
   const [contactOpen, setContactOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [guaranteeOpen, setGuaranteeOpen] = useState(false);
 
   useEffect(() => {
     if (!id || authLoading) return;
@@ -173,9 +175,19 @@ export function ProductDetailClient() {
         </div>
 
         {!product.isAuction && (
-          <p className="text-3xl font-bold text-primary">
-            {formatPrice(product.price)} <span className="text-lg">تومان</span>
-          </p>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold text-primary">
+              {formatPrice(product.price)} <span className="text-lg">تومان</span>
+            </p>
+            {product.newPrice != null && product.newPrice > 0 && (
+              <p className="text-sm text-muted-foreground">
+                قیمت نو محصول:{' '}
+                <span className="font-medium text-foreground">
+                  {formatPrice(product.newPrice)} تومان
+                </span>
+              </p>
+            )}
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2">
@@ -188,10 +200,20 @@ export function ProductDetailClient() {
             </span>
           ))}
           {product.hasGuarantee && (
-            <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
+              aria-label="اطلاعات تضمین فروشگاه"
+              onClick={() => setGuaranteeOpen(true)}
+              onMouseEnter={() => {
+                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+                  setGuaranteeOpen(true);
+                }
+              }}
+            >
               <Shield className="h-4 w-4" />
               با تضمین فروشگاه
-            </span>
+            </button>
           )}
           {product.isAuction && (
             <Badge className="bg-violet-600 text-white hover:bg-violet-600">مزایده</Badge>
@@ -239,6 +261,7 @@ export function ProductDetailClient() {
         </div>
 
         <TransactionSafetyDialog open={safetyOpen} onOpenChange={setSafetyOpen} />
+        <GuaranteeInfoDialog open={guaranteeOpen} onOpenChange={setGuaranteeOpen} />
 
         <div>
           <h3 className="mb-2 font-bold">توضیحات</h3>

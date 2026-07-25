@@ -53,7 +53,9 @@ export function TransactionSafetyDialog({ open, onOpenChange }: TransactionSafet
           </section>
 
           <section className="space-y-2">
-            <h3 className="font-semibold text-amber-800 dark:text-amber-200">{copy.cautionTitle}</h3>
+            <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+              {copy.cautionTitle}
+            </h3>
             <ul className="list-disc space-y-1 pr-5 text-muted-foreground">
               {copy.cautionItems.map((item) => (
                 <li key={item}>{item}</li>

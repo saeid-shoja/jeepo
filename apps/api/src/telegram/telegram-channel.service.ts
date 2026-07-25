@@ -41,6 +41,11 @@ export class TelegramChannelService {
     );
   }
 
+  /** Admin-curated «قیمت مناسب» posts to the BEST_PRICE topic. */
+  async announceBestPrice(productId: string): Promise<void> {
+    await this.postProduct(productId, 'BEST_PRICE');
+  }
+
   /** Post when a listing becomes ACTIVE (shop, auction, or guarantee). */
   announceProductActive(productId: string): void {
     void this.postProductActive(productId).catch((err) =>
@@ -77,10 +82,11 @@ export class TelegramChannelService {
     if (!product) return;
 
     const threadId = topicForKind(kind, this.topics);
-    const caption = this.buildCaption(product);
+    const caption = this.buildCaption(product, kind);
     const firstImage = this.firstImage(product.images);
+    const withPhoto = (kind === 'GUARANTEE' || kind === 'BEST_PRICE') && firstImage;
 
-    if (kind === 'GUARANTEE' && firstImage) {
+    if (withPhoto && firstImage) {
       await this.telegram.sendPhotoToTopic(this.channelChatId, threadId, firstImage, caption);
       return;
     }
@@ -110,17 +116,20 @@ export class TelegramChannelService {
     });
   }
 
-  private buildCaption(product: {
-    id: string;
-    title: string;
-    price: number;
-    isAuction: boolean;
-    auctionStartPrice: number | null;
-    city: string | null;
-    neighborhood: string | null;
-    hasGuarantee: boolean;
-    isBoosted: boolean;
-  }): string {
+  private buildCaption(
+    product: {
+      id: string;
+      title: string;
+      price: number;
+      isAuction: boolean;
+      auctionStartPrice: number | null;
+      city: string | null;
+      neighborhood: string | null;
+      hasGuarantee: boolean;
+      isBoosted: boolean;
+    },
+    kind?: TelegramProductAnnouncementKind,
+  ): string {
     const url = this.buildProductPublicUrl(product.id);
     const price =
       product.isAuction && product.auctionStartPrice != null
@@ -132,6 +141,7 @@ export class TelegramChannelService {
       `💰 ${escapeTelegramHtml(formatPrice(price))}`,
     ];
     if (location) lines.push(`📍 ${escapeTelegramHtml(location)}`);
+    if (kind === 'BEST_PRICE') lines.push('🏷 قیمت مناسب');
     if (product.hasGuarantee) lines.push('🛡 تضمین جیپو');
     if (product.isBoosted) lines.push('📈 پله‌شده');
     lines.push(`🔗 <a href="${url}">مشاهده آگهی در جیپو</a>`);
@@ -165,6 +175,8 @@ function topicForKind(
       return topics.SHOP;
     case 'GUARANTEE':
       return topics.GUARANTEE;
+    case 'BEST_PRICE':
+      return topics.BEST_PRICE;
     case 'AUCTION':
       return topics.AUCTION;
     case 'STRENGTHENED':

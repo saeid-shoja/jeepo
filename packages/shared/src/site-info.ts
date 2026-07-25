@@ -151,6 +151,24 @@ export const TRANSACTION_SAFETY_WARNING = {
     'در صورت بروز مشکل و یا شناسایی نشانه‌های مشکوک، لطفاً آگهی را از طریق «گزارش تخلف» گزارش دهید.',
 } as const;
 
+/** Buyer-facing copy for the shop-guarantee badge on product detail. */
+export const GUARANTEE_BUYER_INFO = {
+  title: 'با تضمین فروشگاه',
+  items: [
+    'با خیال راحت از راه دور خرید کنید',
+    'تا زمان دریافت محصول پول در اختیار فروشگاه باقی می‌ماند.',
+    'درصورت عدم تطابق محصول با توضیحات فروشنده و یا عدم ارسال وجه به شما برمی‌گردد.',
+  ],
+} as const;
+
+/** Seller rules shown when enabling shop guarantee on listing forms. */
+export const GUARANTEE_LISTING_RULES = [
+  'قیمت و توضیحات آگهی باید مشخص باشد.',
+  'برای هر محصول قیمت و آگهی جدا ثبت شود.',
+  'برای محصولات با چند عدد موجودی فقط قیمت یک عدد ثبت شود.',
+  'در غیر این صورت آگهی رد می‌شود.',
+] as const;
+
 /**
  * Website and business rules.
  */

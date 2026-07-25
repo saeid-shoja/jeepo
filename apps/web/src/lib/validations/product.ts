@@ -45,6 +45,8 @@ const sharedProductFields = {
     .int('تعداد باید عدد صحیح باشد')
     .min(1, 'حداقل ۱ عدد')
     .max(9999, 'حداکثر ۹۹۹۹ عدد'),
+  /** Approximate retail / new price; required when situation is USED (non-auction). */
+  newPrice: z.number(),
 };
 
 export const newProductSchema = z
@@ -65,6 +67,13 @@ export const newProductSchema = z
           code: z.ZodIssueCode.custom,
           message: 'قیمت محصول را وارد کنید',
           path: ['price'],
+        });
+      }
+      if (data.situation === 'USED' && data.newPrice <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'قیمت تقریبی نو محصول را وارد کنید',
+          path: ['newPrice'],
         });
       }
       return;
@@ -129,15 +138,25 @@ export const newProductSchema = z
 
 const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedProductFields;
 
-export const editProductSchema = z.object({
-  ...editProductFields,
-  price: z.number().positive('قیمت محصول را وارد کنید'),
-  stockQuantity: z
-    .number()
-    .int('تعداد باید عدد صحیح باشد')
-    .min(1, 'حداقل ۱ عدد')
-    .max(9999, 'حداکثر ۹۹۹۹ عدد'),
-});
+export const editProductSchema = z
+  .object({
+    ...editProductFields,
+    price: z.number().positive('قیمت محصول را وارد کنید'),
+    stockQuantity: z
+      .number()
+      .int('تعداد باید عدد صحیح باشد')
+      .min(1, 'حداقل ۱ عدد')
+      .max(9999, 'حداکثر ۹۹۹۹ عدد'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.situation === 'USED' && data.newPrice <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'قیمت تقریبی نو محصول را وارد کنید',
+        path: ['newPrice'],
+      });
+    }
+  });
 
 export type NewProductFormValues = z.infer<typeof newProductSchema>;
 export type EditProductFormValues = z.infer<typeof editProductSchema>;

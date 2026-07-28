@@ -3,6 +3,11 @@ import type { Metadata } from 'next';
 import { JsonLd } from '@/components/seo/json-ld';
 import { buildFaqJsonLd, buildMetadata } from '@/lib/seo';
 
+/** سوالات مربوط به مزایده / تقویت — موقتاً مخفی */
+const HIDDEN_FAQ_QUESTIONS = new Set(['منظور از برچسب تقویت شده چیست؟']);
+
+const visibleFaqItems = FAQ_ITEMS.filter((item) => !HIDDEN_FAQ_QUESTIONS.has(item.question));
+
 export const metadata: Metadata = buildMetadata({
   title: 'سوالات پرتکرار',
   description: `پاسخ به سوالات پرتکرار درباره ثبت آگهی، امنیت معامله و قوانین ${SITE_NAME_FA}.`,
@@ -23,7 +28,7 @@ export default function FaqPage() {
         </div>
 
         <section className="space-y-4">
-          {FAQ_ITEMS.map((item) => (
+          {visibleFaqItems.map((item) => (
             <article key={item.question} className="rounded-xl border bg-card p-5">
               <h2 className="text-base font-semibold">{item.question}</h2>
               <p className="text-muted-foreground mt-2 text-sm leading-7">{item.answer}</p>

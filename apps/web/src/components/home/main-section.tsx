@@ -1,12 +1,12 @@
 'use client';
 
-import { ArrowLeft, Gavel, PackageSearch, Store } from 'lucide-react';
+import { ArrowLeft, PackageSearch, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { AuctionProductCard } from '@/components/auction/auction-product-card';
 import { HomeProductStrip } from '@/components/home/home-product-strip';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
+import { useRestoreListScroll } from '@/lib/use-restore-list-scroll';
 import BadgeInfo from './badge-info';
 
 const HOME_SECTION_LIMIT = '15';
@@ -30,16 +30,16 @@ async function loadSection(
 export default function MainSection() {
   const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [clientProducts, setClientProducts] = useState<any[]>([]);
-  const [auctionProducts, setAuctionProducts] = useState<any[]>([]);
   const [shopLoading, setShopLoading] = useState(true);
   const [clientLoading, setClientLoading] = useState(true);
-  const [auctionLoading, setAuctionLoading] = useState(true);
 
   useEffect(() => {
     void loadSection({ advertiser: 'SHOP' }, setShopProducts, setShopLoading);
     void loadSection({ advertiser: 'CLIENT' }, setClientProducts, setClientLoading);
-    void loadSection({ auctionActive: 'true' }, setAuctionProducts, setAuctionLoading);
+    // void loadSection({ auctionActive: 'true' }, setAuctionProducts, setAuctionLoading);
   }, []);
+
+  useRestoreListScroll(!clientLoading && !shopLoading);
 
   return (
     <div className="space-y-5 lg:space-y-10">
@@ -84,13 +84,14 @@ export default function MainSection() {
           <HomeProductStrip
             loading={shopLoading}
             items={shopProducts}
-            emptyMessage="محصولی یافت نشد"
+            emptyMessage="به زودی .."
             getItemKey={(product) => product.id}
             renderItem={(product) => <ProductCard product={product} />}
           />
         </div>
       </section>
 
+      {/* مزایده — موقتاً غیرفعال
       <section className="border-y border-secondary/50 -mx-4 px-4 py-6">
         <div className="container mb-6 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-xl font-bold">
@@ -114,6 +115,7 @@ export default function MainSection() {
           />
         </div>
       </section>
+      */}
 
       <BadgeInfo />
     </div>

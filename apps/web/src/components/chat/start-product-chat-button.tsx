@@ -13,12 +13,14 @@ type StartProductChatButtonProps = {
   productId: string;
   className?: string;
   variant?: 'default' | 'outline';
+  label?: string;
 };
 
 export function StartProductChatButton({
   productId,
   className,
   variant = 'default',
+  label = 'چت با فروشنده',
 }: StartProductChatButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
@@ -29,7 +31,7 @@ export function StartProductChatButton({
       <Button variant={variant} className={className} asChild>
         <Link href={`/login?callbackUrl=${encodeURIComponent(`/product/${productId}`)}`}>
           <MessageCircle className="h-4 w-4" />
-          پیام به فروشنده
+          {label}
         </Link>
       </Button>
     );
@@ -56,7 +58,7 @@ export function StartProductChatButton({
       disabled={loading}
     >
       <MessageCircle className="h-4 w-4" />
-      {loading ? 'در حال اتصال...' : 'پیام به فروشنده'}
+      {loading ? 'در حال اتصال...' : label}
     </Button>
   );
 }

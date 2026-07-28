@@ -18,6 +18,7 @@ import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
 import { ProfileMessagesTab } from '@/components/profile/profile-messages-tab';
 import { ProfileProductsTab } from '@/components/profile/profile-products-tab';
+import { ReferralInviteCard } from '@/components/profile/referral-invite-card';
 import { TelegramNotificationsCard } from '@/components/profile/telegram-notifications-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ function DashboardContent() {
     return api.users
       .profile()
       .then(setProfile)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const tabParam = searchParams.get('tab');
@@ -116,7 +117,7 @@ function DashboardContent() {
                 )}
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2">
             <ProfileEditDialog
               profile={profile}
               onUpdated={(updated) => setProfile((prev: any) => ({ ...prev, ...updated }))}
@@ -128,12 +129,12 @@ function DashboardContent() {
           </div>
         </div>
         {profile && (
-          <div className="flex flex-wrap items-center gap-1 border-t mt-4 pt-3">
+          <div className="md:flex md:flex-wrap grid grid-cols-3 items-center gap-1 border-t mt-4 pt-3">
             <Link
               href="/chats"
               className="flex items-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
             >
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle className="h-3 w-3" />
               گفتگوها
               {chatsUnreadCount > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1 text-[10px]">
@@ -145,7 +146,7 @@ function DashboardContent() {
               href="/orders"
               className="flex items-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
             >
-              <ShoppingBag className="h-4 w-4" />
+              <ShoppingBag className="h-3 w-3" />
               سفارش‌های من
             </Link>
             <Link
@@ -158,7 +159,16 @@ function DashboardContent() {
         )}
       </div>
 
-      <TelegramNotificationsCard />
+      <div className='w-full grid grid-cols-1 md:grid-cols-2 gap-3'>
+        {profile?.role !== 'ADMIN' && (
+          <ReferralInviteCard
+            referralCode={profile?.referralCode}
+            referralCount={profile?.referralCount}
+            boostCredits={profile?.boostCredits}
+          />
+        )}
+        <TelegramNotificationsCard />
+      </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="h-auto w-full flex-wrap sm:w-auto">

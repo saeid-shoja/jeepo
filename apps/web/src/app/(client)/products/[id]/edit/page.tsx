@@ -1,8 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isVehicleSaleCategory, type VehiclePaintCondition } from '@offroad/shared';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { CarBrandPicker } from '@/components/form/car-brand-picker';
@@ -14,6 +15,7 @@ import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
 import { ProductSituationSelect } from '@/components/form/product-situation-select';
+import { VehicleSaleFields } from '@/components/form/vehicle-sale-fields';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -41,7 +43,7 @@ export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { carBrands: carBrandOptions } = useCategories();
+  const { carBrands: carBrandOptions, parts } = useCategories();
   const [fetching, setFetching] = useState(true);
 
   const {
@@ -59,6 +61,7 @@ export default function EditProductPage() {
       description: '',
       price: 0,
       categoryId: '',
+      categorySlug: '',
       city: '',
       neighborhood: '',
       phone: '',
@@ -68,6 +71,8 @@ export default function EditProductPage() {
       hasGuarantee: false,
       stockQuantity: 1,
       newPrice: 0,
+      mileageKm: null,
+      paintCondition: '',
     },
   });
 
@@ -75,12 +80,31 @@ export default function EditProductPage() {
   const hasGuarantee = watch('hasGuarantee');
   const carBrands = watch('carBrands');
   const situation = watch('situation');
+  const categoryId = watch('categoryId');
+  const categorySlug = watch('categorySlug');
+  const mileageKm = watch('mileageKm');
+  const paintCondition = watch('paintCondition');
+
+  const showVehicleFields = useMemo(
+    () => Boolean(categorySlug && isVehicleSaleCategory(categorySlug)),
+    [categorySlug],
+  );
 
   useEffect(() => {
     if (situation === 'NEW') {
       setValue('newPrice', 0);
     }
   }, [situation, setValue]);
+
+  useEffect(() => {
+    if (!categoryId || parts.length === 0) return;
+    const slug = parts.find((p) => p.id === categoryId)?.slug ?? '';
+    setValue('categorySlug', slug);
+    if (!isVehicleSaleCategory(slug)) {
+      setValue('mileageKm', null);
+      setValue('paintCondition', '');
+    }
+  }, [categoryId, parts, setValue]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,6 +120,7 @@ export default function EditProductPage() {
           price: product.price,
           newPrice: product.newPrice ?? 0,
           categoryId: product.categoryId,
+          categorySlug: product.category?.slug ?? '',
           carBrands: (product.carBrands || []).map((b: { value: string }) => b.value),
           city: product.city || '',
           neighborhood: product.neighborhood || '',
@@ -104,6 +129,8 @@ export default function EditProductPage() {
           situation: product.situation === 'USED' ? 'USED' : 'NEW',
           images: product.images || [],
           stockQuantity: product.stockQuantity ?? 1,
+          mileageKm: product.mileageKm ?? null,
+          paintCondition: product.paintCondition ?? '',
         });
       })
       .catch(() => {
@@ -133,6 +160,8 @@ export default function EditProductPage() {
         situation: data.situation,
         images: data.images,
         stockQuantity: data.stockQuantity,
+        mileageKm: showVehicleFields ? data.mileageKm : null,
+        paintCondition: showVehicleFields && data.paintCondition ? data.paintCondition : null,
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -159,6 +188,31 @@ export default function EditProductPage() {
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <Label>دسته‌بندی</Label>
+              <Controller
+                name="categoryId"
+                control={control}
+                render={({ field }) => (
+                  <ProductCategoryPicker value={field.value} onValueChange={field.onChange} />
+                )}
+              />
+              <FieldError message={errors.categoryId?.message} />
+            </div>
+
+            {showVehicleFields && (
+              <VehicleSaleFields
+                mileageKm={mileageKm}
+                paintCondition={paintCondition as VehiclePaintCondition | ''}
+                onMileageChange={(v) => setValue('mileageKm', v, { shouldValidate: true })}
+                onPaintConditionChange={(v) =>
+                  setValue('paintCondition', v, { shouldValidate: true })
+                }
+                mileageError={errors.mileageKm?.message}
+                paintError={errors.paintCondition?.message}
+              />
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
               <Input id="title" {...register('title')} />
@@ -209,18 +263,6 @@ export default function EditProductPage() {
                 {...register('stockQuantity', { setValueAs: parseIntegerInput })}
               />
               <FieldError message={errors.stockQuantity?.message} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>دسته‌بندی</Label>
-              <Controller
-                name="categoryId"
-                control={control}
-                render={({ field }) => (
-                  <ProductCategoryPicker value={field.value} onValueChange={field.onChange} />
-                )}
-              />
-              <FieldError message={errors.categoryId?.message} />
             </div>
           </CardContent>
         </Card>

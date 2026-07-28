@@ -37,7 +37,7 @@ export function ListingPremiumPaymentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="p-10 sm:max-w-md"
+        className="sm:max-w-md"
         onPointerDownOutside={(e) => loading && e.preventDefault()}
       >
         <DialogHeader>

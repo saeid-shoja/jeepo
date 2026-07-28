@@ -1,9 +1,9 @@
 'use client';
 
 import { SITE_NAME_FA } from '@offroad/shared';
-import { SlidersHorizontal } from 'lucide-react';
+import { Loader2, SlidersHorizontal } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProductCard } from '@/components/shop/product-card';
 import {
   ProductsFilterSidebar,
@@ -13,7 +13,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { api } from '@/lib/api';
+import {
+  getRestorePagesLoaded,
+  hasPendingListScrollForCurrentPath,
+  listScrollKey,
+  setListPagesLoaded,
+} from '@/lib/list-scroll-restore';
 import { PRICE_FILTER_MAX } from '@/lib/product-utils';
+import { useRestoreListScroll } from '@/lib/use-restore-list-scroll';
 import { useCategories } from '@/stores/categories-store';
 import { useLocationFilter } from '@/stores/location-store';
 
@@ -30,56 +37,36 @@ const defaultFilters: ProductsFilters = {
 const PRODUCT_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
 const PRODUCTS_PAGE_SIZE = 20;
 
-function getVisiblePages(current: number, total: number): number[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-
-  const pages = new Set<number>([1, total, current, current - 1, current + 1]);
-  return [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
-}
-
-function parsePageParam(raw: string | null): number {
-  const n = Number.parseInt(raw ?? '1', 10);
-  return Number.isFinite(n) && n >= 1 ? n : 1;
-}
-
 export function ProductsPageClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const advertiserType = useMemo(() => {
     const raw = searchParams.get('advertiserType');
-    if (raw === 'SHOP' || raw === 'CLIENT' || raw === 'AUCTION') return raw;
+    if (raw === 'SHOP' || raw === 'CLIENT') return raw;
     return 'CLIENT';
   }, [searchParams]);
   const urlSearch = searchParams.get('search') ?? '';
-  const page = useMemo(() => parsePageParam(searchParams.get('page')), [searchParams]);
 
   const [products, setProducts] = useState<any[]>([]);
   const { libraries, loading: categoriesLoading } = useCategories();
   const { selectedCities, hasFilter } = useLocationFilter();
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [filters, setFilters] = useState<ProductsFilters>(defaultFilters);
-  const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<'CLIENT' | 'SHOP' | 'AUCTION'>(
     advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION',
   );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
 
-  const setListPage = useCallback(
-    (nextPage: number, method: 'push' | 'replace' = 'push') => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (nextPage <= 1) params.delete('page');
-      else params.set('page', String(nextPage));
-      const qs = params.toString();
-      const href = qs ? `${pathname}?${qs}` : pathname;
-      if (method === 'push') router.push(href, { scroll: true });
-      else router.replace(href, { scroll: true });
-    },
-    [pathname, router, searchParams],
-  );
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingMoreRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
 
   useEffect(() => {
     setSearchQuery(urlSearch);
@@ -90,13 +77,20 @@ export function ProductsPageClient() {
   }, [advertiserType]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    pageRef.current = page;
+    setListPagesLoaded(page);
   }, [page]);
 
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useRestoreListScroll(!initialLoading && products.length > 0);
+
   const buildParams = useCallback(
-    (overrides?: { page?: number }) => {
+    (pageNum: number) => {
       const p: Record<string, string> = {
-        page: String(overrides?.page ?? page),
+        page: String(pageNum),
         limit: String(PRODUCTS_PAGE_SIZE),
       };
       if (activeTab === 'AUCTION') {
@@ -115,45 +109,153 @@ export function ProductsPageClient() {
       if (filters.hasGuarantee) p.hasGuarantee = filters.hasGuarantee;
       return p;
     },
-    [activeTab, page, searchQuery, filters, selectedCities],
+    [activeTab, searchQuery, filters, selectedCities],
   );
 
-  const fetchProducts = useCallback(
-    (pageNum: number) => {
-      setLoading(true);
-      api.products
-        .list(buildParams({ page: pageNum }))
-        .then((res) => {
-          setProducts(res.products);
-          setTotalPages(res.totalPages);
-        })
-        .finally(() => setLoading(false));
-    },
-    [buildParams],
+  const queryKey = useMemo(
+    () =>
+      JSON.stringify({
+        activeTab,
+        searchQuery,
+        filters,
+        selectedCities,
+      }),
+    [activeTab, searchQuery, filters, selectedCities],
   );
 
   useEffect(() => {
     if (categoriesLoading) return;
-    fetchProducts(page);
-  }, [page, categoriesLoading, fetchProducts]);
+
+    const requestId = ++requestIdRef.current;
+    let cancelled = false;
+
+    const loadInitial = async () => {
+      setInitialLoading(true);
+      setLoadingMore(false);
+      loadingMoreRef.current = false;
+      setProducts([]);
+      setPage(1);
+      pageRef.current = 1;
+      setHasMore(true);
+      hasMoreRef.current = true;
+      setListPagesLoaded(1);
+
+      const pagesToLoad = getRestorePagesLoaded();
+
+      try {
+        let all: any[] = [];
+        let totalPages = 1;
+        let lastPage = 1;
+
+        for (let p = 1; p <= pagesToLoad; p++) {
+          const res = await api.products.list(buildParams(p));
+          if (cancelled || requestIdRef.current !== requestId) return;
+          all = all.concat(res.products);
+          totalPages = res.totalPages;
+          lastPage = p;
+          setProducts(all);
+          setPage(lastPage);
+          pageRef.current = lastPage;
+          setListPagesLoaded(lastPage);
+          const more = lastPage < totalPages;
+          setHasMore(more);
+          hasMoreRef.current = more;
+          if (p === 1) {
+            setInitialLoading(false);
+            if (pagesToLoad > 1) {
+              setLoadingMore(true);
+              loadingMoreRef.current = true;
+            }
+          }
+          if (p >= totalPages) break;
+        }
+      } catch {
+        if (cancelled || requestIdRef.current !== requestId) return;
+        setProducts([]);
+        setHasMore(false);
+        hasMoreRef.current = false;
+      } finally {
+        if (!cancelled && requestIdRef.current === requestId) {
+          setInitialLoading(false);
+          setLoadingMore(false);
+          loadingMoreRef.current = false;
+        }
+      }
+    };
+
+    void loadInitial();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categoriesLoading, queryKey, buildParams]);
+
+  useEffect(() => {
+    if (hasPendingListScrollForCurrentPath()) return;
+    if (listScrollKey().startsWith('/products')) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+  }, [queryKey]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current || initialLoading) return;
+
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const nextPage = pageRef.current + 1;
+    const requestId = requestIdRef.current;
+
+    try {
+      const res = await api.products.list(buildParams(nextPage));
+      if (requestIdRef.current !== requestId) return;
+
+      setProducts((prev) => {
+        const seen = new Set(prev.map((item) => item.id));
+        const fresh = res.products.filter((item: { id: string }) => !seen.has(item.id));
+        return prev.concat(fresh);
+      });
+      setPage(nextPage);
+      pageRef.current = nextPage;
+      setListPagesLoaded(nextPage);
+      const more = nextPage < res.totalPages;
+      setHasMore(more);
+      hasMoreRef.current = more;
+    } catch {
+      if (requestIdRef.current !== requestId) return;
+      setHasMore(false);
+      hasMoreRef.current = false;
+    } finally {
+      if (requestIdRef.current === requestId) {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
+    }
+  }, [buildParams, initialLoading]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasMore || initialLoading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore();
+        }
+      },
+      { root: null, rootMargin: '480px 0px', threshold: 0 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, initialLoading, loadMore, products.length]);
 
   const handleApplyFilters = () => {
     setMobileFiltersOpen(false);
-    if (page !== 1) {
-      setListPage(1, 'replace');
-    } else {
-      fetchProducts(1);
-    }
   };
 
   const handleResetFilters = () => {
     setFilters(defaultFilters);
     setMobileFiltersOpen(false);
-    if (page !== 1) {
-      setListPage(1, 'replace');
-    } else {
-      fetchProducts(1);
-    }
   };
 
   const filterSidebar = (
@@ -179,11 +281,7 @@ export function ProductsPageClient() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            {activeTab === 'SHOP'
-              ? 'محصولات فروشگاه'
-              : activeTab === 'AUCTION'
-                ? 'مزایده‌ها'
-                : `بازارچه ${SITE_NAME_FA}`}
+            {activeTab === 'SHOP' ? 'محصولات فروشگاه' : `بازارچه ${SITE_NAME_FA}`}
           </h1>
           {searchQuery && (
             <p className="text-muted-foreground mt-1 text-sm">
@@ -215,18 +313,13 @@ export function ProductsPageClient() {
           >
             فروشگاه
           </Button>
-          <Button
-            variant={activeTab === 'AUCTION' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTab('AUCTION')}
-          >
-            مزایده‌ها
-          </Button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="hidden w-full shrink-0 lg:block lg:w-72">{filterSidebar}</aside>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <aside className="hidden w-full shrink-0 self-start lg:sticky lg:top-4 lg:block lg:w-72 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          {filterSidebar}
+        </aside>
 
         <div className="min-w-0 flex-1 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -246,7 +339,7 @@ export function ProductsPageClient() {
             </Sheet>
           </div>
 
-          {loading ? (
+          {initialLoading && products.length === 0 ? (
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-5">
               {PRODUCT_SKELETON_KEYS.map((key) => (
                 <div key={key} className="bg-muted aspect-4/5 animate-pulse rounded-sm" />
@@ -259,46 +352,19 @@ export function ProductsPageClient() {
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-              {totalPages > 1 && (
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1 || loading}
-                    onClick={() => setListPage(Math.max(1, page - 1))}
-                  >
-                    قبلی
-                  </Button>
-                  {getVisiblePages(page, totalPages).map((p, index, pages) => {
-                    const prev = pages[index - 1];
-                    const showEllipsis = prev != null && p - prev > 1;
-                    return (
-                      <span key={p} className="flex items-center gap-2">
-                        {showEllipsis ? (
-                          <span className="text-muted-foreground px-1 text-sm">…</span>
-                        ) : null}
-                        <Button
-                          variant={page === p ? 'default' : 'outline'}
-                          size="sm"
-                          className="h-9 w-9 p-0"
-                          disabled={loading}
-                          onClick={() => setListPage(p)}
-                        >
-                          {p}
-                        </Button>
-                      </span>
-                    );
-                  })}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages || loading}
-                    onClick={() => setListPage(Math.min(totalPages, page + 1))}
-                  >
-                    بعدی
-                  </Button>
+
+              <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
+
+              {loadingMore ? (
+                <div
+                  className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 className="size-4 animate-spin" />
+                  در حال بارگذاری...
                 </div>
-              )}
+              ) : null}
             </>
           ) : (
             <div className="text-muted-foreground py-16 text-center">

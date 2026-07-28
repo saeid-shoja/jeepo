@@ -1,4 +1,4 @@
-import { PackageSearch, Shield, Sparkles, TrendingUp } from 'lucide-react';
+import { PackageSearch, Shield, TrendingUp } from 'lucide-react';
 
 const OPTION_CARD_STYLE = 'bg-card flex items-start rounded-md border p-3 lg:p-6';
 const OPTIONS_CARD_ICON = 'text-primary h-5 w-5 lg:h-7 lg:w-7 shrink-0 ml-1';
@@ -14,15 +14,6 @@ function BadgeInfo() {
           <h3 className={OPTIONS_CARD_TITLE}>با تضمین فروشگاه</h3>
           <p className={OPTIONS_CARD_DESC}>
             محصولات دارای نشان تضمین، اصالت کالا را از فروشگاه ما دارند
-          </p>
-        </div>
-      </div>
-      <div className={OPTION_CARD_STYLE}>
-        <Sparkles className={OPTIONS_CARD_ICON} />
-        <div>
-          <h3 className={OPTIONS_CARD_TITLE}>تقویت شده</h3>
-          <p className={OPTIONS_CARD_DESC}>
-            آگهی شما ۴ روز در بالای همه لیست‌ها می‌ماند، حتی با ثبت آگهی‌های جدید
           </p>
         </div>
       </div>

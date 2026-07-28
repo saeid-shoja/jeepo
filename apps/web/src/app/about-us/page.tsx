@@ -15,9 +15,23 @@ import { SiteLogo } from '@/components/layout/site-logo';
 import { JsonLd } from '@/components/seo/json-ld';
 import { buildAboutPageJsonLd, buildMetadata } from '@/lib/seo';
 
+/** بلوک‌ها و امکانات مربوط به مزایده / تقویت — موقتاً مخفی */
+const HIDDEN_ABOUT_BLOCK_TITLES = new Set(['مزایده و تضمین فروشگاه']);
+const HIDDEN_ABOUT_FEATURES = new Set([
+  'مزایده آنلاین برای فروش به بالاترین قیمت',
+  'نشان‌های «تقویت شده» و «پله شده» برای دیده‌شدن بیشتر آگهی',
+]);
+
+const visibleAboutBlocks = ABOUT_US_BLOCKS.filter(
+  (block: SiteContentBlock) => !HIDDEN_ABOUT_BLOCK_TITLES.has(block.title),
+);
+const visibleAboutFeatures = ABOUT_US_FEATURES.filter(
+  (feature) => !HIDDEN_ABOUT_FEATURES.has(feature),
+);
+
 export const metadata: Metadata = buildMetadata({
   title: 'درباره ما',
-  description: `آشنایی با ${SITE_NAME_FA}، بازار تخصصی خرید و فروش لوازم آفرود، مزایده، تضمین فروشگاه و ثبت آگهی.`,
+  description: `آشنایی با ${SITE_NAME_FA}، بازار تخصصی خرید و فروش لوازم آفرود و ثبت آگهی.`,
   path: '/about-us',
   keywords: ['درباره جیپو', 'پلتفرم آفرود', 'بازار لوازم آفرود', 'فروش لوازم دست دوم آفرود'],
 });
@@ -41,7 +55,7 @@ export default function AboutUsPage() {
         </div>
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ABOUT_US_BLOCKS.map((block: SiteContentBlock) => (
+          {visibleAboutBlocks.map((block: SiteContentBlock) => (
             <article key={block.title} className="rounded-xl border bg-card p-5">
               <h2 className="text-lg font-semibold">{block.title}</h2>
               <p className="text-muted-foreground mt-2 text-sm leading-7">{block.description}</p>
@@ -52,7 +66,7 @@ export default function AboutUsPage() {
         <section className="rounded-xl border bg-card p-6 md:p-8">
           <h2 className="text-xl font-semibold">امکانات پلتفرم</h2>
           <ul className="text-muted-foreground mt-4 grid gap-2 text-sm leading-7 sm:grid-cols-2">
-            {ABOUT_US_FEATURES.map((feature) => (
+            {visibleAboutFeatures.map((feature) => (
               <li key={feature} className="flex gap-2">
                 <span className="text-primary shrink-0" aria-hidden>
                   •

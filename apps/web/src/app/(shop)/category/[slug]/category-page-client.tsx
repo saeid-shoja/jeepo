@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
+import { useRestoreListScroll } from '@/lib/use-restore-list-scroll';
 import { useCategories } from '@/stores/categories-store';
 
 export function CategoryPageClient() {
@@ -26,6 +27,8 @@ export function CategoryPageClient() {
       .catch(() => setProducts([]))
       .finally(() => setProductsLoading(false));
   }, [category]);
+
+  useRestoreListScroll(!productsLoading && products.length > 0);
 
   if (categoriesLoading || productsLoading) {
     return <div className="text-muted-foreground py-16 text-center">در حال بارگذاری...</div>;

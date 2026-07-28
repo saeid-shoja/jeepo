@@ -29,7 +29,7 @@ export function BoostPaymentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-md p-10"
+        className="sm:max-w-md"
         onPointerDownOutside={(e) => loading && e.preventDefault()}
       >
         <DialogHeader>

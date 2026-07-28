@@ -1,6 +1,6 @@
 'use client';
 
-import { LISTING_TIP_NO_CONTACT_IN_TEXT, LISTING_TIP_VEHICLE_SALE_APPROVAL } from '@offroad/shared';
+import { LISTING_TIP_NO_CONTACT_IN_TEXT } from '@offroad/shared';
 import { Info } from 'lucide-react';
 
 export function ListingFormTips() {
@@ -11,7 +11,6 @@ export function ListingFormTips() {
         <span className="font-bold text-destructive">نکات مهم</span>
       </div>
       <ul className="list-disc space-y-2 ps-5 leading-relaxed">
-        <li>{LISTING_TIP_VEHICLE_SALE_APPROVAL}</li>
         <li>{LISTING_TIP_NO_CONTACT_IN_TEXT}</li>
       </ul>
     </div>

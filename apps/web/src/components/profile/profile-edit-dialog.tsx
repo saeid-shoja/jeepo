@@ -95,7 +95,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
 
       const updated = await api.users.updateProfile({
         name: trimmedName,
-        city: city || undefined,
+        city: city.trim() || null,
         telegramId: normalizedTelegram,
       });
       patchUser({
@@ -144,7 +144,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 className="text-xs"
               />
             </div>
-            <CitySelect value={city} onChange={setCity} label="شهر" />
+            <CitySelect value={city} onChange={setCity} label="شهر (اختیاری)" required={false} />
             <div className="space-y-2">
               <Label htmlFor="profile-telegram">
                 آیدی تلگرام{' '}

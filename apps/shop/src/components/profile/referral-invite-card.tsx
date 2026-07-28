@@ -92,6 +92,6 @@ export function ReferralInviteCard({
           </Button>
         </div>
       </CardContent>
-    </Card >
+    </Card>
   );
 }

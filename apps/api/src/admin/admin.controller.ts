@@ -10,6 +10,7 @@ import {
   AnnounceBestPriceDto,
   CreateAdminUserDto,
   FindAdminProductsQueryDto,
+  FindAdminUsersQueryDto,
   UpdateAdminUserDto,
   UpdateProductStatusDto,
 } from './dto';
@@ -31,8 +32,8 @@ export class AdminController {
   }
 
   @Get('users')
-  getAllUsers() {
-    return this.adminService.getAllUsers();
+  getAllUsers(@Query() query: FindAdminUsersQueryDto) {
+    return this.adminService.getAllUsers({ search: query.search });
   }
 
   @Post('users')
@@ -70,6 +71,7 @@ export class AdminController {
       tab: query.tab,
       advertiser: query.advertiser,
       status: query.status,
+      search: query.search,
     });
   }
 

@@ -1,0 +1,278 @@
+'use client';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { DigitsInput, TelegramIdInput } from '@/components/form/digits-input';
+import { FieldError } from '@/components/form/field-error';
+import { RequiredLabel } from '@/components/form/required-label';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import {
+  type RegisterFormValues,
+  registerSchema,
+  type VerifyEmailFormValues,
+  verifyEmailSchema,
+} from '@/lib/validations/auth';
+import { useAuth } from '@/stores/auth-store';
+
+function RegisterPageContent() {
+  const { register: registerUser, verifyEmail, resendVerification } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailFromQuery = searchParams.get('email');
+  const referralFromQuery = searchParams.get('ref')?.trim().toUpperCase() ?? '';
+  const nextPath = searchParams.get('next');
+  const afterAuthPath = nextPath?.startsWith('/') ? nextPath : '/profile';
+
+  const [step, setStep] = useState<'details' | 'verify'>(emailFromQuery ? 'verify' : 'details');
+  const [pendingEmail, setPendingEmail] = useState(emailFromQuery ?? '');
+  const [maskedEmail, setMaskedEmail] = useState('');
+  const [resending, setResending] = useState(false);
+
+  const detailsForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: emailFromQuery ?? '',
+      phone: '',
+      password: '',
+      telegramId: '',
+      referralCode: referralFromQuery,
+    },
+  });
+
+  const verifyForm = useForm<VerifyEmailFormValues>({
+    resolver: zodResolver(verifyEmailSchema),
+    defaultValues: {
+      email: emailFromQuery ?? '',
+      code: '',
+    },
+  });
+
+  useEffect(() => {
+    if (emailFromQuery) {
+      setStep('verify');
+      setPendingEmail(emailFromQuery);
+      verifyForm.setValue('email', emailFromQuery);
+    }
+  }, [emailFromQuery, verifyForm]);
+
+  const onRegisterSubmit = async (data: RegisterFormValues) => {
+    try {
+      const result = await registerUser(
+        data.phone,
+        data.name,
+        data.password,
+        data.email,
+        undefined,
+        data.telegramId,
+        data.referralCode,
+      );
+      setPendingEmail(result.email);
+      setMaskedEmail(result.maskedEmail);
+      verifyForm.setValue('email', result.email);
+      verifyForm.setValue('code', '');
+      setStep('verify');
+      toast.success(result.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطا در ثبت نام');
+    }
+  };
+
+  const onVerifySubmit = async (data: VerifyEmailFormValues) => {
+    try {
+      await verifyEmail(data.email, data.code);
+      toast.success('ایمیل تأیید شد. خوش آمدید!');
+      router.push(afterAuthPath);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'کد تأیید نامعتبر است');
+    }
+  };
+
+  const handleResend = async () => {
+    const email = verifyForm.getValues('email') || pendingEmail;
+    if (!email) return;
+    setResending(true);
+    try {
+      const message = await resendVerification(email);
+      toast.success(message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'ارسال مجدد ناموفق بود');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (step === 'verify') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">تأیید ایمیل</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4 text-center text-sm leading-relaxed">
+            کد ۶ رقمی ارسال‌شده به{' '}
+            <span className="text-foreground font-medium" dir="ltr">
+              {maskedEmail || pendingEmail}
+            </span>{' '}
+            را وارد کنید. در صورت عدم دریافت پوشه اسپم ایمیل را چک کنید.
+          </p>
+          <form onSubmit={verifyForm.handleSubmit(onVerifySubmit)} className="space-y-4" noValidate>
+            <input type="hidden" {...verifyForm.register('email')} />
+            <div className="space-y-2">
+              <RequiredLabel htmlFor="code">کد تأیید</RequiredLabel>
+              <DigitsInput
+                id="code"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="123456"
+                className="text-center text-lg tracking-widest"
+                autoComplete="one-time-code"
+                {...verifyForm.register('code')}
+              />
+              <FieldError message={verifyForm.formState.errors.code?.message} />
+            </div>
+            <Button type="submit" className="w-full" disabled={verifyForm.formState.isSubmitting}>
+              {verifyForm.formState.isSubmitting ? 'در حال تأیید...' : 'تأیید و ورود به پروفایل'}
+            </Button>
+          </form>
+          <div className="mt-4 flex flex-col items-center gap-2 text-sm">
+            <Button
+              type="button"
+              variant="link"
+              disabled={resending}
+              onClick={() => void handleResend()}
+            >
+              {resending ? 'در حال ارسال...' : 'ارسال مجدد کد'}
+            </Button>
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-primary"
+              onClick={() => setStep('details')}
+            >
+              بازگشت به فرم ثبت‌نام
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-center text-2xl">ثبت نام</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          onSubmit={detailsForm.handleSubmit(onRegisterSubmit)}
+          className="space-y-3"
+          noValidate
+        >
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="name">نام و نام خانوادگی</RequiredLabel>
+            <Input id="name" type="text" {...detailsForm.register('name')} />
+            <FieldError message={detailsForm.formState.errors.name?.message} />
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="email">ایمیل</RequiredLabel>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              dir="ltr"
+              className="text-end"
+              autoComplete="email"
+              {...detailsForm.register('email')}
+            />
+            <FieldError message={detailsForm.formState.errors.email?.message} />
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="phone">شماره موبایل</RequiredLabel>
+            <DigitsInput
+              id="phone"
+              type="tel"
+              placeholder="0912xxxxxxx"
+              autoComplete="tel"
+              {...detailsForm.register('phone')}
+            />
+            <FieldError message={detailsForm.formState.errors.phone?.message} />
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="password">رمز عبور</RequiredLabel>
+            <PasswordInput
+              id="password"
+              autoComplete="new-password"
+              {...detailsForm.register('password')}
+            />
+            <FieldError message={detailsForm.formState.errors.password?.message} />
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="telegramId" required={false}>
+              آیدی تلگرام{' '}
+              <span className="text-muted-foreground text-xs">(جهت دریافت اعلان های چت و خبر)</span>
+            </RequiredLabel>
+            <TelegramIdInput
+              id="telegramId"
+              type="text"
+              placeholder="@username"
+              autoComplete="off"
+              {...detailsForm.register('telegramId')}
+            />
+            <FieldError message={detailsForm.formState.errors.telegramId?.message} />
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="referralCode" required={false}>
+              کد معرف
+            </RequiredLabel>
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="اختیاری"
+              dir="ltr"
+              className="text-end uppercase"
+              autoComplete="off"
+              {...detailsForm.register('referralCode')}
+            />
+            <FieldError message={detailsForm.formState.errors.referralCode?.message} />
+          </div>
+          <Button type="submit" className="w-full" disabled={detailsForm.formState.isSubmitting}>
+            {detailsForm.formState.isSubmitting ? 'در حال ثبت نام...' : 'ادامه و دریافت کد تأیید'}
+          </Button>
+        </form>
+        <div className="w-full flex justify-between items-center mt-4 lg:text-sm text-xs">
+          <p className="text-muted-foreground text-center">
+            قبلاً ثبت نام کرده‌اید؟{' '}
+            <Link
+              href={
+                nextPath?.startsWith('/') ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'
+              }
+              className="text-primary hover:underline"
+            >
+              ورود
+            </Link>
+          </p>
+          <Link href="/" className="text-primary hover:underline">
+            بازگشت به صفحه اصلی
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={<div className="py-16 text-center text-muted-foreground">در حال بارگذاری...</div>}
+    >
+      <RegisterPageContent />
+    </Suspense>
+  );
+}

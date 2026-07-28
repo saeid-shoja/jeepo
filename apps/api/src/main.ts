@@ -13,8 +13,8 @@ async function bootstrap() {
   });
 
   // Default 100kb limit rejects listings with base64 images (~260kb+)
-  app.useBodyParser('json', { limit: '10mb' });
-  app.useBodyParser('urlencoded', { extended: true, limit: '10mb' });
+  app.useBodyParser('json', { limit: '15mb' });
+  app.useBodyParser('urlencoded', { extended: true, limit: '15mb' });
 
   app.enableCors(createCorsOptions());
 

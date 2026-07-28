@@ -36,7 +36,12 @@ export class FavoritesService {
     const active = favorites.filter((row) => row.product.status === 'ACTIVE');
 
     return Promise.all(
-      active.map((row) => this.productsService.mapProduct(row.product, { viewerUserId: userId })),
+      active.map((row) =>
+        this.productsService.mapProduct(row.product, {
+          viewerUserId: userId,
+          coverImageOnly: true,
+        }),
+      ),
     );
   }
 

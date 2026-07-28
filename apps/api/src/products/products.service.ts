@@ -87,7 +87,7 @@ export class ProductsService {
       _count?: { auctionBids: number };
       category?: { slug: string } | null;
     },
-  >(product: T, options?: { viewerUserId?: string | null }) {
+  >(product: T, options?: { viewerUserId?: string | null; coverImageOnly?: boolean }) {
     const strengthenedActive =
       product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
     const brandLabels =
@@ -106,9 +106,12 @@ export class ProductsService {
       isAuctionActive(product.auctionEndsAt) &&
       product.status === 'ACTIVE';
 
+    const parsedImages: string[] = JSON.parse(product.images || '[]');
+    const images = options?.coverImageOnly ? parsedImages.slice(0, 1) : parsedImages;
+
     const mapped: Record<string, unknown> = {
       ...product,
-      images: JSON.parse(product.images),
+      images,
       carBrands: brands.map((brand) => ({
         value: brand,
         label: brandLabels.get(brand) ?? brand,
@@ -230,8 +233,9 @@ export class ProductsService {
       return {
         activeCount,
         activeNewCount,
-        freeLimit: Number.MAX_SAFE_INTEGER,
-        newLimit: Number.MAX_SAFE_INTEGER,
+        freeLimit: null,
+        newLimit: null,
+        unlimitedListings: true,
         requiresListingFee: false,
       };
     }
@@ -239,40 +243,77 @@ export class ProductsService {
     const freeLimit = resolveUserListingLimit(user?.maxActiveListings);
     const newLimit = resolveUserNewListingLimit(user?.maxActiveNewListings);
     const requiresListingFee = activeCount >= freeLimit;
-    return { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee };
+    return {
+      activeCount,
+      activeNewCount,
+      freeLimit,
+      newLimit,
+      requiresListingFee,
+      unlimitedListings: false as const,
+    };
   }
 
   /** Hard-block when user already has max ACTIVE listings with situation=NEW. */
   async assertNewListingQuota(userId: string, situation?: string | null) {
     if (situation !== 'NEW') return;
-    const { activeNewCount, newLimit } = await this.getListingQuotaState(userId);
-    if (activeNewCount >= newLimit) {
+    const state = await this.getListingQuotaState(userId);
+    if (state.unlimitedListings) return;
+    const { activeNewCount, newLimit } = state;
+    if (activeNewCount >= newLimit!) {
       throw new BadRequestException(
-        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
+        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit!.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
       );
     }
   }
 
   async getListingQuota(userId: string) {
     void this.purgeExpiredListingPaymentDrafts();
-    const { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee } =
-      await this.getListingQuotaState(userId);
+    const state = await this.getListingQuotaState(userId);
+    const {
+      activeCount,
+      activeNewCount,
+      freeLimit,
+      newLimit,
+      requiresListingFee,
+      unlimitedListings,
+    } = state;
+
+    if (unlimitedListings) {
+      return {
+        activeCount,
+        activeNewCount,
+        freeLimit: null,
+        newLimit: null,
+        defaultLimit: FREE_CLIENT_LISTING_LIMIT,
+        hasCustomLimit: false,
+        remainingFree: null,
+        requiresListingFee: false,
+        listingFee: EXTRA_LISTING_FEE,
+        paymentGraceDays: 3,
+        defaultNewLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
+        hasCustomNewLimit: false,
+        remainingNew: null,
+        atNewLimit: false,
+        unlimitedListings: true,
+      };
+    }
 
     return {
       activeCount,
-      freeLimit,
+      freeLimit: freeLimit!,
       defaultLimit: FREE_CLIENT_LISTING_LIMIT,
       hasCustomLimit: freeLimit !== FREE_CLIENT_LISTING_LIMIT,
-      remainingFree: Math.max(0, freeLimit - activeCount),
+      remainingFree: Math.max(0, freeLimit! - activeCount),
       requiresListingFee,
       listingFee: EXTRA_LISTING_FEE,
       paymentGraceDays: 3,
       activeNewCount,
-      newLimit,
+      newLimit: newLimit!,
       defaultNewLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       hasCustomNewLimit: newLimit !== FREE_CLIENT_NEW_LISTING_LIMIT,
-      remainingNew: Math.max(0, newLimit - activeNewCount),
-      atNewLimit: activeNewCount >= newLimit,
+      remainingNew: Math.max(0, newLimit! - activeNewCount),
+      atNewLimit: activeNewCount >= newLimit!,
+      unlimitedListings: false,
     };
   }
 
@@ -713,7 +754,9 @@ export class ProductsService {
     ]);
 
     return {
-      products: await Promise.all(products.map((p) => this.mapProduct(p, { viewerUserId: null }))),
+      products: await Promise.all(
+        products.map((p) => this.mapProduct(p, { viewerUserId: null, coverImageOnly: true })),
+      ),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -870,6 +913,35 @@ export class ProductsService {
     throw new BadRequestException(
       'برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
     );
+  }
+
+  async applyBoostWithCredit(id: string, userId: string) {
+    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_BOOST);
+
+    await this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.updateMany({
+        where: { id: userId, boostCredits: { gte: 1 } },
+        data: { boostCredits: { decrement: 1 } },
+      });
+      if (updatedUser.count === 0) {
+        throw new BadRequestException('امتیاز پله‌شدن رایگان ندارید');
+      }
+
+      const product = await tx.product.findUnique({ where: { id } });
+      if (!product) throw new NotFoundException('محصول یافت نشد');
+
+      const now = new Date();
+      await tx.product.update({
+        where: { id },
+        data: { isBoosted: true, listedAt: now },
+      });
+    });
+
+    this.telegramChannel.announceBoost(id);
+
+    const product = await this.prisma.product.findUnique({ where: { id } });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+    return this.mapProduct(product);
   }
 
   async remove(id: string, userId?: string, userRole?: string) {

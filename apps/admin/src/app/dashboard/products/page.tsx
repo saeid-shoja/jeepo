@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, isAdminApprovalRequiredCategory } from '@offroad/shared';
+import { formatPrice, isVehicleSaleCategory } from '@offroad/shared';
 import { CheckCircle, Gavel, Shield, Store, Tag, TrendingUp, User, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -22,16 +22,24 @@ export default function AdminProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [announcing, setAnnouncing] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
 
   const fetchProducts = useCallback(() => {
+    const params: Record<string, string> = {
+      page: String(page),
+      limit: '20',
+      tab,
+    };
+    if (search) params.search = search;
     adminApi
-      .products({ page: String(page), limit: '20', tab })
+      .products(params)
       .then((res) => {
         setProducts(res.products);
         setTotalPages(res.totalPages);
       })
       .catch(() => toast.error('بارگذاری محصولات ناموفق بود'));
-  }, [page, tab]);
+  }, [page, tab, search]);
 
   useEffect(() => {
     fetchProducts();
@@ -133,6 +141,42 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
+      <form
+        className="flex flex-wrap gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setPage(1);
+          setSearch(searchInput.trim());
+        }}
+      >
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="جستجو بر اساس عنوان محصول یا نام/ایمیل فروشنده…"
+          className="min-w-[240px] flex-1 rounded-md border px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+        >
+          جستجو
+        </button>
+        {search ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput('');
+              setSearch('');
+              setPage(1);
+            }}
+            className="rounded-md border px-4 py-2 text-sm"
+          >
+            پاک کردن
+          </button>
+        ) : null}
+      </form>
+
       <div className="flex flex-wrap gap-2 border-b pb-1">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
@@ -195,7 +239,7 @@ export default function AdminProductsPage() {
                   <td className="px-4 py-3">
                     <p className="font-medium">{p.title}</p>
                     <p className="text-xs text-gray-500">{p.category?.name ?? '—'}</p>
-                    {p.category?.slug && isAdminApprovalRequiredCategory(p.category.slug) && (
+                    {p.category?.slug && isVehicleSaleCategory(p.category.slug) && (
                       <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-800">
                         فروش خودرو/موتور
                       </span>

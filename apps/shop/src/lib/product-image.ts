@@ -22,9 +22,23 @@ export function isWebpDataUrl(value: string): boolean {
   return /^data:image\/webp[;,]/i.test(value);
 }
 
+export function isVideoDataUrl(value: string): boolean {
+  return /^data:video\//i.test(value);
+}
+
+/** Remote or data URL that looks like a video. */
+export function isProductVideoUrl(value: string): boolean {
+  if (isVideoDataUrl(value)) return true;
+  if (/^https?:\/\//i.test(value)) {
+    return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(value) || /\/video\//i.test(value);
+  }
+  return false;
+}
+
 /** True when the listing image is an acceptable stored value (webp data URL or remote URL). */
 export function isAllowedProductImageUrl(value: string): boolean {
   if (isWebpDataUrl(value)) return true;
+  if (isVideoDataUrl(value)) return true;
   return /^https?:\/\//i.test(value);
 }
 

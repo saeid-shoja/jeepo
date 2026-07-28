@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
-import { ProductImage } from '@/components/shop/product-image';
+import { ProductGallery } from '@/components/shop/product-gallery';
 import { ProductShareButton } from '@/components/shop/product-share-button';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
@@ -27,7 +27,6 @@ export function ProductDetailClient() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [currentImage, setCurrentImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [reportOpen, setReportOpen] = useState(false);
   const [guaranteeOpen, setGuaranteeOpen] = useState(false);
@@ -94,43 +93,12 @@ export function ProductDetailClient() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 container">
-      <div className="space-y-3">
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-          {images[currentImage] ? (
-            <ProductImage
-              key={images[currentImage]}
-              src={images[currentImage]}
-              alt={product.title}
-              priority
-              deferUntilVisible={false}
-              className="absolute inset-0"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
-          ) : (
-            <div className="text-muted-foreground flex aspect-square items-center justify-center">
-              بدون تصویر
-            </div>
-          )}
-          <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
-            <ProductSituationBadge situation={situation} />
-          </div>
-        </div>
-        {images.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto">
-            {images.map((img: string, i: number) => (
-              <Button
-                key={img}
-                type="button"
-                variant="ghost"
-                onClick={() => setCurrentImage(i)}
-                className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 p-0 ${currentImage === i ? 'border-primary' : 'border-transparent'}`}
-              >
-                <ProductImage src={img} alt="" className="absolute inset-0" sizes="64px" />
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
+      <ProductGallery
+        images={images}
+        title={product.title}
+        resetKey={product.id ?? id}
+        badge={<ProductSituationBadge situation={situation} />}
+      />
 
       <div className="space-y-5">
         <div>
@@ -195,11 +163,6 @@ export function ProductDetailClient() {
               className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
               aria-label="اطلاعات تضمین فروشگاه"
               onClick={() => setGuaranteeOpen(true)}
-              onMouseEnter={() => {
-                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
-                  setGuaranteeOpen(true);
-                }
-              }}
             >
               <Shield className="h-4 w-4" />
               با تضمین فروشگاه

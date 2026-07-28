@@ -4,6 +4,7 @@ import { SITE_NAME_FA } from '@offroad/shared';
 import { Loader2, SlidersHorizontal } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollToTopButton } from '@/components/layout/scroll-to-top-button';
 import { ProductCard } from '@/components/shop/product-card';
 import {
   ProductsFilterSidebar,
@@ -317,8 +318,10 @@ export function ProductsPageClient() {
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <aside className="hidden w-full shrink-0 self-start lg:sticky lg:top-4 lg:block lg:w-72 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-          {filterSidebar}
+        <aside className="hidden w-72 shrink-0 lg:block">
+          <div className="sticky top-5 z-20 max-h-[calc(100vh-2.5rem)] overflow-y-auto overscroll-contain pe-1">
+            {filterSidebar}
+          </div>
         </aside>
 
         <div className="min-w-0 flex-1 space-y-4">
@@ -374,6 +377,8 @@ export function ProductsPageClient() {
           )}
         </div>
       </div>
+
+      <ScrollToTopButton />
     </div>
   );
 }

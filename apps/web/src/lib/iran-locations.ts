@@ -27,3 +27,13 @@ export function getAllIranCities(): string[] {
   }
   return [...set].sort((a, b) => a.localeCompare(b, 'fa'));
 }
+
+export function getProvinceNameForCity(city: string): string | null {
+  return IRAN_PROVINCES.find((p) => p.cities.includes(city))?.name ?? null;
+}
+
+/** Full delivery line: استان، شهر، آدرس دقیق */
+export function formatDeliveryAddress(city: string, addressDetail: string): string {
+  const province = getProvinceNameForCity(city);
+  return [province, city, addressDetail.trim()].filter(Boolean).join('، ');
+}

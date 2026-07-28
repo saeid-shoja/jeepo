@@ -49,7 +49,7 @@ function DashboardContent() {
     return api.users
       .profile()
       .then(setProfile)
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const tabParam = searchParams.get('tab');
@@ -159,7 +159,7 @@ function DashboardContent() {
         )}
       </div>
 
-      <div className='w-full grid grid-cols-1 md:grid-cols-2 gap-3'>
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
         {profile?.role !== 'ADMIN' && (
           <ReferralInviteCard
             referralCode={profile?.referralCode}

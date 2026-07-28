@@ -84,6 +84,7 @@ export const api = {
       password: string;
       city?: string;
       telegramId?: string;
+      referralCode?: string;
     }) =>
       request<{
         requiresVerification: boolean;
@@ -128,19 +129,20 @@ export const api = {
     listingQuota: () =>
       request<{
         activeCount: number;
-        freeLimit: number;
+        freeLimit: number | null;
         defaultLimit: number;
         hasCustomLimit: boolean;
-        remainingFree: number;
+        remainingFree: number | null;
         requiresListingFee: boolean;
         listingFee: number;
         paymentGraceDays: number;
         activeNewCount: number;
-        newLimit: number;
+        newLimit: number | null;
         defaultNewLimit: number;
         hasCustomNewLimit: boolean;
-        remainingNew: number;
+        remainingNew: number | null;
         atNewLimit: boolean;
+        unlimitedListings?: boolean;
       }>('/products/listing-quota'),
     create: (data: any) =>
       request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
@@ -171,6 +173,8 @@ export const api = {
     applyStrengthened: (id: string) =>
       request<any>(`/products/${id}/apply-strengthened`, { method: 'POST' }),
     applyBoost: (id: string) => request<any>(`/products/${id}/apply-boost`, { method: 'POST' }),
+    applyBoostCredit: (id: string) =>
+      request<any>(`/products/${id}/apply-boost-credit`, { method: 'POST' }),
     report: (id: string, data: { title: string; description: string }) =>
       request<{ message: string }>(`/products/${id}/report`, {
         method: 'POST',
@@ -334,6 +338,7 @@ export const api = {
       request<{
         configured: boolean;
         linked: boolean;
+        linkCode?: string;
         botUrl?: string;
         botUsername?: string;
         linkedAt?: string;

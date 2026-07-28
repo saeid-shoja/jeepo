@@ -2,13 +2,12 @@
 
 import { formatPrice } from '@offroad/shared';
 import { ChevronDown, Filter, RotateCcw } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import {
   GUARANTEE_FILTER_OPTIONS,
@@ -35,6 +34,18 @@ interface ProductsFilterSidebarProps {
   onChange: (patch: Partial<ProductsFilters>) => void;
   onApply: () => void;
   onReset: () => void;
+}
+
+function FilterSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Collapsible defaultOpen={false} className="group/filter-section">
+      <CollapsibleTrigger className="hover:bg-muted flex w-full items-center justify-between rounded-sm px-1 py-2 text-sm font-semibold">
+        {title}
+        <ChevronDown className="text-muted-foreground h-4 w-4 shrink-0 transition-transform group-data-[state=open]/filter-section:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-3 pt-1 pb-2">{children}</CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 function LibraryNodeItem({
@@ -82,7 +93,7 @@ function LibraryNodeItem({
   }
 
   return (
-    <Collapsible defaultOpen={depth < 1} className="group/library-node">
+    <Collapsible defaultOpen={false} className="group/library-node">
       <div className="flex items-center gap-1">
         <label
           htmlFor={checkboxId}
@@ -98,7 +109,7 @@ function LibraryNodeItem({
             className="text-muted-foreground hover:bg-muted rounded p-1"
             aria-label="باز و بسته کردن"
           >
-            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/library-node:rotate-180" />
           </button>
         </CollapsibleTrigger>
       </div>
@@ -127,7 +138,7 @@ export function ProductsFilterSidebar({
   const priceRange: [number, number] = [filters.minPrice, filters.maxPrice];
 
   return (
-    <Card className="sticky top-24 gap-0 py-0 shadow-md">
+    <Card className="gap-0 py-0 shadow-md">
       <CardHeader className="border-b px-4 py-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <Filter className="h-4 w-4" />
@@ -135,9 +146,8 @@ export function ProductsFilterSidebar({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-6 px-4 py-4">
-        <div className="space-y-3">
-          <Label className="text-sm font-semibold">محدوده قیمت (تومان)</Label>
+      <CardContent className="divide-y px-4 py-2">
+        <FilterSection title="محدوده قیمت (تومان)">
           <Slider
             min={0}
             max={PRICE_FILTER_MAX}
@@ -152,12 +162,9 @@ export function ProductsFilterSidebar({
             <span>{formatPrice(filters.maxPrice)}</span>
             <span>{formatPrice(filters.minPrice)}</span>
           </div>
-        </div>
+        </FilterSection>
 
-        <Separator />
-
-        <div className="space-y-3">
-          <Label className="text-sm font-semibold">وضعیت کالا</Label>
+        <FilterSection title="وضعیت کالا">
           <div className="space-y-2">
             {SITUATION_FILTER_OPTIONS.map((opt) => {
               const optionId = `situation-filter-${opt.value || 'all'}`;
@@ -177,12 +184,9 @@ export function ProductsFilterSidebar({
               );
             })}
           </div>
-        </div>
+        </FilterSection>
 
-        <Separator />
-
-        <div className="space-y-3">
-          <Label className="text-sm font-semibold">ضمانت فروشگاه</Label>
+        <FilterSection title="ضمانت فروشگاه">
           <div className="space-y-2">
             {GUARANTEE_FILTER_OPTIONS.map((opt) => {
               const optionId = `guarantee-filter-${opt.value || 'all'}`;
@@ -202,12 +206,9 @@ export function ProductsFilterSidebar({
               );
             })}
           </div>
-        </div>
+        </FilterSection>
 
-        <Separator />
-
-        <div className="space-y-3">
-          <Label className="text-sm font-semibold">زمان انتشار</Label>
+        <FilterSection title="زمان انتشار">
           <div className="space-y-2">
             {POSTED_WITHIN_OPTIONS.map((opt) => {
               const optionId = `posted-within-filter-${opt.value || 'all'}`;
@@ -227,20 +228,17 @@ export function ProductsFilterSidebar({
               );
             })}
           </div>
-        </div>
+        </FilterSection>
 
-        <Separator />
-
-        <div className="space-y-3">
-          <Label className="text-sm font-semibold">کتابخانه‌ها</Label>
+        <FilterSection title="کتابخانه‌ها">
           <p className="text-muted-foreground text-xs">گروه و زیرگروه — دسته قطعات و برند خودرو</p>
           <ScrollArea className="h-56 pr-3">
             <div className="space-y-3">
               {libraries.map((library) => (
-                <Collapsible key={library.id} defaultOpen>
+                <Collapsible key={library.id} defaultOpen={false} className="group/library">
                   <CollapsibleTrigger className="hover:bg-muted flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm font-semibold">
                     {library.name}
-                    <ChevronDown className="h-4 w-4 opacity-60" />
+                    <ChevronDown className="h-4 w-4 opacity-60 transition-transform group-data-[state=open]/library:rotate-180" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-1 space-y-0.5">
                     {library.children.map((node) => (
@@ -257,9 +255,9 @@ export function ProductsFilterSidebar({
               ))}
             </div>
           </ScrollArea>
-        </div>
+        </FilterSection>
 
-        <div className="flex flex-col gap-2 pt-1">
+        <div className="flex flex-col gap-2 py-4">
           <Button onClick={onApply} className="w-full">
             اعمال فیلتر
           </Button>

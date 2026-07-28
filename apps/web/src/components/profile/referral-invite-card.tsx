@@ -51,7 +51,7 @@ export function ReferralInviteCard({
     <Card>
       <CardHeader className="">
         <CardTitle className="flex items-center justify-between gap-2 text-base">
-          <div className='flex items-center gap-2'>
+          <div className="flex items-center gap-2">
             <UserPlus className="size-5 text-primary" />
             معرفی دوستان
           </div>
@@ -63,12 +63,19 @@ export function ReferralInviteCard({
       </CardHeader>
       <CardContent className="space-y-4 h-full text-sm flex flex-col justify-between">
         <p className="text-muted-foreground leading-relaxed">
-          {`با دعوت دوستان، به ازای هر ثبت‌نام موفق ${REFERRALS_PER_BOOST_CREDIT.toLocaleString('fa-IR')} امتیاز پله‌ کردن رایگان آگهی خود دریافت می‌کنید. با استفاده از این امتیاز شما با هر امتیاز میتوانید از مزایای پله کردن آگهی استفاده کنید.`}        </p>
+          {`با دعوت دوستان، به ازای هر ثبت‌نام موفق ${REFERRALS_PER_BOOST_CREDIT.toLocaleString('fa-IR')} امتیاز پله‌ کردن رایگان آگهی خود دریافت می‌کنید. با استفاده از این امتیاز شما با هر امتیاز میتوانید از مزایای پله کردن آگهی استفاده کنید.`}{' '}
+          {referralCount > 0
+            ? `تاکنون ${referralCount.toLocaleString('fa-IR')} نفر با کد شما ثبت‌نام کرده‌اند.`
+            : null}
+        </p>
         <div className="grid gap-3 grid-cols-2">
           <div className="border bg-muted/30 flex gap-1 items-center px-2">
             <p className="text-muted-foreground text-xs">کد معرفی:</p>
-            <button type='button' className="font-mono text-sm font-bold tracking-widest"
-              onClick={() => void copyReferralCode()}>
+            <button
+              type="button"
+              className="font-mono text-sm font-bold tracking-widest"
+              onClick={() => void copyReferralCode()}
+            >
               {referralCode}
             </button>
           </div>

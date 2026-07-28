@@ -27,6 +27,7 @@ type AuthState = {
     email: string,
     city?: string,
     telegramId?: string,
+    referralCode?: string,
   ) => Promise<{ email: string; maskedEmail: string; message: string }>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<string>;
@@ -60,8 +61,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: res.user });
   },
 
-  register: async (phone, name, password, email, city, telegramId) => {
+  register: async (phone, name, password, email, city, telegramId, referralCode) => {
     const normalizedTelegram = telegramId?.trim().replace(/^@/, '') || undefined;
+    const normalizedReferral = referralCode?.trim().toUpperCase() || undefined;
     const res = await api.auth.register({
       phone: phone.trim(),
       name: name.trim(),
@@ -69,6 +71,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       email: email.trim().toLowerCase(),
       city: city?.trim() ?? '',
       telegramId: normalizedTelegram,
+      referralCode: normalizedReferral,
     });
     return {
       email: res.email,

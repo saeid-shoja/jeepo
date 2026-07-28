@@ -20,8 +20,8 @@ export const registerSchema = z.object({
   email: emailSchema,
   phone: iranMobileField(),
   password: passwordSchema,
-  city: z.string().trim().min(1, 'شهر را انتخاب کنید'),
   telegramId: telegramIdField(),
+  referralCode: z.string().trim().optional(),
 });
 
 export const verifyEmailSchema = z.object({

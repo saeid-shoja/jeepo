@@ -1,4 +1,9 @@
 pnpm biome check --write --staged --no-errors-on-unmatched
-# Avoid stale .next artifacts when dev server is running alongside production build.
-rm -rf apps/web/.next apps/admin/.next
+# Avoid stale .next artifacts when a concurrent Next.js process holds files open.
+# `rm -rf` can fail with "Directory not empty" on macOS in that race — retry, then continue.
+for dir in apps/web/.next apps/admin/.next apps/shop/.next; do
+  if [ -e "$dir" ]; then
+    rm -rf "$dir" 2>/dev/null || rm -rf "$dir" 2>/dev/null || true
+  fi
+done
 pnpm build

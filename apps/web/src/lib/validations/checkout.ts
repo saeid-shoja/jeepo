@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { optionalIranMobileField } from '@/lib/validations/digits';
+import { iranMobileField } from '@/lib/validations/digits';
 
 export const checkoutSchema = z.object({
-  address: z.string().min(10, 'آدرس تحویل را کامل وارد کنید'),
-  phone: optionalIranMobileField(),
+  city: z.string().trim().min(1, 'شهر را انتخاب کنید'),
+  address: z.string().trim().min(5, 'آدرس دقیق (خیابان، پلاک، واحد) را وارد کنید'),
+  phone: iranMobileField(),
   note: z.string().optional(),
 });
 

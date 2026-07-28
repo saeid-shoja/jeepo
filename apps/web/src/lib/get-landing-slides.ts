@@ -37,6 +37,7 @@ export const MOCK_SLIDES: Slide[] = [
     link: '/products/new',
     linkLabel: 'ثبت آگهی',
   },
+  /* مزایده — موقتاً غیرفعال
   {
     id: '4',
     imageUrl: '/images/hero/s4.jpeg',
@@ -46,6 +47,7 @@ export const MOCK_SLIDES: Slide[] = [
     link: '/auctions',
     linkLabel: 'مزایده ها',
   },
+  */
   {
     id: '5',
     imageUrl: '/images/hero/s5.webp',

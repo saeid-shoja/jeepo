@@ -1,0 +1,61 @@
+import { resolveApiBaseUrl } from '@offroad/shared';
+
+const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
+
+/** Server-side fetch for SEO, sitemap, and generateMetadata (no auth). */
+export async function serverFetch<T>(
+  endpoint: string,
+  options?: { revalidate?: number | false },
+): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      next: { revalidate: options?.revalidate ?? 3600 },
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<T>;
+  } catch {
+    return null;
+  }
+}
+
+export type ServerProduct = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  images: string[];
+  status: string;
+  type: string;
+  situation?: string | null;
+  isAuction?: boolean;
+  hasGuarantee?: boolean;
+  purchasable?: boolean;
+  city?: string;
+  neighborhood?: string;
+  updatedAt: string;
+  createdAt: string;
+  category?: { id: string; name: string; slug: string };
+  carBrands?: { value: string; label: string }[];
+};
+
+export type ServerCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  parentId?: string | null;
+};
+
+export async function fetchProduct(id: string) {
+  return serverFetch<ServerProduct>(`/products/${id}`, { revalidate: 1800 });
+}
+
+export async function fetchProductsForSitemap(limit = 500) {
+  return serverFetch<{ products: ServerProduct[] }>(
+    `/products?limit=${limit}&page=1&advertiser=SHOP`,
+    { revalidate: 3600 },
+  );
+}
+
+export async function fetchCategoriesForSitemap() {
+  return serverFetch<{ parts: ServerCategory[] }>('/categories', { revalidate: 86400 });
+}

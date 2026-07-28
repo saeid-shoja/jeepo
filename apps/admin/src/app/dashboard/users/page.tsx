@@ -283,8 +283,8 @@ export default function AdminUsersPage() {
                 dir="ltr"
               />
               <span className="mt-1 block text-xs text-gray-500">
-                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT}). بیش از سقف = هزینه ثبت. قابل تنظیم ۱
-                تا ۹۹۹.
+                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT}). بیش از سقف = هزینه ثبت. قابل تنظیم ۱ تا
+                ۹۹۹.
               </span>
             </label>
             <label className="block text-sm">

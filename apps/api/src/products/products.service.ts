@@ -11,6 +11,7 @@ import {
   FREE_CLIENT_NEW_LISTING_LIMIT,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
+  isVehicleSaleCategory,
   listingPaymentDueAt,
   PAYMENT_PURPOSES,
   type PaymentPurpose,
@@ -22,7 +23,11 @@ import { CategoriesService } from '../categories/categories.service';
 import { getAuctionCurrentPrice, isAuctionActive } from '../common/auction';
 import { isPurchasableProduct } from '../common/purchasable';
 import { MailService } from '../mail/mail.service';
-import type { Advertiser, ProductSituation } from '../prisma/generated/client';
+import type {
+  Advertiser,
+  ProductSituation,
+  VehiclePaintCondition,
+} from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
@@ -364,6 +369,34 @@ export class ProductsService {
       .catch(() => {});
   }
 
+  private async resolveVehicleSaleFields(
+    categoryId: string,
+    data: {
+      mileageKm?: number | null;
+      paintCondition?: VehiclePaintCondition | null;
+    },
+  ): Promise<{ mileageKm: number | null; paintCondition: VehiclePaintCondition | null }> {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { slug: true },
+    });
+    if (!category || !isVehicleSaleCategory(category.slug)) {
+      return { mileageKm: null, paintCondition: null };
+    }
+
+    if (data.mileageKm == null || !Number.isFinite(data.mileageKm) || data.mileageKm < 0) {
+      throw new BadRequestException('میزان کارکرد (کیلومتر) را وارد کنید');
+    }
+    if (!data.paintCondition) {
+      throw new BadRequestException('وضعیت رنگ بدنه را انتخاب کنید');
+    }
+
+    return {
+      mileageKm: Math.round(data.mileageKm),
+      paintCondition: data.paintCondition,
+    };
+  }
+
   private async buildCreateData(
     data: CreateProductDto,
     userId: string,
@@ -380,6 +413,7 @@ export class ProductsService {
     const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
     const newPrice =
       data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
+    const vehicleFields = await this.resolveVehicleSaleFields(data.categoryId, data);
 
     return {
       title: data.title,
@@ -396,6 +430,8 @@ export class ProductsService {
       phone: data.isAuction ? undefined : data.phone,
       advertiser: data.advertiser ?? 'CLIENT',
       situation: data.situation,
+      mileageKm: vehicleFields.mileageKm,
+      paintCondition: vehicleFields.paintCondition,
       userId: userId || null,
       status: options.status,
       listingFeePaid: options.listingFeePaid,
@@ -883,6 +919,20 @@ export class ProductsService {
     if (data.categoryId) {
       await this.categoriesService.assertLeafCategory(data.categoryId);
     }
+
+    const categoryIdForVehicle = data.categoryId ?? product.categoryId;
+    const vehicleFields = await this.resolveVehicleSaleFields(categoryIdForVehicle, {
+      mileageKm:
+        data.mileageKm !== undefined
+          ? data.mileageKm
+          : (product as { mileageKm?: number | null }).mileageKm,
+      paintCondition:
+        data.paintCondition !== undefined
+          ? data.paintCondition
+          : (product as { paintCondition?: VehiclePaintCondition | null }).paintCondition,
+    });
+    updateData.mileageKm = vehicleFields.mileageKm;
+    updateData.paintCondition = vehicleFields.paintCondition;
 
     if (data.isBoosted === true && !product.isBoosted) {
       updateData.listedAt = new Date();

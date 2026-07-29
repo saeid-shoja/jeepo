@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 import type { SendChatMessageDto } from './dto';
 
 const conversationInclude = {
@@ -24,7 +25,10 @@ const conversationInclude = {
 
 @Injectable()
 export class ProductChatsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pushService: PushService,
+  ) {}
 
   private parseImages(images: string): string[] {
     try {
@@ -263,7 +267,7 @@ export class ProductChatsService {
   }
 
   async sendMessage(conversationId: string, userId: string, dto: SendChatMessageDto) {
-    await this.assertParticipant(conversationId, userId);
+    const conversation = await this.assertParticipant(conversationId, userId);
     const body = dto.body.trim();
     if (!body) throw new BadRequestException('متن پیام را وارد کنید');
 
@@ -283,6 +287,16 @@ export class ProductChatsService {
       });
 
       return created;
+    });
+
+    const recipientId =
+      conversation.buyerId === userId ? conversation.sellerId : conversation.buyerId;
+    const pushBody = body.length > 120 ? `${body.slice(0, 117)}…` : body;
+    void this.pushService.sendToUser(recipientId, {
+      title: `${message.sender.name} — ${conversation.product.title}`,
+      body: pushBody,
+      url: `/chats?id=${conversationId}`,
+      tag: `chat-${conversationId}`,
     });
 
     return this.mapMessage(message, userId);

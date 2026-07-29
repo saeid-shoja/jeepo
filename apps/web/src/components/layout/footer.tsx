@@ -1,5 +1,12 @@
-import { SITE_EMAIL, SITE_NAME_FA, SITE_TELEGRAM_HANDLE, SITE_TELEGRAM_URL } from '@offroad/shared';
-import { Mail, MapPin, Send } from 'lucide-react';
+import {
+  SITE_EMAIL,
+  SITE_INSTAGRAM_HANDLE,
+  SITE_INSTAGRAM_URL,
+  SITE_NAME_FA,
+  SITE_TELEGRAM_HANDLE,
+  SITE_TELEGRAM_URL,
+} from '@offroad/shared';
+import { Instagram, Mail, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
 import { EnamadTrustSeal } from '@/components/layout/enamad-trust-seal';
 import { SiteLogo } from '@/components/layout/site-logo';
@@ -74,6 +81,18 @@ export function SiteFooter() {
                   dir="ltr"
                 >
                   {SITE_TELEGRAM_HANDLE}
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <Instagram className="h-4 w-4 shrink-0" />
+                <a
+                  href={SITE_INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                  dir="ltr"
+                >
+                  {SITE_INSTAGRAM_HANDLE}
                 </a>
               </p>
               <p className="flex items-center gap-2">

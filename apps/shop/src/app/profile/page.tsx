@@ -8,6 +8,7 @@ import { AuthPrompt } from '@/components/auth/auth-prompt';
 import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
 import { TelegramNotificationsCard } from '@/components/profile/telegram-notifications-card';
+import { PushNotificationsCard } from '@/components/profile/push-notifications-card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
@@ -112,7 +113,10 @@ function ProfileContent() {
         </div>
       </div>
 
-      <TelegramNotificationsCard />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <TelegramNotificationsCard />
+        <PushNotificationsCard />
+      </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>

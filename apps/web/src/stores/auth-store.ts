@@ -20,6 +20,8 @@ type AuthState = {
   hydrated: boolean;
   hydrate: () => Promise<void>;
   login: (identifier: string, password: string) => Promise<void>;
+  requestLoginCode: (email: string) => Promise<{ maskedEmail: string; message: string }>;
+  verifyLoginCode: (email: string, code: string) => Promise<void>;
   register: (
     phone: string,
     name: string,
@@ -57,6 +59,17 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (identifier, password) => {
     const res = await api.auth.login({ identifier: identifier.trim(), password });
+    localStorage.setItem('token', res.token);
+    set({ user: res.user });
+  },
+
+  requestLoginCode: async (email) => {
+    const res = await api.auth.requestLoginCode({ email: email.trim().toLowerCase() });
+    return { maskedEmail: res.maskedEmail, message: res.message };
+  },
+
+  verifyLoginCode: async (email, code) => {
+    const res = await api.auth.verifyLoginCode({ email: email.trim().toLowerCase(), code });
     localStorage.setItem('token', res.token);
     set({ user: res.user });
   },
@@ -108,10 +121,23 @@ export function useAuth() {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
   const login = useAuthStore((s) => s.login);
+  const requestLoginCode = useAuthStore((s) => s.requestLoginCode);
+  const verifyLoginCode = useAuthStore((s) => s.verifyLoginCode);
   const register = useAuthStore((s) => s.register);
   const verifyEmail = useAuthStore((s) => s.verifyEmail);
   const resendVerification = useAuthStore((s) => s.resendVerification);
   const logout = useAuthStore((s) => s.logout);
   const patchUser = useAuthStore((s) => s.patchUser);
-  return { user, loading, login, register, verifyEmail, resendVerification, logout, patchUser };
+  return {
+    user,
+    loading,
+    login,
+    requestLoginCode,
+    verifyLoginCode,
+    register,
+    verifyEmail,
+    resendVerification,
+    logout,
+    patchUser,
+  };
 }

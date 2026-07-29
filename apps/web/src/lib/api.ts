@@ -110,6 +110,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    requestLoginCode: (data: { email: string }) =>
+      request<{ message: string; maskedEmail: string }>('/auth/login/request-code', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    verifyLoginCode: (data: { email: string; code: string }) =>
+      request<{ token: string; user: any }>('/auth/login/verify-code', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     forgotPassword: (data: { email: string }) =>
       request<{ message: string }>('/auth/forgot-password', {
         method: 'POST',
@@ -345,6 +355,18 @@ export const api = {
         expiresAt?: string;
         message?: string;
       }>('/users/telegram/link'),
+    pushConfig: () =>
+      request<{ enabled: boolean; publicKey: string | null }>('/users/push/config'),
+    pushSubscribe: (data: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+      request<{ subscribed: boolean }>('/users/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    pushUnsubscribe: (data: { endpoint: string }) =>
+      request<{ unsubscribed: boolean }>('/users/push/subscribe', {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+      }),
   },
 
   auctions: {

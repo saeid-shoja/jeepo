@@ -20,6 +20,7 @@ import { ProfileMessagesTab } from '@/components/profile/profile-messages-tab';
 import { ProfileProductsTab } from '@/components/profile/profile-products-tab';
 import { ReferralInviteCard } from '@/components/profile/referral-invite-card';
 import { TelegramNotificationsCard } from '@/components/profile/telegram-notifications-card';
+import { PushNotificationsCard } from '@/components/profile/push-notifications-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -168,6 +169,7 @@ function DashboardContent() {
           />
         )}
         <TelegramNotificationsCard />
+        <PushNotificationsCard />
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

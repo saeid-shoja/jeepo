@@ -63,6 +63,18 @@ function telegramChannelChatId(): string {
   return process.env.TELEGRAM_CHANNEL_CHAT_ID?.trim() || '@jeeppo';
 }
 
+function vapidPublicKey(): string {
+  return process.env.VAPID_PUBLIC_KEY?.trim() ?? '';
+}
+
+function vapidPrivateKey(): string {
+  return process.env.VAPID_PRIVATE_KEY?.trim() ?? '';
+}
+
+function vapidSubject(): string {
+  return process.env.VAPID_SUBJECT?.trim() || 'mailto:jeepoinfo@gmail.com';
+}
+
 @Global()
 @Module({
   providers: [
@@ -118,6 +130,18 @@ function telegramChannelChatId(): string {
       provide: 'TELEGRAM_CHANNEL_TOPICS',
       useValue: loadTelegramChannelTopics(),
     },
+    {
+      provide: 'VAPID_PUBLIC_KEY',
+      useValue: vapidPublicKey(),
+    },
+    {
+      provide: 'VAPID_PRIVATE_KEY',
+      useValue: vapidPrivateKey(),
+    },
+    {
+      provide: 'VAPID_SUBJECT',
+      useValue: vapidSubject(),
+    },
   ],
   exports: [
     'JWT_SECRET',
@@ -133,6 +157,9 @@ function telegramChannelChatId(): string {
     'TELEGRAM_USE_POLLING',
     'TELEGRAM_CHANNEL_CHAT_ID',
     'TELEGRAM_CHANNEL_TOPICS',
+    'VAPID_PUBLIC_KEY',
+    'VAPID_PRIVATE_KEY',
+    'VAPID_SUBJECT',
   ],
 })
 export class ConfigModule {}

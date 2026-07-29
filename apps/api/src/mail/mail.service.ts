@@ -2,6 +2,15 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { formatPrice, SITE_EMAIL, SITE_NAME_FA } from '@offroad/shared';
 import { Resend } from 'resend';
 import type { PaymentMethod } from '../prisma/generated/client';
+import {
+  buildEmailLayout,
+  emailButton,
+  emailCodeBox,
+  emailGreeting,
+  emailHighlightBox,
+  emailInfoBox,
+  escapeHtml,
+} from './mail-layout';
 
 type OrderParty = {
   name: string;
@@ -34,14 +43,6 @@ export type OrderEmailPayload = {
 const PAYMENT_LABELS: Record<string, string> = {
   ONLINE: 'پرداخت آنلاین',
 };
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function formatParty(label: string, party: OrderParty): string {
   return `
@@ -82,37 +83,37 @@ function buildOrderEmailHtml(
     ...new Map(payload.items.map((item) => [item.sellerLabel, item.seller])).entries(),
   ];
 
-  return `
-    <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
-      <h2 style="margin:0 0 12px">${escapeHtml(heading)}</h2>
-      ${introHtml ? `<p style="margin:0 0 16px">${introHtml}</p>` : ''}
-      <p style="color:#666;font-size:14px;margin:0 0 16px">شماره سفارش: <span dir="ltr">${escapeHtml(payload.orderId)}</span></p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
-        <tr><td style="padding:4px 0;color:#666;width:140px">تاریخ</td><td>${payload.createdAt.toLocaleString('fa-IR')}</td></tr>
-        <tr><td style="padding:4px 0;color:#666">مبلغ کل</td><td><strong>${formatPrice(payload.total)} تومان</strong></td></tr>
-        <tr><td style="padding:4px 0;color:#666">روش پرداخت</td><td>${escapeHtml(paymentLabel)}</td></tr>
-        <tr><td style="padding:4px 0;color:#666">آدرس تحویل</td><td>${escapeHtml(payload.address ?? '—')}</td></tr>
-        <tr><td style="padding:4px 0;color:#666">تلفن تماس</td><td dir="ltr">${escapeHtml(payload.phone ?? '—')}</td></tr>
-        <tr><td style="padding:4px 0;color:#666">یادداشت</td><td>${escapeHtml(payload.note ?? '—')}</td></tr>
+  const bodyHtml = `
+    ${introHtml ? `<p style="margin:0 0 16px;">${introHtml}</p>` : ''}
+    <p style="color:#64748b;font-size:14px;margin:0 0 16px;">شماره سفارش: <span dir="ltr" style="color:#1e3a5f;font-weight:bold;">${escapeHtml(payload.orderId)}</span></p>
+    ${emailInfoBox(`
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:6px 0;color:#64748b;width:140px;">تاریخ</td><td>${payload.createdAt.toLocaleString('fa-IR')}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">مبلغ کل</td><td><strong style="color:#d62828;">${formatPrice(payload.total)} تومان</strong></td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">روش پرداخت</td><td>${escapeHtml(paymentLabel)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">آدرس تحویل</td><td>${escapeHtml(payload.address ?? '—')}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">تلفن تماس</td><td dir="ltr">${escapeHtml(payload.phone ?? '—')}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">یادداشت</td><td>${escapeHtml(payload.note ?? '—')}</td></tr>
       </table>
-      ${formatParty('خریدار', payload.buyer)}
-      ${sellers.map(([label, seller]) => formatParty(label, seller)).join('')}
-      <h3 style="margin:20px 0 8px;font-size:16px">اقلام سفارش</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead>
-          <tr style="background:#f5f5f5">
-            <th style="padding:8px;text-align:right">محصول</th>
-            <th style="padding:8px">تعداد</th>
-            <th style="padding:8px">قیمت واحد</th>
-            <th style="padding:8px">جمع</th>
-            <th style="padding:8px;text-align:right">فروشنده</th>
-          </tr>
-        </thead>
-        <tbody>${itemRows}</tbody>
-      </table>
-      <p style="color:#666;font-size:14px;margin-top:20px">با تشکر،<br/>تیم ${SITE_NAME_FA}</p>
-    </div>
+    `)}
+    ${formatParty('خریدار', payload.buyer)}
+    ${sellers.map(([label, seller]) => formatParty(label, seller)).join('')}
+    <h3 style="margin:20px 0 10px;font-size:16px;color:#1e3a5f;">اقلام سفارش</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+      <thead>
+        <tr style="background:#f1f5f9;">
+          <th style="padding:10px;text-align:right;color:#475569;">محصول</th>
+          <th style="padding:10px;color:#475569;">تعداد</th>
+          <th style="padding:10px;color:#475569;">قیمت واحد</th>
+          <th style="padding:10px;color:#475569;">جمع</th>
+          <th style="padding:10px;text-align:right;color:#475569;">فروشنده</th>
+        </tr>
+      </thead>
+      <tbody>${itemRows}</tbody>
+    </table>
   `;
+
+  return buildEmailLayout({ title: heading, bodyHtml });
 }
 
 @Injectable()
@@ -153,16 +154,16 @@ export class MailService {
   }
 
   async sendWelcome(to: string, name: string): Promise<void> {
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111">
-        <h2>به ${SITE_NAME_FA} خوش آمدید!</h2>
-        <p>سلام ${name}،</p>
-        <p>ثبت‌نام شما با موفقیت انجام شد. از اینکه به جمع کاربران ${SITE_NAME_FA} پیوستید خوشحالیم.</p>
-        <p>اکنون می‌توانید آگهی ثبت کنید، محصولات را جستجو کنید و از امکانات فروشگاه استفاده کنید.</p>
-        <p style="color:#666;font-size:14px">با تشکر،<br/>تیم ${SITE_NAME_FA}</p>
-      </div>
+    const bodyHtml = `
+      ${emailGreeting(name)}
+      <p style="margin:0 0 12px;">ثبت‌نام شما با موفقیت انجام شد. از اینکه به جمع کاربران ${escapeHtml(SITE_NAME_FA)} پیوستید خوشحالیم.</p>
+      <p style="margin:0;">اکنون می‌توانید آگهی ثبت کنید، محصولات را جستجو کنید و از امکانات فروشگاه استفاده کنید.</p>
     `;
-
+    const html = buildEmailLayout({
+      title: `به ${SITE_NAME_FA} خوش آمدید!`,
+      previewText: 'ثبت‌نام شما با موفقیت انجام شد',
+      bodyHtml,
+    });
     await this.send(to, `خوش آمدید به ${SITE_NAME_FA}`, html);
   }
 
@@ -174,33 +175,62 @@ export class MailService {
       return;
     }
 
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111">
-        <h2>تأیید ایمیل</h2>
-        <p>سلام ${name}،</p>
-        <p>برای تکمیل ثبت‌نام در ${SITE_NAME_FA}، کد زیر را در سایت وارد کنید:</p>
-        <p style="font-size:28px;font-weight:bold;letter-spacing:4px;direction:ltr;text-align:center">${code}</p>
-        <p style="color:#666;font-size:14px">این کد تا ۱۵ دقیقه معتبر است.</p>
-      </div>
+    const bodyHtml = `
+      ${emailGreeting(name)}
+      <p style="margin:0 0 8px;">برای تکمیل ثبت‌نام در ${escapeHtml(SITE_NAME_FA)}، کد زیر را در سایت وارد کنید:</p>
+      ${emailCodeBox('کد تأیید ایمیل', code)}
     `;
+    const html = buildEmailLayout({
+      title: 'تأیید ایمیل',
+      previewText: 'کد تأیید ثبت‌نام',
+      bodyHtml,
+    });
 
     const sent = await this.send(to, `کد تأیید ایمیل ${SITE_NAME_FA}`, html);
     if (!sent) logCode();
   }
 
-  async sendNewPassword(to: string, name: string, password: string): Promise<void> {
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111">
-        <h2>رمز عبور جدید</h2>
-        <p>سلام ${name}،</p>
-        <p>درخواست بازیابی رمز عبور برای حساب شما در ${SITE_NAME_FA} ثبت شد.</p>
-        <p>رمز عبور جدید شما:</p>
-        <p style="font-size:18px;font-weight:bold;letter-spacing:1px;direction:ltr;text-align:right">${password}</p>
-        <p>پس از ورود، توصیه می‌کنیم رمز عبور را از بخش پروفایل تغییر دهید.</p>
-        <p style="color:#666;font-size:14px">اگر این درخواست را شما ثبت نکرده‌اید، این ایمیل را نادیده بگیرید.</p>
-      </div>
-    `;
+  async sendLoginCode(to: string, name: string, code: string): Promise<void> {
+    const logCode = () => this.logger.warn(`Login code for ${to}: ${code}`);
 
+    if (!this.resend) {
+      logCode();
+      return;
+    }
+
+    const bodyHtml = `
+      ${emailGreeting(name)}
+      <p style="margin:0 0 8px;">برای ورود به حساب ${escapeHtml(SITE_NAME_FA)}، کد زیر را وارد کنید:</p>
+      ${emailCodeBox('کد ورود', code)}
+      <p style="margin:0;font-size:13px;color:#94a3b8;">اگر این درخواست را شما ثبت نکرده‌اید، این ایمیل را نادیده بگیرید.</p>
+    `;
+    const html = buildEmailLayout({
+      title: 'ورود به حساب',
+      previewText: 'کد ورود یک‌بار مصرف',
+      bodyHtml,
+    });
+
+    const sent = await this.send(to, `کد ورود ${SITE_NAME_FA}`, html);
+    if (!sent) logCode();
+  }
+
+
+
+  async sendNewPassword(to: string, name: string, password: string): Promise<void> {
+    const RTL_TEXT =
+      'direction:rtl;text-align:right';
+    const bodyHtml = `
+      ${emailGreeting(name)}
+      <p style="margin:0 0 12px;">درخواست بازیابی رمز عبور برای حساب شما در ${escapeHtml(SITE_NAME_FA)} ثبت شد.</p>
+      ${emailHighlightBox(`<div style="display:inline-block;background:linear-gradient(135deg,#fef2f2 0%,#fff7ed 100%);border:2px dashed #d62828;border-radius:14px;padding:22px 28px;min-width:200px;text-align:center;"><p style="margin:0;font-size:34px;font-weight:bold;color:#d62828;letter-spacing:8px;direction:ltr;text-align:center;font-family:'Courier New',monospace;${RTL_TEXT}"><strong>رمز عبور جدید:</strong><br/><span dir="ltr" style="font-size:20px;font-weight:bold;font-family:monospace;">${escapeHtml(password)}</span></p></div>`)}
+      <p style="margin:0;">پس از ورود، توصیه می‌کنیم رمز عبور را از بخش پروفایل تغییر دهید.</p>
+      <p style="margin:12px 0 0;font-size:13px;color:#94a3b8;">اگر این درخواست را شما ثبت نکرده‌اید، این ایمیل را نادیده بگیرید.</p>
+    `;
+    const html = buildEmailLayout({
+      title: 'رمز عبور جدید',
+      previewText: 'بازیابی رمز عبور',
+      bodyHtml,
+    });
     await this.send(to, `رمز عبور جدید ${SITE_NAME_FA}`, html);
   }
 
@@ -243,27 +273,26 @@ export class MailService {
       )
       .join('');
 
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
-        <h2 style="margin:0 0 12px">محصول شما با موفقیت فروخته شد</h2>
-        <p>سلام ${escapeHtml(sellerName)}،</p>
-        <p>یکی از آگهی‌های شما در ${SITE_NAME_FA} خریداری شد.</p>
-        <p style="color:#666;font-size:14px">شماره سفارش: <span dir="ltr">${escapeHtml(orderId)}</span></p>
-        <h3 style="margin:16px 0 8px;font-size:16px">اقلام فروخته‌شده</h3>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
+    const html = buildEmailLayout({
+      title: 'محصول شما با موفقیت فروخته شد',
+      bodyHtml: `
+        ${emailGreeting(sellerName)}
+        <p style="margin:0 0 12px;">یکی از آگهی‌های شما در ${escapeHtml(SITE_NAME_FA)} خریداری شد.</p>
+        <p style="color:#64748b;font-size:14px;margin:0 0 16px;">شماره سفارش: <span dir="ltr">${escapeHtml(orderId)}</span></p>
+        <h3 style="margin:16px 0 10px;font-size:16px;color:#1e3a5f;">اقلام فروخته‌شده</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;border:1px solid #e2e8f0;">
           <thead>
-            <tr style="background:#f5f5f5">
-              <th style="padding:8px;text-align:right">محصول</th>
-              <th style="padding:8px">تعداد</th>
-              <th style="padding:8px">مبلغ</th>
+            <tr style="background:#f1f5f9;">
+              <th style="padding:10px;text-align:right;">محصول</th>
+              <th style="padding:10px;">تعداد</th>
+              <th style="padding:10px;">مبلغ</th>
             </tr>
           </thead>
           <tbody>${itemRows}</tbody>
         </table>
         ${formatParty('خریدار', buyer)}
-        <p style="color:#666;font-size:14px;margin-top:20px">با تشکر،<br/>تیم ${SITE_NAME_FA}</p>
-      </div>
-    `;
+      `,
+    });
 
     await this.send(to, `فروش موفق — سفارش ${orderId.slice(-8)} | ${SITE_NAME_FA}`, html);
   }
@@ -292,18 +321,15 @@ export class MailService {
     title: string,
     productUrl: string,
   ): Promise<void> {
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
-        <h2 style="margin:0 0 12px">آگهی شما تأیید شد</h2>
-        <p>سلام ${escapeHtml(name)}،</p>
-        <p>آگهی «${escapeHtml(title)}» پس از بررسی توسط تیم ${SITE_NAME_FA} تأیید و در سایت منتشر شد.</p>
-        <p style="margin:20px 0">
-          <a href="${escapeHtml(productUrl)}" style="display:inline-block;background:#111;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">مشاهده آگهی</a>
-        </p>
-        <p style="color:#666;font-size:14px">لینک آگهی: <a href="${escapeHtml(productUrl)}">${escapeHtml(productUrl)}</a></p>
-        <p style="color:#666;font-size:14px;margin-top:20px">با تشکر،<br/>تیم ${SITE_NAME_FA}</p>
-      </div>
-    `;
+    const html = buildEmailLayout({
+      title: 'آگهی شما تأیید شد',
+      bodyHtml: `
+        ${emailGreeting(name)}
+        <p style="margin:0 0 12px;">آگهی «<strong>${escapeHtml(title)}</strong>» پس از بررسی توسط تیم ${escapeHtml(SITE_NAME_FA)} تأیید و در سایت منتشر شد.</p>
+        ${emailButton('مشاهده آگهی', productUrl)}
+        <p style="margin:0;font-size:13px;color:#94a3b8;">لینک: <a href="${escapeHtml(productUrl)}" style="color:#d62828;">${escapeHtml(productUrl)}</a></p>
+      `,
+    });
 
     await this.send(to, `آگهی شما منتشر شد — ${SITE_NAME_FA}`, html);
   }
@@ -331,34 +357,36 @@ export class MailService {
       city: string | null;
     };
   }): Promise<void> {
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
-        <h2 style="margin:0 0 12px">آگهی با تضمین فروشگاه — در انتظار تأیید</h2>
-        <p>یک آگهی با گزینه «تضمین فروشگاه» ثبت شده و تا تأیید ادمین در فروشگاه نمایش داده نمی‌شود.</p>
-        <h3 style="margin:16px 0 8px;font-size:16px">اطلاعات آگهی</h3>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
-          <tr><td style="padding:4px 0;color:#666;width:140px">عنوان</td><td>${escapeHtml(payload.product.title)}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">شناسه</td><td dir="ltr">${escapeHtml(payload.product.id)}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">دسته</td><td>${escapeHtml(payload.product.categoryName ?? '—')}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">قیمت</td><td>${formatPrice(payload.product.price)} تومان</td></tr>
-          <tr><td style="padding:4px 0;color:#666">قیمت نو</td><td>${payload.product.newPrice != null ? `${formatPrice(payload.product.newPrice)} تومان` : '—'}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">وضعیت کالا</td><td>${escapeHtml(payload.product.situation ?? '—')}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">موجودی</td><td>${payload.product.stockQuantity ?? 1}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">شهر / محله</td><td>${escapeHtml([payload.product.city, payload.product.neighborhood].filter(Boolean).join(' — ') || '—')}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">تلفن آگهی</td><td dir="ltr">${escapeHtml(payload.product.phone ?? '—')}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">لینک</td><td><a href="${escapeHtml(payload.product.url)}">${escapeHtml(payload.product.url)}</a></td></tr>
-        </table>
-        <h3 style="margin:16px 0 8px;font-size:16px">توضیحات</h3>
-        <p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(payload.product.description)}</p>
+    const html = buildEmailLayout({
+      title: 'آگهی با تضمین فروشگاه — در انتظار تأیید',
+      bodyHtml: `
+        <p style="margin:0 0 16px;">یک آگهی با گزینه «تضمین فروشگاه» ثبت شده و تا تأیید ادمین در فروشگاه نمایش داده نمی‌شود.</p>
+        <h3 style="margin:16px 0 10px;font-size:16px;color:#1e3a5f;">اطلاعات آگهی</h3>
+        ${emailInfoBox(`
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:6px 0;color:#64748b;width:140px;">عنوان</td><td>${escapeHtml(payload.product.title)}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">شناسه</td><td dir="ltr">${escapeHtml(payload.product.id)}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">دسته</td><td>${escapeHtml(payload.product.categoryName ?? '—')}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">قیمت</td><td>${formatPrice(payload.product.price)} تومان</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">قیمت نو</td><td>${payload.product.newPrice != null ? `${formatPrice(payload.product.newPrice)} تومان` : '—'}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">وضعیت کالا</td><td>${escapeHtml(payload.product.situation ?? '—')}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">موجودی</td><td>${payload.product.stockQuantity ?? 1}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">شهر / محله</td><td>${escapeHtml([payload.product.city, payload.product.neighborhood].filter(Boolean).join(' — ') || '—')}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">تلفن آگهی</td><td dir="ltr">${escapeHtml(payload.product.phone ?? '—')}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">لینک</td><td><a href="${escapeHtml(payload.product.url)}" style="color:#d62828;">${escapeHtml(payload.product.url)}</a></td></tr>
+          </table>
+        `)}
+        <h3 style="margin:16px 0 10px;font-size:16px;color:#1e3a5f;">توضیحات</h3>
+        <p style="margin:0 0 16px;white-space:pre-wrap;">${escapeHtml(payload.product.description)}</p>
         ${formatParty('فروشنده', {
-          name: payload.seller.name,
-          phone: payload.seller.phone,
-          email: payload.seller.email,
-          city: payload.seller.city,
-        })}
-        <p style="color:#666;font-size:14px;margin-top:20px">زمان: ${new Date().toLocaleString('fa-IR')}</p>
-      </div>
-    `;
+        name: payload.seller.name,
+        phone: payload.seller.phone,
+        email: payload.seller.email,
+        city: payload.seller.city,
+      })}
+        <p style="margin:0;font-size:13px;color:#94a3b8;">زمان: ${new Date().toLocaleString('fa-IR')}</p>
+      `,
+    });
 
     await this.send(
       SITE_EMAIL,
@@ -397,37 +425,38 @@ export class MailService {
     const advertiserLabel =
       payload.product.advertiser === 'SHOP' ? 'فروشگاه جیپو' : 'کاربر (آگهی شخصی)';
 
-    const html = `
-      <div dir="rtl" style="font-family:Tahoma,sans-serif;line-height:1.8;color:#111;max-width:640px">
-        <h2 style="margin:0 0 12px">گزارش تخلف آگهی — ${escapeHtml(SITE_NAME_FA)}</h2>
-        <h3 style="margin:16px 0 8px;font-size:16px">عنوان گزارش</h3>
-        <p style="margin:0 0 12px">${escapeHtml(payload.reportTitle)}</p>
-        <h3 style="margin:16px 0 8px;font-size:16px">توضیحات گزارش</h3>
-        <p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(payload.reportDescription)}</p>
-        <h3 style="margin:16px 0 8px;font-size:16px">اطلاعات آگهی</h3>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
-          <tr><td style="padding:4px 0;color:#666;width:140px">عنوان</td><td>${escapeHtml(payload.product.title)}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">شناسه</td><td dir="ltr">${escapeHtml(payload.product.id)}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">دسته</td><td>${escapeHtml(payload.product.categoryName ?? '—')}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">قیمت</td><td>${formatPrice(payload.product.price)} تومان</td></tr>
-          <tr><td style="padding:4px 0;color:#666">شهر</td><td>${escapeHtml(payload.product.city ?? '—')}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">نوع آگهی</td><td>${escapeHtml(advertiserLabel)}</td></tr>
-          <tr><td style="padding:4px 0;color:#666">لینک</td><td><a href="${escapeHtml(payload.product.url)}">${escapeHtml(payload.product.url)}</a></td></tr>
-        </table>
-        ${
-          payload.advertiser
-            ? formatParty('آگهی‌دهنده', {
-                name: payload.advertiser.name,
-                phone: payload.advertiser.phone,
-                email: payload.advertiser.email,
-                city: payload.advertiser.city,
-              }) +
-              (
-                payload.advertiser.telegramId
-                  ? `<p style="font-size:14px">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
-                  : ''
-              )
-            : ''
+    const html = buildEmailLayout({
+      title: `گزارش تخلف آگهی — ${escapeHtml(SITE_NAME_FA)}`,
+      bodyHtml: `
+        <h3 style="margin:0 0 8px;font-size:16px;color:#1e3a5f;">عنوان گزارش</h3>
+        <p style="margin:0 0 16px;">${escapeHtml(payload.reportTitle)}</p>
+        <h3 style="margin:0 0 8px;font-size:16px;color:#1e3a5f;">توضیحات گزارش</h3>
+        <p style="margin:0 0 16px;white-space:pre-wrap;">${escapeHtml(payload.reportDescription)}</p>
+        <h3 style="margin:0 0 10px;font-size:16px;color:#1e3a5f;">اطلاعات آگهی</h3>
+        ${emailInfoBox(`
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:6px 0;color:#64748b;width:140px;">عنوان</td><td>${escapeHtml(payload.product.title)}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">شناسه</td><td dir="ltr">${escapeHtml(payload.product.id)}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">دسته</td><td>${escapeHtml(payload.product.categoryName ?? '—')}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">قیمت</td><td>${formatPrice(payload.product.price)} تومان</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">شهر</td><td>${escapeHtml(payload.product.city ?? '—')}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">نوع آگهی</td><td>${escapeHtml(advertiserLabel)}</td></tr>
+            <tr><td style="padding:6px 0;color:#64748b;">لینک</td><td><a href="${escapeHtml(payload.product.url)}" style="color:#d62828;">${escapeHtml(payload.product.url)}</a></td></tr>
+          </table>
+        `)}
+        ${payload.advertiser
+          ? formatParty('آگهی‌دهنده', {
+            name: payload.advertiser.name,
+            phone: payload.advertiser.phone,
+            email: payload.advertiser.email,
+            city: payload.advertiser.city,
+          }) +
+          (
+            payload.advertiser.telegramId
+              ? `<p style="font-size:14px;">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
+              : ''
+          )
+          : ''
         }
         ${formatParty('گزارش‌دهنده', {
           name: payload.reporter.name,
@@ -435,9 +464,9 @@ export class MailService {
           email: payload.reporter.email,
           city: null,
         })}
-        <p style="color:#666;font-size:14px;margin-top:20px">زمان: ${new Date().toLocaleString('fa-IR')}</p>
-      </div>
-    `;
+        <p style="margin:0;font-size:13px;color:#94a3b8;">زمان: ${new Date().toLocaleString('fa-IR')}</p>
+      `,
+    });
 
     await this.send(
       SITE_EMAIL,

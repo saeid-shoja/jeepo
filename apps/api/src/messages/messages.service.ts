@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { MessageTarget, UserMessageType } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { TelegramChannelService } from '../telegram/telegram-channel.service';
@@ -19,6 +20,7 @@ export class MessagesService {
     private telegramBot: TelegramBotService,
     private telegram: TelegramService,
     private telegramChannel: TelegramChannelService,
+    private pushService: PushService,
   ) {}
 
   private mapUserMessage(message: {
@@ -149,6 +151,17 @@ export class MessagesService {
     }
 
     this.telegramChannel.announceNews(title, body);
+
+    const pushBody = body.length > 120 ? `${body.slice(0, 117)}…` : body;
+    void this.pushService.sendToUsers(
+      recipients.map((user) => user.id),
+      {
+        title,
+        body: pushBody,
+        url: '/dashboard?tab=messages',
+        tag: `message-${batch.id}`,
+      },
+    );
 
     return {
       id: batch.id,

@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FavoritesService } from '../favorites/favorites.service';
 import { MessagesService } from '../messages/messages.service';
+import { PushService } from '../push/push.service';
+import { PushSubscribeDto, PushUnsubscribeDto } from '../push/dto/push-subscribe.dto';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { ChangePasswordDto, UpdateProfileDto } from './dto';
@@ -16,6 +18,7 @@ export class UsersController {
     private messagesService: MessagesService,
     private favoritesService: FavoritesService,
     private telegramBotService: TelegramBotService,
+    private pushService: PushService,
   ) {}
 
   @Get('profile')
@@ -26,6 +29,28 @@ export class UsersController {
   @Get('telegram/link')
   getTelegramLink(@Request() req: { user: { userId: string } }) {
     return this.telegramBotService.createLinkForUser(req.user.userId);
+  }
+
+  @Get('push/config')
+  getPushConfig() {
+    return this.pushService.getConfig();
+  }
+
+  @Post('push/subscribe')
+  subscribePush(
+    @Request() req: { user: { userId: string } },
+    @Body() body: PushSubscribeDto,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.pushService.subscribe(req.user.userId, body, userAgent);
+  }
+
+  @Delete('push/subscribe')
+  unsubscribePush(
+    @Request() req: { user: { userId: string } },
+    @Body() body: PushUnsubscribeDto,
+  ) {
+    return this.pushService.unsubscribe(req.user.userId, body.endpoint);
   }
 
   @Get('products')

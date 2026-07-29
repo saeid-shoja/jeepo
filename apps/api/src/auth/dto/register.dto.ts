@@ -22,10 +22,14 @@ export class RegisterDto {
   @MinLength(6, { message: 'رمز عبور باید حداقل ۶ کاراکتر باشد' })
   password!: string;
 
-  @Transform(trim)
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  })
+  @IsOptional()
   @IsString()
-  @MinLength(1, { message: 'شهر را انتخاب کنید' })
-  city!: string;
+  city?: string;
 
   /** Telegram @username or numeric user id (optional). */
   @Transform(({ value }) => {
@@ -40,4 +44,15 @@ export class RegisterDto {
     message: 'آیدی تلگرام معتبر نیست (مثال: username یا @username)',
   })
   telegramId?: string;
+
+  /** Optional referrer code from an existing user. */
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim().toUpperCase();
+    return trimmed.length >= 4 ? trimmed : undefined;
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(4, { message: 'کد معرف باید حداقل ۴ کاراکتر باشد' })
+  referralCode?: string;
 }

@@ -37,7 +37,10 @@ export const adminApi = {
       body: JSON.stringify({ identifier, password }),
     }),
   dashboard: () => request<any>('/admin/dashboard'),
-  users: () => request<any[]>('/admin/users'),
+  users: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return request<any[]>(`/admin/users${qs}`);
+  },
   createUser: (data: {
     phone: string;
     email: string;

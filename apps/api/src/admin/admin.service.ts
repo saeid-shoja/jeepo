@@ -66,8 +66,18 @@ export class AdminService {
     };
   }
 
-  async getAllUsers() {
+  async getAllUsers(params: { search?: string } = {}) {
+    const search = params.search?.trim();
     const users = await this.prisma.user.findMany({
+      where: search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search } },
+            ],
+          }
+        : undefined,
       select: {
         id: true,
         phone: true,
@@ -276,6 +286,7 @@ export class AdminService {
     tab?: AdminProductTab;
     advertiser?: Advertiser;
     status?: ProductStatus;
+    search?: string;
   }) {
     const where: Record<string, unknown> = {};
 
@@ -303,6 +314,22 @@ export class AdminService {
         if (params.status) where.status = params.status;
     }
 
+    const search = params.search?.trim();
+    if (search) {
+      const searchOr = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { user: { phone: { contains: search } } },
+      ];
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchOr }];
+        delete where.OR;
+      } else {
+        where.OR = searchOr;
+      }
+    }
+
     return where;
   }
 
@@ -312,6 +339,7 @@ export class AdminService {
     tab?: AdminProductTab;
     advertiser?: Advertiser;
     status?: ProductStatus;
+    search?: string;
   }) {
     const page = params.page || 1;
     const limit = params.limit || 20;

@@ -30,7 +30,7 @@ export const PERSIAN_MONTHS = [
 ] as const;
 
 /** Free active client listings per user; each additional listing requires a fee. */
-export const FREE_CLIENT_LISTING_LIMIT = 2;
+export const FREE_CLIENT_LISTING_LIMIT = 10;
 
 /** Max active client listings with situation=NEW per user (hard cap). */
 export const FREE_CLIENT_NEW_LISTING_LIMIT = 2;

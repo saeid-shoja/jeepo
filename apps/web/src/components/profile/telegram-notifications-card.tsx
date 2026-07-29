@@ -5,11 +5,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
 
 type TelegramLinkState = {
   configured: boolean;
   linked: boolean;
+  linkCode?: string;
   botUrl?: string;
   botUsername?: string;
   linkedAt?: string;
@@ -20,15 +22,17 @@ export function TelegramNotificationsCard() {
   const [state, setState] = useState<TelegramLinkState | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) setLoading(true);
     try {
       const data = await api.users.telegramLink();
       setState(data);
+      return data;
     } catch {
       setState({ configured: false, linked: false, message: 'خطا در بارگذاری' });
+      return null;
     } finally {
-      setLoading(false);
+      if (!opts?.quiet) setLoading(false);
     }
   }, []);
 
@@ -36,11 +40,23 @@ export function TelegramNotificationsCard() {
     void load();
   }, [load]);
 
+  const copyLinkCode = useCallback(async () => {
+    if (!state?.linkCode) return;
+    try {
+      await navigator.clipboard.writeText(state.linkCode);
+      toast.success('کد اتصال کپی شد');
+    } catch {
+      toast.error('کپی کد ناموفق بود');
+    }
+  }, [state?.linkCode]);
+
   if (loading) {
     return (
-      <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-        در حال بارگذاری وضعیت تلگرام...
-      </div>
+      <Card>
+        <CardContent className="text-muted-foreground py-6 text-sm">
+          در حال بارگذاری وضعیت تلگرام...
+        </CardContent>
+      </Card>
     );
   }
 
@@ -50,53 +66,89 @@ export function TelegramNotificationsCard() {
 
   if (state.linked) {
     return (
-      <div className="rounded-lg border border-green-300 bg-card p-4">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-700" />
-          <div className="min-w-0 flex-1 formTextSize">
-            <p className="font-semibold text-neutral-900">تلگرام متصل است</p>
-            <p className="mt-1 text-neutral-700">
-              اطلاعیه‌ها و پیام‌های مدیریت در تب «پیام‌ها» همین صفحه نمایش داده می‌شوند.
-              {state.botUsername ? ` (@${state.botUsername})` : ''}
-            </p>
-          </div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between gap-2 text-base">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="size-5 text-green-700" />
+              تلگرام متصل است
+            </div>
+            {state.botUsername ? (
+              <p className="text-muted-foreground text-xs font-normal" dir="ltr">
+                @{state.botUsername}
+              </p>
+            ) : null}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <p className="text-muted-foreground leading-relaxed">
+            اطلاعیه‌ها و پیام‌های مدیریت را در تلگرام و در تب «پیام‌ها» همین صفحه دریافت می‌کنید.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <Send className="text-primary mt-0.5 size-5 shrink-0" />
-          <div className="formTextSize">
-            <p className="font-medium">دریافت اطلاعیه در تلگرام</p>
-            <p className="text-muted-foreground mt-1">
-              ربات را استارت کنید تا اخبار و پیام‌های مدیریت را در تلگرام بگیرید.
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Send className="text-primary size-5" />
+          دریافت اطلاعیه در تلگرام
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm flex flex-col justify-between">
+        <p className="text-muted-foreground leading-relaxed">
+          ۱. کد زیر را کپی کنید.
+          <br />
+          ۲. ربات را باز کنید و همان کد را در چت بفرستید.
+          <br />
+          ۳. بعد از پیام موفقیت، «بررسی اتصال» را بزنید.
+          <br />
+          {state.linkCode ? (
+            <p className="text-muted-foreground shrink-0">
+              ۴. برای کپی روی کد بزنید:
+              <button
+                type="button"
+                onClick={() => void copyLinkCode()}
+                className="font-mono text-base font-bold tracking-[0.2em]"
+                dir="ltr"
+              >
+                {state.linkCode}
+              </button>
             </p>
-          </div>
-        </div>
-        {state.botUrl && (
-          <Button type="button" variant="outline" className="shrink-0 gap-2 formTextSize" asChild>
-            <a href={state.botUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="size-4" />
-              اتصال تلگرام
-            </a>
+          ) : null}
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {state.botUrl ? (
+            <Button type="button" size="sm" className="gap-1" asChild>
+              <a href={state.botUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-3" />
+                باز کردن ربات
+              </a>
+            </Button>
+          ) : (
+            <div />
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            onClick={() => {
+              void load({ quiet: true }).then((data) => {
+                if (data?.linked) {
+                  toast.success('تلگرام با موفقیت متصل شد');
+                } else {
+                  toast.message('هنوز متصل نشده — کد را در ربات بفرستید و دوباره بررسی کنید');
+                }
+              });
+            }}
+          >
+            بررسی اتصال
           </Button>
-        )}
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="mt-2 text-xs"
-        onClick={() => {
-          void load().then(() => toast.message('وضعیت اتصال به‌روز شد'));
-        }}
-      >
-        بررسی مجدد اتصال
-      </Button>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

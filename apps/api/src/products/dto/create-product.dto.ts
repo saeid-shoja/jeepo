@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -14,7 +15,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { NoContactInText } from '../../common/no-contact-in-text.validator';
-import { Advertiser, ProductSituation } from '../../prisma/generated/client';
+import { Advertiser, ProductSituation, VehiclePaintCondition } from '../../prisma/generated/client';
 
 export class CreateProductDto {
   @IsString()
@@ -93,6 +94,18 @@ export class CreateProductDto {
   @IsOptional()
   @IsEnum(ProductSituation)
   situation?: ProductSituation;
+
+  /** Odometer mileage in km — required for vehicle/motorcycle sale categories. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'میزان کارکرد باید عدد صحیح باشد' })
+  @Min(0, { message: 'میزان کارکرد نمی‌تواند منفی باشد' })
+  mileageKm?: number;
+
+  /** Body/paint condition — required for vehicle/motorcycle sale categories. */
+  @IsOptional()
+  @IsEnum(VehiclePaintCondition, { message: 'وضعیت رنگ را انتخاب کنید' })
+  paintCondition?: VehiclePaintCondition;
 
   @IsOptional()
   @IsBoolean()

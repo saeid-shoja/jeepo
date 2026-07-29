@@ -43,15 +43,18 @@ export default function AdminUsersPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
+    const params = search ? { search } : undefined;
     adminApi
-      .users()
+      .users(params)
       .then(setUsers)
       .catch((e) => toast.error(e instanceof Error ? e.message : 'خطا در بارگذاری'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     load();
@@ -168,6 +171,40 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
+      <form
+        className="flex flex-wrap gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSearch(searchInput.trim());
+        }}
+      >
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="جستجو بر اساس نام، ایمیل یا شماره موبایل…"
+          className="min-w-[240px] flex-1 rounded-md border px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+        >
+          جستجو
+        </button>
+        {search ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput('');
+              setSearch('');
+            }}
+            className="rounded-md border px-4 py-2 text-sm"
+          >
+            پاک کردن
+          </button>
+        ) : null}
+      </form>
+
       {showForm && (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-4">
           <h2 className="font-semibold">{editingId ? 'ویرایش کاربر' : 'کاربر جدید'}</h2>
@@ -238,7 +275,7 @@ export default function AdminUsersPage() {
               <input
                 type="number"
                 min={1}
-                max={100}
+                max={999}
                 value={form.maxActiveListings}
                 onChange={(e) => setForm((f) => ({ ...f, maxActiveListings: e.target.value }))}
                 placeholder={`پیش‌فرض (${FREE_CLIENT_LISTING_LIMIT})`}
@@ -246,7 +283,8 @@ export default function AdminUsersPage() {
                 dir="ltr"
               />
               <span className="mt-1 block text-xs text-gray-500">
-                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT}). بیش از سقف = هزینه ثبت.
+                خالی = پیش‌فرض ({FREE_CLIENT_LISTING_LIMIT}). بیش از سقف = هزینه ثبت. قابل تنظیم ۱ تا
+                ۹۹۹.
               </span>
             </label>
             <label className="block text-sm">
@@ -254,7 +292,7 @@ export default function AdminUsersPage() {
               <input
                 type="number"
                 min={1}
-                max={100}
+                max={999}
                 value={form.maxActiveNewListings}
                 onChange={(e) => setForm((f) => ({ ...f, maxActiveNewListings: e.target.value }))}
                 placeholder={`پیش‌فرض (${FREE_CLIENT_NEW_LISTING_LIMIT})`}
@@ -262,7 +300,8 @@ export default function AdminUsersPage() {
                 dir="ltr"
               />
               <span className="mt-1 block text-xs text-gray-500">
-                خالی = پیش‌فرض ({FREE_CLIENT_NEW_LISTING_LIMIT}). سقف سخت برای وضعیت نو.
+                خالی = پیش‌فرض ({FREE_CLIENT_NEW_LISTING_LIMIT}). سقف سخت برای وضعیت نو — قابل تنظیم
+                ۱ تا ۹۹۹.
               </span>
             </label>
           </div>

@@ -1,14 +1,33 @@
 import {
   containsLinkOrPhone,
+  isVehicleSaleCategory,
   NO_CONTACT_IN_TEXT_MESSAGE,
   PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
   toEnglishDigits,
+  VEHICLE_PAINT_CONDITIONS,
 } from '@offroad/shared';
 import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
+import {
+  dataUrlByteSize,
+  isVideoDataUrl,
+  isWebpDataUrl,
+  PRODUCT_IMAGE_MAX_BYTES,
+  PRODUCT_VIDEO_MAX_BYTES,
+  productImageFormatError,
+  productImageSizeError,
+  productVideoFormatError,
+  productVideoSizeError,
+} from '@/lib/product-image';
 import { IRAN_MOBILE_REGEX } from '@/lib/validations/digits';
 
 const situationSchema = z.enum(['NEW', 'USED']);
+const paintConditionSchema = z.enum(
+  VEHICLE_PAINT_CONDITIONS.map((o) => o.value) as [
+    (typeof VEHICLE_PAINT_CONDITIONS)[number]['value'],
+    ...(typeof VEHICLE_PAINT_CONDITIONS)[number]['value'][],
+  ],
+);
 
 const phoneField = z
   .string()
@@ -28,16 +47,64 @@ const neighborhoodField = z
     `محله حداکثر ${PRODUCT_NEIGHBORHOOD_MAX_LENGTH} کاراکتر باشد`,
   );
 
+function createImagesField(requireWebp: boolean) {
+  return z.array(z.string()).superRefine((images, ctx) => {
+    images.forEach((image, index) => {
+      if (/^https?:\/\//i.test(image)) return;
+
+      const label = `رسانه ${(index + 1).toLocaleString('fa-IR')}`;
+
+      if (isVideoDataUrl(image)) {
+        if (dataUrlByteSize(image) > PRODUCT_VIDEO_MAX_BYTES) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: productVideoSizeError(label),
+            path: [index],
+          });
+        }
+        return;
+      }
+
+      if (!image.startsWith('data:image/')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: requireWebp ? productImageFormatError(label) : productVideoFormatError(label),
+          path: [index],
+        });
+        return;
+      }
+
+      if (dataUrlByteSize(image) > PRODUCT_IMAGE_MAX_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: productImageSizeError(label),
+          path: [index],
+        });
+        return;
+      }
+
+      if (requireWebp && !isWebpDataUrl(image)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: productImageFormatError(label),
+          path: [index],
+        });
+      }
+    });
+  });
+}
+
 const sharedProductFields = {
   title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
   description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
   categoryId: z.string().min(1, 'دسته‌بندی را انتخاب کنید'),
+  /** Synced from selected category — used to require vehicle-sale fields. */
+  categorySlug: z.string().optional().or(z.literal('')),
   city: z.string().optional(),
   neighborhood: neighborhoodField.optional().or(z.literal('')),
   phone: phoneField,
   situation: situationSchema,
   carBrands: z.array(z.string()),
-  images: z.array(z.string()),
   hasGuarantee: z.boolean(),
   applyStrengthened: z.boolean(),
   stockQuantity: z
@@ -47,11 +114,39 @@ const sharedProductFields = {
     .max(9999, 'حداکثر ۹۹۹۹ عدد'),
   /** Approximate retail / new price; required when situation is USED (non-auction). */
   newPrice: z.number(),
+  mileageKm: z.number().nullable(),
+  paintCondition: z.union([paintConditionSchema, z.literal('')]),
 };
+
+function refineVehicleSaleFields(
+  data: {
+    categorySlug?: string;
+    mileageKm: number | null;
+    paintCondition: string;
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (!data.categorySlug || !isVehicleSaleCategory(data.categorySlug)) return;
+  if (data.mileageKm == null || !Number.isFinite(data.mileageKm) || data.mileageKm < 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'میزان کارکرد (کیلومتر) را وارد کنید',
+      path: ['mileageKm'],
+    });
+  }
+  if (!data.paintCondition) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'وضعیت رنگ را انتخاب کنید',
+      path: ['paintCondition'],
+    });
+  }
+}
 
 export const newProductSchema = z
   .object({
     ...sharedProductFields,
+    images: createImagesField(true),
     price: z.number(),
     isAuction: z.boolean(),
     auctionStartPrice: z.number(),
@@ -61,6 +156,8 @@ export const newProductSchema = z
     buyNowPrice: z.number(),
   })
   .superRefine((data, ctx) => {
+    refineVehicleSaleFields(data, ctx);
+
     if (!data.isAuction) {
       if (data.price <= 0) {
         ctx.addIssue({
@@ -141,6 +238,8 @@ const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedPr
 export const editProductSchema = z
   .object({
     ...editProductFields,
+    /** Legacy JPEG/PNG data-URLs allowed until re-uploaded; size is always enforced. */
+    images: createImagesField(false),
     price: z.number().positive('قیمت محصول را وارد کنید'),
     stockQuantity: z
       .number()
@@ -149,6 +248,8 @@ export const editProductSchema = z
       .max(9999, 'حداکثر ۹۹۹۹ عدد'),
   })
   .superRefine((data, ctx) => {
+    refineVehicleSaleFields(data, ctx);
+
     if (data.situation === 'USED' && data.newPrice <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

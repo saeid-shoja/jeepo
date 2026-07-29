@@ -12,6 +12,8 @@ import {
 } from 'class-validator';
 import { UserRole } from '../../prisma/generated/client';
 
+const ADMIN_LISTING_CAP_MAX = 999;
+
 export class CreateAdminUserDto {
   @IsString()
   @Matches(/^09\d{9}$/, { message: 'شماره موبایل معتبر نیست' })
@@ -40,13 +42,17 @@ export class CreateAdminUserDto {
   @Type(() => Number)
   @IsInt({ message: 'حداکثر آگهی باید عدد صحیح باشد' })
   @Min(1, { message: 'حداقل ۱ آگهی فعال مجاز است' })
-  @Max(100, { message: 'حداکثر ۱۰۰ آگهی فعال قابل تنظیم است' })
+  @Max(ADMIN_LISTING_CAP_MAX, {
+    message: `حداکثر ${ADMIN_LISTING_CAP_MAX.toLocaleString('fa-IR')} آگهی فعال قابل تنظیم است`,
+  })
   maxActiveListings?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'حداکثر آگهی نو باید عدد صحیح باشد' })
   @Min(1, { message: 'حداقل ۱ آگهی نو فعال مجاز است' })
-  @Max(100, { message: 'حداکثر ۱۰۰ آگهی نو فعال قابل تنظیم است' })
+  @Max(ADMIN_LISTING_CAP_MAX, {
+    message: `حداکثر ${ADMIN_LISTING_CAP_MAX.toLocaleString('fa-IR')} آگهی نو فعال قابل تنظیم است`,
+  })
   maxActiveNewListings?: number;
 }

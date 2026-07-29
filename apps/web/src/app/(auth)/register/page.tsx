@@ -4,9 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { CitySelect } from '@/components/form/city-select';
 import { DigitsInput, TelegramIdInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { RequiredLabel } from '@/components/form/required-label';
@@ -27,6 +26,7 @@ function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromQuery = searchParams.get('email');
+  const referralFromQuery = searchParams.get('ref')?.trim().toUpperCase() ?? '';
 
   const [step, setStep] = useState<'details' | 'verify'>(emailFromQuery ? 'verify' : 'details');
   const [pendingEmail, setPendingEmail] = useState(emailFromQuery ?? '');
@@ -40,8 +40,8 @@ function RegisterPageContent() {
       email: emailFromQuery ?? '',
       phone: '',
       password: '',
-      city: '',
       telegramId: '',
+      referralCode: referralFromQuery,
     },
   });
 
@@ -68,8 +68,9 @@ function RegisterPageContent() {
         data.name,
         data.password,
         data.email,
-        data.city,
+        undefined,
         data.telegramId,
+        data.referralCode,
       );
       setPendingEmail(result.email);
       setMaskedEmail(result.maskedEmail);
@@ -210,18 +211,6 @@ function RegisterPageContent() {
             />
             <FieldError message={detailsForm.formState.errors.password?.message} />
           </div>
-          <Controller
-            name="city"
-            control={detailsForm.control}
-            render={({ field }) => (
-              <CitySelect
-                value={field.value}
-                onChange={field.onChange}
-                required
-                error={detailsForm.formState.errors.city?.message}
-              />
-            )}
-          />
           <div className="space-y-2">
             <RequiredLabel htmlFor="telegramId" required={false}>
               آیدی تلگرام{' '}
@@ -235,6 +224,21 @@ function RegisterPageContent() {
               {...detailsForm.register('telegramId')}
             />
             <FieldError message={detailsForm.formState.errors.telegramId?.message} />
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="referralCode" required={false}>
+              کد معرف
+            </RequiredLabel>
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="اختیاری"
+              dir="ltr"
+              className="text-end uppercase"
+              autoComplete="off"
+              {...detailsForm.register('referralCode')}
+            />
+            <FieldError message={detailsForm.formState.errors.referralCode?.message} />
           </div>
           <Button type="submit" className="w-full" disabled={detailsForm.formState.isSubmitting}>
             {detailsForm.formState.isSubmitting ? 'در حال ثبت نام...' : 'ادامه و دریافت کد تأیید'}

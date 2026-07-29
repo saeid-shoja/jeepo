@@ -30,15 +30,37 @@ export class TelegramService {
   }
 
   getBotUsername(): string {
-    return this.botUsername;
+    return this.botUsername.replace(/^@/, '');
+  }
+
+  /** Open chat with bot (no deep-link payload — more reliable on mobile). */
+  buildBotUrl(): string {
+    return `https://t.me/${this.getBotUsername()}`;
   }
 
   buildDeepLink(token: string): string {
-    return `https://t.me/${this.botUsername}?start=${encodeURIComponent(token)}`;
+    return `https://t.me/${this.getBotUsername()}?start=${encodeURIComponent(token)}`;
   }
 
+  /** Short human-friendly link code (avoids fragile Telegram deep-link payloads). */
   generateLinkToken(): string {
-    return randomBytes(16).toString('hex');
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = randomBytes(6);
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += alphabet[bytes[i]! % alphabet.length];
+    }
+    return code;
+  }
+
+  normalizeLinkCode(raw: string | null | undefined): string | null {
+    if (!raw) return null;
+    const code = raw.trim().toUpperCase().replace(/[\s-]/g, '');
+    if (/^[A-Z0-9]{6}$/.test(code)) return code;
+    // Legacy hex deep-link tokens (32 chars)
+    const hex = raw.trim().toLowerCase();
+    if (/^[a-f0-9]{32}$/.test(hex)) return hex;
+    return null;
   }
 
   private async callApi<T>(method: string, body: Record<string, unknown>): Promise<T | null> {
@@ -62,6 +84,55 @@ export class TelegramService {
     }
 
     return data.result ?? null;
+  }
+
+  async getWebhookInfo(): Promise<{
+    url?: string;
+    pending_update_count?: number;
+    last_error_message?: string;
+  } | null> {
+    return this.callApi('getWebhookInfo', {});
+  }
+
+  async deleteWebhook(): Promise<boolean> {
+    const result = await this.callApi('deleteWebhook', { drop_pending_updates: false });
+    return result != null;
+  }
+
+  async getUpdates(offset: number, timeoutSec = 25): Promise<TelegramUpdate[]> {
+    if (!this.botToken) return [];
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), (timeoutSec + 5) * 1000);
+
+    try {
+      const res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/getUpdates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          offset,
+          timeout: timeoutSec,
+          allowed_updates: ['message'],
+        }),
+        signal: controller.signal,
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        description?: string;
+        result?: TelegramUpdate[];
+      };
+      if (!data.ok) {
+        this.logger.warn(`Telegram getUpdates failed: ${data.description ?? res.status}`);
+        return [];
+      }
+      return data.result ?? [];
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return [];
+      this.logger.warn(`Telegram getUpdates error: ${err instanceof Error ? err.message : err}`);
+      return [];
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async sendMessage(chatId: string, text: string): Promise<boolean> {

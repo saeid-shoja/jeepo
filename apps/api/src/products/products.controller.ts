@@ -94,6 +94,11 @@ export class ProductsController {
     return this.productsService.applyStrengthened(id, req.user.userId);
   }
 
+  @Post(':id/apply-boost-credit')
+  applyBoostWithCredit(@Param('id') id: string, @Request() req: { user: { userId: string } }) {
+    return this.productsService.applyBoostWithCredit(id, req.user.userId);
+  }
+
   @Post(':id/apply-boost')
   applyBoost(@Param('id') id: string, @Request() req: { user: { userId: string } }) {
     return this.productsService.applyBoost(id, req.user.userId);

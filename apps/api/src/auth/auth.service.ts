@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { generateUniqueReferralCode, processReferralOnSignup } from '../common/referrals';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
@@ -129,8 +130,19 @@ export class AuthService {
     const phone = data.phone;
     const email = data.email;
     const name = data.name;
-    const city = data.city;
+    const city = data.city?.trim() || '';
     const telegramId = data.telegramId ?? null;
+    const referralCode = data.referralCode ?? null;
+
+    if (referralCode) {
+      const referrer = await this.prisma.user.findUnique({
+        where: { referralCode },
+        select: { id: true },
+      });
+      if (!referrer) {
+        throw new BadRequestException('کد معرف نامعتبر است');
+      }
+    }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
     const code = generateVerificationCode();
@@ -154,6 +166,7 @@ export class AuthService {
           password: hashedPassword,
           city,
           telegramId,
+          referralCode,
           verificationCode: hashedCode,
           verificationExpiresAt: expiresAt,
           lastCodeSentAt: now,
@@ -202,18 +215,22 @@ export class AuthService {
     const user = await this.prisma.$transaction(async (tx) => {
       await this.assertUserNotRegistered(tx, pending.phone, pending.email);
 
+      const referralCode = await generateUniqueReferralCode(tx);
       const created = await tx.user.create({
         data: {
           phone: pending.phone,
           email: pending.email,
           name: pending.name,
           password: pending.password,
-          city: pending.city,
+          city: pending.city || null,
           telegramId: pending.telegramId,
+          referralCode,
           emailVerified: true,
           emailVerifiedAt: new Date(),
         },
       });
+
+      await processReferralOnSignup(tx, created.id, pending.referralCode);
 
       await tx.pendingRegistration.delete({ where: { id: pending.id } });
       return created;

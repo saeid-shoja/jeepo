@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 const shopLinks = [
   { href: '/', label: 'صفحه اصلی' },
   { href: '/products?advertiserType=SHOP', label: 'فروشگاه' },
-  { href: '/products?advertiserType=AUCTION', label: 'مزایده‌ها' },
+  // { href: '/products?advertiserType=AUCTION', label: 'مزایده‌ها' }, // موقتاً غیرفعال
   { href: '/categories', label: 'دسته‌بندی‌ها' },
 ];
 
@@ -60,8 +60,8 @@ export function SiteFooter() {
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <SiteLogo size="lg" />
             <p className="text-muted-foreground text-sm leading-relaxed">
-              جیپو یک بستر خرید و فروش و ثبت آگهی و برگزاری مزایده برای فروش لوازم دست دوم آفرودی و
-              موتورسیکلت های سفری و آفرودی است.
+              جیپو یک بستر خرید و فروش و ثبت آگهی برای فروش لوازم دست دوم آفرودی و موتورسیکلت‌های
+              سفری و آفرودی است.
             </p>
             <div className="text-muted-foreground space-y-2 text-sm">
               <p className="flex items-center gap-2">

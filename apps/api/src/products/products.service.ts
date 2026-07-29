@@ -11,6 +11,7 @@ import {
   FREE_CLIENT_NEW_LISTING_LIMIT,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
+  isVehicleSaleCategory,
   listingPaymentDueAt,
   PAYMENT_PURPOSES,
   type PaymentPurpose,
@@ -22,7 +23,11 @@ import { CategoriesService } from '../categories/categories.service';
 import { getAuctionCurrentPrice, isAuctionActive } from '../common/auction';
 import { isPurchasableProduct } from '../common/purchasable';
 import { MailService } from '../mail/mail.service';
-import type { Advertiser, ProductSituation } from '../prisma/generated/client';
+import type {
+  Advertiser,
+  ProductSituation,
+  VehiclePaintCondition,
+} from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
@@ -87,7 +92,7 @@ export class ProductsService {
       _count?: { auctionBids: number };
       category?: { slug: string } | null;
     },
-  >(product: T, options?: { viewerUserId?: string | null }) {
+  >(product: T, options?: { viewerUserId?: string | null; coverImageOnly?: boolean }) {
     const strengthenedActive =
       product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
     const brandLabels =
@@ -106,9 +111,12 @@ export class ProductsService {
       isAuctionActive(product.auctionEndsAt) &&
       product.status === 'ACTIVE';
 
+    const parsedImages: string[] = JSON.parse(product.images || '[]');
+    const images = options?.coverImageOnly ? parsedImages.slice(0, 1) : parsedImages;
+
     const mapped: Record<string, unknown> = {
       ...product,
-      images: JSON.parse(product.images),
+      images,
       carBrands: brands.map((brand) => ({
         value: brand,
         label: brandLabels.get(brand) ?? brand,
@@ -221,46 +229,96 @@ export class ProductsService {
       this.countActiveNewClientListings(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { maxActiveListings: true, maxActiveNewListings: true },
+        select: { role: true, maxActiveListings: true, maxActiveNewListings: true },
       }),
     ]);
+
+    /** Admins have no free-listing or NEW-listing caps. */
+    if (user?.role === 'ADMIN') {
+      return {
+        activeCount,
+        activeNewCount,
+        freeLimit: null,
+        newLimit: null,
+        unlimitedListings: true,
+        requiresListingFee: false,
+      };
+    }
+
     const freeLimit = resolveUserListingLimit(user?.maxActiveListings);
     const newLimit = resolveUserNewListingLimit(user?.maxActiveNewListings);
     const requiresListingFee = activeCount >= freeLimit;
-    return { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee };
+    return {
+      activeCount,
+      activeNewCount,
+      freeLimit,
+      newLimit,
+      requiresListingFee,
+      unlimitedListings: false as const,
+    };
   }
 
   /** Hard-block when user already has max ACTIVE listings with situation=NEW. */
   async assertNewListingQuota(userId: string, situation?: string | null) {
     if (situation !== 'NEW') return;
-    const { activeNewCount, newLimit } = await this.getListingQuotaState(userId);
-    if (activeNewCount >= newLimit) {
+    const state = await this.getListingQuotaState(userId);
+    if (state.unlimitedListings) return;
+    const { activeNewCount, newLimit } = state;
+    if (activeNewCount >= newLimit!) {
       throw new BadRequestException(
-        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
+        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit!.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
       );
     }
   }
 
   async getListingQuota(userId: string) {
     void this.purgeExpiredListingPaymentDrafts();
-    const { activeCount, activeNewCount, freeLimit, newLimit, requiresListingFee } =
-      await this.getListingQuotaState(userId);
+    const state = await this.getListingQuotaState(userId);
+    const {
+      activeCount,
+      activeNewCount,
+      freeLimit,
+      newLimit,
+      requiresListingFee,
+      unlimitedListings,
+    } = state;
+
+    if (unlimitedListings) {
+      return {
+        activeCount,
+        activeNewCount,
+        freeLimit: null,
+        newLimit: null,
+        defaultLimit: FREE_CLIENT_LISTING_LIMIT,
+        hasCustomLimit: false,
+        remainingFree: null,
+        requiresListingFee: false,
+        listingFee: EXTRA_LISTING_FEE,
+        paymentGraceDays: 3,
+        defaultNewLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
+        hasCustomNewLimit: false,
+        remainingNew: null,
+        atNewLimit: false,
+        unlimitedListings: true,
+      };
+    }
 
     return {
       activeCount,
-      freeLimit,
+      freeLimit: freeLimit!,
       defaultLimit: FREE_CLIENT_LISTING_LIMIT,
       hasCustomLimit: freeLimit !== FREE_CLIENT_LISTING_LIMIT,
-      remainingFree: Math.max(0, freeLimit - activeCount),
+      remainingFree: Math.max(0, freeLimit! - activeCount),
       requiresListingFee,
       listingFee: EXTRA_LISTING_FEE,
       paymentGraceDays: 3,
       activeNewCount,
-      newLimit,
+      newLimit: newLimit!,
       defaultNewLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       hasCustomNewLimit: newLimit !== FREE_CLIENT_NEW_LISTING_LIMIT,
-      remainingNew: Math.max(0, newLimit - activeNewCount),
-      atNewLimit: activeNewCount >= newLimit,
+      remainingNew: Math.max(0, newLimit! - activeNewCount),
+      atNewLimit: activeNewCount >= newLimit!,
+      unlimitedListings: false,
     };
   }
 
@@ -311,6 +369,34 @@ export class ProductsService {
       .catch(() => {});
   }
 
+  private async resolveVehicleSaleFields(
+    categoryId: string,
+    data: {
+      mileageKm?: number | null;
+      paintCondition?: VehiclePaintCondition | null;
+    },
+  ): Promise<{ mileageKm: number | null; paintCondition: VehiclePaintCondition | null }> {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { slug: true },
+    });
+    if (!category || !isVehicleSaleCategory(category.slug)) {
+      return { mileageKm: null, paintCondition: null };
+    }
+
+    if (data.mileageKm == null || !Number.isFinite(data.mileageKm) || data.mileageKm < 0) {
+      throw new BadRequestException('میزان کارکرد (کیلومتر) را وارد کنید');
+    }
+    if (!data.paintCondition) {
+      throw new BadRequestException('وضعیت رنگ بدنه را انتخاب کنید');
+    }
+
+    return {
+      mileageKm: Math.round(data.mileageKm),
+      paintCondition: data.paintCondition,
+    };
+  }
+
   private async buildCreateData(
     data: CreateProductDto,
     userId: string,
@@ -327,6 +413,7 @@ export class ProductsService {
     const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
     const newPrice =
       data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
+    const vehicleFields = await this.resolveVehicleSaleFields(data.categoryId, data);
 
     return {
       title: data.title,
@@ -343,6 +430,8 @@ export class ProductsService {
       phone: data.isAuction ? undefined : data.phone,
       advertiser: data.advertiser ?? 'CLIENT',
       situation: data.situation,
+      mileageKm: vehicleFields.mileageKm,
+      paintCondition: vehicleFields.paintCondition,
       userId: userId || null,
       status: options.status,
       listingFeePaid: options.listingFeePaid,
@@ -701,7 +790,9 @@ export class ProductsService {
     ]);
 
     return {
-      products: await Promise.all(products.map((p) => this.mapProduct(p, { viewerUserId: null }))),
+      products: await Promise.all(
+        products.map((p) => this.mapProduct(p, { viewerUserId: null, coverImageOnly: true })),
+      ),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -829,6 +920,20 @@ export class ProductsService {
       await this.categoriesService.assertLeafCategory(data.categoryId);
     }
 
+    const categoryIdForVehicle = data.categoryId ?? product.categoryId;
+    const vehicleFields = await this.resolveVehicleSaleFields(categoryIdForVehicle, {
+      mileageKm:
+        data.mileageKm !== undefined
+          ? data.mileageKm
+          : (product as { mileageKm?: number | null }).mileageKm,
+      paintCondition:
+        data.paintCondition !== undefined
+          ? data.paintCondition
+          : (product as { paintCondition?: VehiclePaintCondition | null }).paintCondition,
+    });
+    updateData.mileageKm = vehicleFields.mileageKm;
+    updateData.paintCondition = vehicleFields.paintCondition;
+
     if (data.isBoosted === true && !product.isBoosted) {
       updateData.listedAt = new Date();
     }
@@ -858,6 +963,35 @@ export class ProductsService {
     throw new BadRequestException(
       'برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
     );
+  }
+
+  async applyBoostWithCredit(id: string, userId: string) {
+    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_BOOST);
+
+    await this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.updateMany({
+        where: { id: userId, boostCredits: { gte: 1 } },
+        data: { boostCredits: { decrement: 1 } },
+      });
+      if (updatedUser.count === 0) {
+        throw new BadRequestException('امتیاز پله‌شدن رایگان ندارید');
+      }
+
+      const product = await tx.product.findUnique({ where: { id } });
+      if (!product) throw new NotFoundException('محصول یافت نشد');
+
+      const now = new Date();
+      await tx.product.update({
+        where: { id },
+        data: { isBoosted: true, listedAt: now },
+      });
+    });
+
+    this.telegramChannel.announceBoost(id);
+
+    const product = await this.prisma.product.findUnique({ where: { id } });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+    return this.mapProduct(product);
   }
 
   async remove(id: string, userId?: string, userRole?: string) {

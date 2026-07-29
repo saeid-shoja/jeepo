@@ -7,15 +7,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { CitySelect } from '@/components/form/city-select';
 import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
+import { RequiredLabel } from '@/components/form/required-label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { formatDeliveryAddress } from '@/lib/iran-locations';
 import { type CheckoutFormValues, checkoutSchema } from '@/lib/validations/checkout';
 import { useAuth } from '@/stores/auth-store';
 import { useCart } from '@/stores/cart-store';
@@ -94,11 +97,13 @@ export default function CheckoutPage() {
   const {
     register,
     handleSubmit,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
+      city: '',
       address: '',
       phone: '',
       note: '',
@@ -151,8 +156,8 @@ export default function CheckoutPage() {
     try {
       const { id, paymentUrl } = await api.orders.create({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-        address: data.address,
-        phone: data.phone || undefined,
+        address: formatDeliveryAddress(data.city, data.address),
+        phone: data.phone,
         note: data.note || undefined,
         paymentMethod: 'ONLINE',
       });
@@ -205,18 +210,30 @@ export default function CheckoutPage() {
               <CardTitle className="text-base">اطلاعات تحویل</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Controller
+                name="city"
+                control={control}
+                render={({ field }) => (
+                  <CitySelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    required
+                    error={errors.city?.message}
+                  />
+                )}
+              />
               <div className="space-y-2">
-                <Label htmlFor="address">آدرس کامل تحویل</Label>
+                <RequiredLabel htmlFor="address">آدرس دقیق</RequiredLabel>
                 <Textarea
                   id="address"
                   rows={3}
-                  placeholder="استان، شهر، خیابان، پلاک، واحد..."
+                  placeholder="خیابان، کوچه، پلاک، واحد..."
                   {...register('address')}
                 />
                 <FieldError message={errors.address?.message} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">شماره تماس</Label>
+                <RequiredLabel htmlFor="phone">شماره تماس</RequiredLabel>
                 <DigitsInput
                   id="phone"
                   type="tel"

@@ -34,8 +34,10 @@ if (!existsSync(backupPath)) {
 const pkg = JSON.parse(readFileSync(apiPkgPath, 'utf8'));
 if (pkg.dependencies?.['@offroad/shared']?.startsWith('workspace:')) {
   pkg.dependencies['@offroad/shared'] = 'file:./vendor/offroad-shared';
-  writeFileSync(apiPkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }
+/** Shared (and iran-locations) needs this at runtime; keep it on the API package for npm/Runflare installs. */
+pkg.dependencies['provinces-and-cities'] = pkg.dependencies['provinces-and-cities'] ?? '^1.0.7';
+writeFileSync(apiPkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
 console.log('apps/api is ready for Runflare (vendor/offroad-shared bundled).');
 console.log('Deploy: cd apps/api && runflare deploy');

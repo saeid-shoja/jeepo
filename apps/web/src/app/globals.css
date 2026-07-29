@@ -129,3 +129,12 @@
 .safe-area-pb {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
+
+@keyframes nav-progress {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-300%);
+  }
+}

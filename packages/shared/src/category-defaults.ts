@@ -17,7 +17,7 @@ export const MOTORCYCLE_ATV_SUBCATEGORIES = [
   },
 ] as const;
 
-/** Subcategories under «فروش موتورسیکلت های سفری و آفرودی» — require admin price review before publish. */
+/** Subcategories under «فروش موتورسیکلت های سفری و آفرودی». */
 export const MOTORCYCLE_ATV_SALE_CHILDREN = [
   {
     name: 'انواع تریل و کراس',
@@ -33,15 +33,40 @@ export const MOTORCYCLE_ATV_SALE_CHILDREN = [
   },
 ] as const;
 
-/** Client vehicle/motorcycle sale ads — hidden until admin approves price. */
-export const ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS = [
+/**
+ * Leaf categories for vehicle/motorcycle sales.
+ * Mileage + paint condition fields are required for these listings.
+ */
+export const VEHICLE_SALE_CATEGORY_SLUGS = [
   'car-sales',
   'travel-offroad-trail-cross',
   'travel-offroad-adventure',
 ] as const;
 
+export function isVehicleSaleCategory(slug: string): boolean {
+  return (VEHICLE_SALE_CATEGORY_SLUGS as readonly string[]).includes(slug);
+}
+
+/** @deprecated Vehicle sales no longer require admin approval; kept empty for API compatibility. */
+export const ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS: readonly string[] = [];
+
 export function isAdminApprovalRequiredCategory(slug: string): boolean {
   return (ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS as readonly string[]).includes(slug);
+}
+
+export const VEHICLE_PAINT_CONDITIONS = [
+  { value: 'UNPAINTED', label: 'بی رنگ' },
+  { value: 'SCRATCHES', label: 'دارای خط و خش' },
+  { value: 'PARTIAL_PAINT', label: 'دارای رنگ شدگی' },
+  { value: 'FULL_PAINT', label: 'تمام رنگ' },
+  { value: 'ACCIDENT', label: 'تصادفی' },
+] as const;
+
+export type VehiclePaintCondition = (typeof VEHICLE_PAINT_CONDITIONS)[number]['value'];
+
+export function getVehiclePaintConditionLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return VEHICLE_PAINT_CONDITIONS.find((opt) => opt.value === value)?.label ?? null;
 }
 
 export const MOTORCYCLE_ATV_SLUG = 'motorcycle-atv';

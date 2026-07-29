@@ -8,6 +8,7 @@ jeepo (جیپو) — offroad parts e-commerce platform. pnpm monorepo with Turbo
 
 - `apps/api` — NestJS 11 + Prisma 7 + PostgreSQL 16. `pnpm --filter @offroad/api`
 - `apps/web` — Next.js 15 customer storefront (port 3000)
+- `apps/shop` — Next.js 15 shop-only storefront for subdomain/Torob (port 3002). See `docs/SHOP_APP.md`
 - `apps/admin` — Next.js 15 admin dashboard (port 3001)
 - `packages/shared` — shared TypeScript types/utils (must build before apps consume it)
 - `packages/ui` — shared UI components (WIP)

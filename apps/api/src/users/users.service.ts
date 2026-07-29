@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { ensureUserReferralCode } from '../common/referrals';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService } from '../products/products.service';
 import type { ChangePasswordDto, UpdateProfileDto } from './dto';
@@ -12,33 +13,40 @@ export class UsersService {
   ) {}
 
   async getProfile(userId: string) {
-    const [user, activeListingsCount, totalListingsCount] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          phone: true,
-          name: true,
-          role: true,
-          city: true,
-          telegramId: true,
-          telegramChatId: true,
-          telegramLinkedAt: true,
-          createdAt: true,
-        },
-      }),
-      this.productsService.countActiveClientListings(userId),
-      this.prisma.product.count({
-        where: { userId, advertiser: 'CLIENT' },
-      }),
-    ]);
+    const [user, activeListingsCount, totalListingsCount, referralCount, referralCode] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            phone: true,
+            name: true,
+            role: true,
+            city: true,
+            telegramId: true,
+            telegramChatId: true,
+            telegramLinkedAt: true,
+            boostCredits: true,
+            createdAt: true,
+          },
+        }),
+        this.productsService.countActiveClientListings(userId),
+        this.prisma.product.count({
+          where: { userId, advertiser: 'CLIENT' },
+        }),
+        this.prisma.user.count({ where: { referredById: userId } }),
+        ensureUserReferralCode(this.prisma, userId),
+      ]);
     if (!user) throw new NotFoundException('کاربر یافت نشد');
     const { telegramChatId, ...profile } = user;
     return {
       ...profile,
+      referralCode,
+      referralCount,
       telegramLinked: Boolean(telegramChatId),
       activeListingsCount,
       totalListingsCount,
+      unlimitedListings: user.role === 'ADMIN',
     };
   }
 
@@ -48,7 +56,9 @@ export class UsersService {
       include: { category: true, carBrands: true },
       orderBy: [{ listedAt: 'desc' }, { createdAt: 'desc' }],
     });
-    return Promise.all(products.map((product) => this.productsService.mapProduct(product)));
+    return Promise.all(
+      products.map((product) => this.productsService.mapProduct(product, { coverImageOnly: true })),
+    );
   }
 
   async updateProfile(userId: string, data: UpdateProfileDto) {

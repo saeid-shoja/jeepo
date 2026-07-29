@@ -1,15 +1,15 @@
 'use client';
 
-import { formatPrice, formatProductLocation, isStrengthenedActive, timeAgo } from '@offroad/shared';
-import { Clock, MapPin, Shield, Sparkles, TrendingUp } from 'lucide-react';
-import Image from 'next/image';
+import { formatPrice, formatProductLocation, timeAgo } from '@offroad/shared';
+import { Clock, MapPin, Shield, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { AuctionProductCard } from '@/components/auction/auction-product-card';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
+import { ProductMedia } from '@/components/shop/product-media';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { saveListScroll } from '@/lib/list-scroll-restore';
 import { type ProductSituation, resolveProductSituation } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
@@ -49,31 +49,39 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { user } = useAuth();
 
+  /* مزایده — موقتاً غیرفعال
   if (product.isAuction) {
     return <AuctionProductCard product={product} />;
   }
+  */
 
   const images = product.images || [];
   const firstImage = images[0];
   const situation = resolveProductSituation(product);
   const postedAt = timeAgo(new Date(product.listedAt ?? product.createdAt));
   const canBuy = canViewerPurchase(product, user?.id);
-  const strengthenedActive =
-    product.isStrengthenedActive ?? isStrengthenedActive(product.strengthenedUntil);
 
   return (
-    <Card className="hover:border-primary/40 flex h-full flex-col gap-0 overflow-hidden py-0 transition-all hover:shadow-lg hover:scale-102">
-      <Link href={`/product/${product.id}`} className="group block">
+    <Card
+      data-product-id={product.id}
+      className="hover:border-primary/40 flex h-full flex-col gap-0 overflow-hidden py-0 transition-all hover:shadow-lg hover:scale-102"
+      dir="rtl"
+    >
+      <Link
+        href={`/product/${product.id}`}
+        className="group block"
+        onClick={() => saveListScroll(product.id)}
+      >
         <div className="relative aspect-square overflow-hidden bg-muted">
           <div className="absolute top-2 left-2 z-10">
             <FavoriteButton productId={product.id} />
           </div>
-          <Image
-            width={100}
-            height={100}
-            src={firstImage || '/images/product/no-photo.jpg'}
+          <ProductMedia
+            src={firstImage}
             alt={product.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 border-3 border-card rounded-sm"
+            active={false}
+            className="absolute inset-0"
+            mediaClassName="object-cover transition-transform duration-300 group-hover:scale-105 border-3 border-card rounded-sm"
           />
           <div className="absolute top-2 right-2 flex flex-col gap-1">
             {product.status === 'DEPRECATED' && (
@@ -84,12 +92,6 @@ export function ProductCard({ product }: ProductCardProps) {
               <Badge className="bg-green-600 text-white hover:bg-green-600">
                 <Shield className="h-3 w-3" />
                 تضمین شده
-              </Badge>
-            )}
-            {strengthenedActive && (
-              <Badge className="bg-violet-600 text-white hover:bg-violet-600">
-                <Sparkles className="h-3 w-3" />
-                تقویت شده
               </Badge>
             )}
             {product.isBoosted && (
@@ -125,7 +127,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {canBuy && (
-        <div className="-mb-1 border-t p-3 pt-0">
+        <div className="border-t p-1.5 pt-0.5">
           <AddToCartButton product={product} className="w-full" size="sm" />
         </div>
       )}

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
+import { useRestoreListScroll } from '@/lib/use-restore-list-scroll';
 import { useFavoritesStore } from '@/stores/favorites-store';
 
 type ProfileFavoritesTabProps = {
@@ -37,6 +38,8 @@ export function ProfileFavoritesTab({ enabled }: ProfileFavoritesTabProps) {
       void loadFavorites();
     }
   }, [enabled, loadFavorites]);
+
+  useRestoreListScroll(enabled && !loading && products.length > 0);
 
   if (loading) {
     return (

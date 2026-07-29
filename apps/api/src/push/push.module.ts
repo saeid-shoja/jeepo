@@ -8,12 +8,8 @@ import { PushService } from './push.service';
   providers: [
     {
       provide: PushService,
-      useFactory: (
-        prisma: PrismaService,
-        publicKey: string,
-        privateKey: string,
-        subject: string,
-      ) => new PushService(prisma, publicKey, privateKey, subject),
+      useFactory: (prisma: PrismaService, publicKey: string, privateKey: string, subject: string) =>
+        new PushService(prisma, publicKey, privateKey, subject),
       inject: [PrismaService, 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'],
     },
   ],

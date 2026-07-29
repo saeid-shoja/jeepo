@@ -100,10 +100,15 @@ export function PushNotificationsCard() {
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <p className="text-muted-foreground leading-relaxed">
-            پیام‌های چت و اطلاعیه‌های سایت روی تلفن یا مرورگر شما (بعد از نصب PWA) نمایش داده
-            می‌شوند.
+            پیام‌های چت و اطلاعیه‌های سایت روی تلفن یا مرورگر شما (بعد از نصب PWA) نمایش داده می‌شوند.
           </p>
-          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void handleDisable()}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void handleDisable()}
+          >
             <BellOff className="size-3" />
             غیرفعال کردن
           </Button>
@@ -122,14 +127,14 @@ export function PushNotificationsCard() {
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <p className="text-muted-foreground leading-relaxed">
-          با فعال‌سازی اعلان، پیام‌های چت و اطلاعیه‌های جیپو مستقیم روی دستگاه شما (حتی وقتی
-          سایت بسته است) نمایش داده می‌شوند. برای بهترین تجربه، ابتدا جیپو را از منوی مرورگر
-          «Add to Home Screen» نصب کنید.
+          با فعال‌سازی اعلان، پیام‌های چت و اطلاعیه‌های جیپو مستقیم روی دستگاه شما (حتی وقتی سایت بسته
+          است) نمایش داده می‌شوند. برای بهترین تجربه، ابتدا جیپو را از منوی مرورگر «Add to Home
+          Screen» نصب کنید.
         </p>
         {state === 'denied' ? (
           <p className="text-destructive text-xs leading-relaxed">
-            اعلان‌ها در مرورگر مسدود شده‌اند. از تنظیمات مرورگر اجازه اعلان را برای jeepo.ir
-            فعال کنید.
+            اعلان‌ها در مرورگر مسدود شده‌اند. از تنظیمات مرورگر اجازه اعلان را برای jeepo.ir فعال
+            کنید.
           </p>
         ) : (
           <Button type="button" size="sm" disabled={busy} onClick={() => void handleEnable()}>

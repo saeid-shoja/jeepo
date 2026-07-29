@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TelegramModule } from '../telegram/telegram.module';
 import { PushModule } from '../push/push.module';
+import { TelegramModule } from '../telegram/telegram.module';
 import { MessagesService } from './messages.service';
 
 @Module({

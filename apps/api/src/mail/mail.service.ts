@@ -214,11 +214,8 @@ export class MailService {
     if (!sent) logCode();
   }
 
-
-
   async sendNewPassword(to: string, name: string, password: string): Promise<void> {
-    const RTL_TEXT =
-      'direction:rtl;text-align:right';
+    const RTL_TEXT = 'direction:rtl;text-align:right';
     const bodyHtml = `
       ${emailGreeting(name)}
       <p style="margin:0 0 12px;">درخواست بازیابی رمز عبور برای حساب شما در ${escapeHtml(SITE_NAME_FA)} ثبت شد.</p>
@@ -379,11 +376,11 @@ export class MailService {
         <h3 style="margin:16px 0 10px;font-size:16px;color:#1e3a5f;">توضیحات</h3>
         <p style="margin:0 0 16px;white-space:pre-wrap;">${escapeHtml(payload.product.description)}</p>
         ${formatParty('فروشنده', {
-        name: payload.seller.name,
-        phone: payload.seller.phone,
-        email: payload.seller.email,
-        city: payload.seller.city,
-      })}
+          name: payload.seller.name,
+          phone: payload.seller.phone,
+          email: payload.seller.email,
+          city: payload.seller.city,
+        })}
         <p style="margin:0;font-size:13px;color:#94a3b8;">زمان: ${new Date().toLocaleString('fa-IR')}</p>
       `,
     });
@@ -444,19 +441,20 @@ export class MailService {
             <tr><td style="padding:6px 0;color:#64748b;">لینک</td><td><a href="${escapeHtml(payload.product.url)}" style="color:#d62828;">${escapeHtml(payload.product.url)}</a></td></tr>
           </table>
         `)}
-        ${payload.advertiser
-          ? formatParty('آگهی‌دهنده', {
-            name: payload.advertiser.name,
-            phone: payload.advertiser.phone,
-            email: payload.advertiser.email,
-            city: payload.advertiser.city,
-          }) +
-          (
-            payload.advertiser.telegramId
-              ? `<p style="font-size:14px;">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
-              : ''
-          )
-          : ''
+        ${
+          payload.advertiser
+            ? formatParty('آگهی‌دهنده', {
+                name: payload.advertiser.name,
+                phone: payload.advertiser.phone,
+                email: payload.advertiser.email,
+                city: payload.advertiser.city,
+              }) +
+              (
+                payload.advertiser.telegramId
+                  ? `<p style="font-size:14px;">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
+                  : ''
+              )
+            : ''
         }
         ${formatParty('گزارش‌دهنده', {
           name: payload.reporter.name,

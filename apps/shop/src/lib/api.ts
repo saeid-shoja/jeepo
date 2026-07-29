@@ -355,8 +355,7 @@ export const api = {
         expiresAt?: string;
         message?: string;
       }>('/users/telegram/link'),
-    pushConfig: () =>
-      request<{ enabled: boolean; publicKey: string | null }>('/users/push/config'),
+    pushConfig: () => request<{ enabled: boolean; publicKey: string | null }>('/users/push/config'),
     pushSubscribe: (data: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
       request<{ subscribed: boolean }>('/users/push/subscribe', {
         method: 'POST',

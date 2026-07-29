@@ -3,8 +3,7 @@ import { SITE_EMAIL, SITE_NAME_FA, SITE_URL } from '@offroad/shared';
 const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
 const LOGO_URL = `${SITE_URL.replace(/\/$/, '')}/logo.png`;
 
-const RTL_TEXT =
-  'direction:rtl;text-align:right;font-family:Tahoma,"Segoe UI",Arial,sans-serif;';
+const RTL_TEXT = 'direction:rtl;text-align:right;font-family:Tahoma,"Segoe UI",Arial,sans-serif;';
 
 export function escapeHtml(value: string): string {
   return value

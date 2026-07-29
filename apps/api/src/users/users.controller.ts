@@ -1,9 +1,19 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  Request,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FavoritesService } from '../favorites/favorites.service';
 import { MessagesService } from '../messages/messages.service';
-import { PushService } from '../push/push.service';
 import { PushSubscribeDto, PushUnsubscribeDto } from '../push/dto/push-subscribe.dto';
+import { PushService } from '../push/push.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { ChangePasswordDto, UpdateProfileDto } from './dto';
@@ -46,10 +56,7 @@ export class UsersController {
   }
 
   @Delete('push/subscribe')
-  unsubscribePush(
-    @Request() req: { user: { userId: string } },
-    @Body() body: PushUnsubscribeDto,
-  ) {
+  unsubscribePush(@Request() req: { user: { userId: string } }, @Body() body: PushUnsubscribeDto) {
     return this.pushService.unsubscribe(req.user.userId, body.endpoint);
   }
 

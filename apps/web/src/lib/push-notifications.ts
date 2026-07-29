@@ -20,7 +20,9 @@ export function isPushSupported(): boolean {
   );
 }
 
-export async function getPushSubscriptionState(): Promise<'unsupported' | 'denied' | 'subscribed' | 'unsubscribed'> {
+export async function getPushSubscriptionState(): Promise<
+  'unsupported' | 'denied' | 'subscribed' | 'unsubscribed'
+> {
   if (!isPushSupported()) return 'unsupported';
   if (Notification.permission === 'denied') return 'denied';
 

@@ -17,10 +17,10 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   type LoginFormValues,
-  type RequestLoginCodeFormValues,
-  type VerifyLoginCodeFormValues,
   loginSchema,
+  type RequestLoginCodeFormValues,
   requestLoginCodeSchema,
+  type VerifyLoginCodeFormValues,
   verifyLoginCodeSchema,
 } from '@/lib/validations/auth';
 import { useAuth } from '@/stores/auth-store';
@@ -127,8 +127,12 @@ export function LoginForm() {
       <CardContent>
         <Tabs defaultValue="password" className="gap-4">
           <TabsList className="w-full">
-            <TabsTrigger value="password" className="flex-1">رمز عبور</TabsTrigger>
-            <TabsTrigger value="email-code" className="flex-1">کد ایمیل</TabsTrigger>
+            <TabsTrigger value="password" className="flex-1">
+              رمز عبور
+            </TabsTrigger>
+            <TabsTrigger value="email-code" className="flex-1">
+              کد ایمیل
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="password">
@@ -211,11 +215,7 @@ export function LoginForm() {
                 </Button>
               </form>
             ) : (
-              <form
-                onSubmit={codeForm.handleSubmit(onVerifyCode)}
-                className="space-y-3"
-                noValidate
-              >
+              <form onSubmit={codeForm.handleSubmit(onVerifyCode)} className="space-y-3" noValidate>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   کد ۶ رقمی ارسال‌شده به{' '}
                   <span className="text-foreground font-medium" dir="ltr">

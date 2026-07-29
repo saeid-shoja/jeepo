@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -34,9 +34,9 @@ export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
     setPending(true);
     try {
       const added = await toggle(productId);
-      toast.success(added ? 'به علاقه‌مندی‌ها اضافه شد' : 'از علاقه‌مندی‌ها حذف شد');
+      toast.success(added ? 'ذخیره شد' : 'از ذخیره‌ها حذف شد');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی علاقه‌مندی‌ها');
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی ذخیره‌ها');
     } finally {
       setPending(false);
     }
@@ -45,7 +45,7 @@ export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
   return (
     <button
       type="button"
-      aria-label={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+      aria-label={isFavorite ? 'حذف از ذخیره‌ها' : 'ذخیره کردن'}
       aria-pressed={isFavorite}
       disabled={pending}
       onClick={handleClick}
@@ -55,10 +55,10 @@ export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
         className,
       )}
     >
-      <Heart
+      <Bookmark
         className={cn(
           'h-4 w-4 transition-colors',
-          isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground hover:text-red-500',
+          isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground hover:text-primary',
         )}
       />
     </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, LogOut, MapPin, Phone, ShoppingBag, User } from 'lucide-react';
+import { Bookmark, LogOut, MapPin, Phone, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -117,8 +117,8 @@ function ProfileContent() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="favorites" className="gap-2">
-            <Heart className="size-4" />
-            علاقه‌مندی‌ها
+            <Bookmark className="size-4" />
+            ذخیره‌ها
           </TabsTrigger>
         </TabsList>
         <TabsContent value="favorites">

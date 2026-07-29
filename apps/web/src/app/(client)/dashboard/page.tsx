@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  Heart,
+  Bookmark,
   LogOut,
   Mail,
   MapPin,
@@ -177,8 +177,8 @@ function DashboardContent() {
             آگهی‌های من
           </TabsTrigger>
           <TabsTrigger value="favorites" className="gap-2">
-            <Heart className="size-4" />
-            علاقه‌مندی‌ها
+            <Bookmark className="size-4" />
+            ذخیره‌ها
           </TabsTrigger>
           <TabsTrigger value="messages" className="gap-2">
             <Mail className="size-4" />

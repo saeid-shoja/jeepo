@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
+import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductGallery } from '@/components/shop/product-gallery';
 import { ProductShareButton } from '@/components/shop/product-share-button';
@@ -104,7 +105,8 @@ export function ProductDetailClient() {
         <div>
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-2xl font-bold">{product.title}</h1>
-            <div className="flex shrink-0 gap-1 items-center">
+            <div className="flex shrink-0 items-center gap-1">
+              <FavoriteButton productId={product.id ?? id} />
               <ProductShareButton productId={product.id ?? id} title={product.title} />
               {isOwner && (
                 <>

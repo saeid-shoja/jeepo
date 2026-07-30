@@ -8,10 +8,7 @@ import { fileURLToPath } from 'node:url';
 const appDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function findStandaloneDir() {
-  const candidates = [
-    join(appDir, '.next/standalone/apps/shop'),
-    join(appDir, '.next/standalone'),
-  ];
+  const candidates = [join(appDir, '.next/standalone/apps/shop'), join(appDir, '.next/standalone')];
 
   for (const dir of candidates) {
     if (existsSync(join(dir, 'server.js'))) return dir;
@@ -50,9 +47,13 @@ function findStandaloneDir() {
 const standaloneDir = findStandaloneDir();
 
 if (!standaloneDir) {
-  console.error('Standalone server.js not found under .next/standalone — run `npm run build` first.');
+  console.error(
+    'Standalone server.js not found under .next/standalone — run `npm run build` first.',
+  );
   if (existsSync(join(appDir, '.next'))) {
-    console.error('Hint: ensure next.config has output: "standalone" and the build finished without errors.');
+    console.error(
+      'Hint: ensure next.config has output: "standalone" and the build finished without errors.',
+    );
   }
   process.exit(1);
 }

@@ -7,6 +7,7 @@ import { execSync } from 'node:child_process';
 const START = {
   web: 'node apps/web/.next/standalone/apps/web/server.js',
   admin: 'node apps/admin/.next/standalone/apps/admin/server.js',
+  shop: 'node apps/shop/.next/standalone/apps/shop/server.js',
   api: 'cd apps/api && pnpm exec prisma migrate deploy && node dist/main.js',
 };
 
@@ -15,6 +16,7 @@ const command = START[appKey] ?? START.web;
 
 process.env.HOSTNAME = process.env.HOSTNAME || '0.0.0.0';
 process.env.PORT =
-  process.env.PORT || (appKey === 'admin' ? '3001' : appKey === 'api' ? '4000' : '3000');
+  process.env.PORT ||
+  (appKey === 'admin' ? '3001' : appKey === 'api' ? '4000' : appKey === 'shop' ? '3002' : '3000');
 
 execSync(command, { stdio: 'inherit', shell: true });

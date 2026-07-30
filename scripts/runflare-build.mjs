@@ -11,6 +11,7 @@ const PNPM_VERSION = '11.6.0';
 const APPS = {
   web: '@offroad/web',
   admin: '@offroad/admin',
+  shop: '@offroad/shop',
   api: '@offroad/api',
 };
 

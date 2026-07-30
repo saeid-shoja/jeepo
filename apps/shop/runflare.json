@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm install && npm run build",
   "startCommand": "npm start",
   "outputDirectory": ".next",
-  "port": 3000
+  "port": 3002
 }

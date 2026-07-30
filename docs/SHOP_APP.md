@@ -82,9 +82,13 @@ CORS_ORIGINS=https://shop.jeepo.ir,https://www.shop.jeepo.ir
 ### 4. Runflare (مشابه web)
 
 ```bash
-pnpm prepare:runflare-shop
+pnpm prepare:runflare-shop   # الزامی — vendor/@offroad/shared را داخل apps/shop می‌گذارد
 cd apps/shop && runflare deploy
 ```
+
+**نکته:** قبل از deploy حتماً `prepare:runflare-shop` را بزنید. بدون آن build روی Runflare خطا می‌دهد.
+
+برای deploy از **ریشه monorepo** با Docker: `runflare.shop.json` و `Dockerfile.shop` (پورت 3002).
 
 ### 5. Vercel / Docker
 

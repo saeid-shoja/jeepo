@@ -1,0 +1,40 @@
+# Runflare / Docker deploy for @offroad/shop (pnpm monorepo).
+# In Runflare panel: Dockerfile path = Dockerfile.shop, port 3002.
+
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PATH"
+RUN npm install -g pnpm@11.6.0
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/shop/package.json ./apps/shop/
+COPY packages/shared/package.json ./packages/shared/
+RUN pnpm install --frozen-lockfile --filter @offroad/shop...
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/shop/node_modules ./apps/shop/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter @offroad/shop build
+
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3002
+ENV HOSTNAME=0.0.0.0
+
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/apps/shop/public ./apps/shop/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/shop/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/shop/.next/static ./apps/shop/.next/static
+
+USER nextjs
+EXPOSE 3002
+CMD ["node", "apps/shop/server.js"]

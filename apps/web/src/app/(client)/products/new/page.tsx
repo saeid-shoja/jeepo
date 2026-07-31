@@ -491,7 +491,7 @@ export default function NewProductPage() {
           )}
         /> */}
 
-        {!isAuction && (
+        {/* {!isAuction && (
           <PremiumProductOptions
             productPrice={price}
             hasGuarantee={hasGuarantee}
@@ -500,7 +500,7 @@ export default function NewProductPage() {
             onGuaranteeChange={(v) => setValue('hasGuarantee', v)}
             onStrengthenedChange={() => {}}
           />
-        )}
+        )} */}
         <Button type="submit" className="w-full" size="lg" disabled={isSubmittingListing}>
           {isSubmittingListing ? (
             <>

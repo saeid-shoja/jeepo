@@ -88,12 +88,12 @@ export function ProductCard({ product }: ProductCardProps) {
               <Badge className="bg-red-600 text-white hover:bg-red-600">منقضی شده</Badge>
             )}
             <ProductSituationBadge situation={situation} />
-            {product.hasGuarantee && (
+            {/* {product.hasGuarantee && (
               <Badge className="bg-green-600 text-white hover:bg-green-600">
                 <Shield className="h-3 w-3" />
                 تضمین شده
               </Badge>
-            )}
+            )} */}
             {product.isBoosted && (
               <Badge className="bg-amber-500 text-white hover:bg-amber-500">
                 <TrendingUp className="h-3 w-3" />

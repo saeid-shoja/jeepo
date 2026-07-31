@@ -203,7 +203,7 @@ export function ProductDetailClient() {
               {b.label}
             </span>
           ))}
-          {product.hasGuarantee && (
+          {/* {product.hasGuarantee && (
             <button
               type="button"
               className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
@@ -213,7 +213,7 @@ export function ProductDetailClient() {
               <Shield className="h-4 w-4" />
               با تضمین فروشگاه
             </button>
-          )}
+          )} */}
           {/* مزایده — موقتاً غیرفعال
           {product.isAuction && (
             <Badge className="bg-violet-600 text-white hover:bg-violet-600">مزایده</Badge>

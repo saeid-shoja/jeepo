@@ -179,7 +179,7 @@ export default function AdminUsersPage() {
         }}
       >
         <input
-          type="search"
+          type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="جستجو بر اساس نام، ایمیل یا شماره موبایل…"

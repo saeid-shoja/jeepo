@@ -150,7 +150,7 @@ export default function AdminProductsPage() {
         }}
       >
         <input
-          type="search"
+          type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="جستجو بر اساس عنوان محصول یا نام/ایمیل فروشنده…"

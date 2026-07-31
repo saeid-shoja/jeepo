@@ -24,8 +24,10 @@ export default function AdminProductsPage() {
   const [announcing, setAnnouncing] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const fetchProducts = useCallback(() => {
+    setLoading(true);
     const params: Record<string, string> = {
       page: String(page),
       limit: '20',
@@ -38,7 +40,8 @@ export default function AdminProductsPage() {
         setProducts(res.products);
         setTotalPages(res.totalPages);
       })
-      .catch(() => toast.error('بارگذاری محصولات ناموفق بود'));
+      .catch(() => toast.error('بارگذاری محصولات ناموفق بود'))
+      .finally(() => setLoading(false));
   }, [page, tab, search]);
 
   useEffect(() => {
@@ -141,26 +144,31 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
-      <form
-        className="flex flex-wrap gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setPage(1);
-          setSearch(searchInput.trim());
-        }}
-      >
+      <div className="flex flex-wrap gap-2">
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              setPage(1);
+              setSearch(searchInput.trim());
+            }
+          }}
           placeholder="جستجو بر اساس عنوان محصول یا نام/ایمیل فروشنده…"
-          className="min-w-[240px] flex-1 rounded-md border px-3 py-2 text-sm"
+          className="min-w-60 flex-1 rounded-md border px-3 py-2 text-sm"
         />
         <button
-          type="submit"
-          className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+          type="button"
+          disabled={loading}
+          onClick={() => {
+            setPage(1);
+            setSearch(searchInput.trim());
+          }}
+          className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
         >
-          جستجو
+          {loading ? 'در حال جستجو…' : 'جستجو'}
         </button>
         {search ? (
           <button
@@ -175,7 +183,7 @@ export default function AdminProductsPage() {
             پاک کردن
           </button>
         ) : null}
-      </form>
+      </div>
 
       <div className="flex flex-wrap gap-2 border-b pb-1">
         {TABS.map(({ id, label, icon: Icon }) => (

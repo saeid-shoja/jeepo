@@ -171,25 +171,27 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
-      <form
-        className="flex flex-wrap gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSearch(searchInput.trim());
-        }}
-      >
+      <div className="flex flex-wrap gap-2">
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              setSearch(searchInput.trim());
+            }
+          }}
           placeholder="جستجو بر اساس نام، ایمیل یا شماره موبایل…"
           className="min-w-[240px] flex-1 rounded-md border px-3 py-2 text-sm"
         />
         <button
-          type="submit"
-          className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+          type="button"
+          disabled={loading}
+          onClick={() => setSearch(searchInput.trim())}
+          className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
         >
-          جستجو
+          {loading ? 'در حال جستجو…' : 'جستجو'}
         </button>
         {search ? (
           <button
@@ -203,7 +205,7 @@ export default function AdminUsersPage() {
             پاک کردن
           </button>
         ) : null}
-      </form>
+      </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-4">

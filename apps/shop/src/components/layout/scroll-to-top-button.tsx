@@ -6,19 +6,17 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type ScrollToTopButtonProps = {
-  /** Show when viewport is within this many px of the document bottom. */
-  bottomOffset?: number;
+  /** Show after scrolling this many viewport heights (default: 1 = 100vh). */
+  viewportThreshold?: number;
   className?: string;
 };
 
-export function ScrollToTopButton({ bottomOffset = 520, className }: ScrollToTopButtonProps) {
+export function ScrollToTopButton({ viewportThreshold = 1, className }: ScrollToTopButtonProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const update = () => {
-      const viewBottom = window.scrollY + window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
-      setVisible(viewBottom >= docHeight - bottomOffset);
+      setVisible(window.scrollY >= window.innerHeight * viewportThreshold);
     };
 
     update();
@@ -28,7 +26,7 @@ export function ScrollToTopButton({ bottomOffset = 520, className }: ScrollToTop
       window.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
     };
-  }, [bottomOffset]);
+  }, [viewportThreshold]);
 
   if (!visible) return null;
 

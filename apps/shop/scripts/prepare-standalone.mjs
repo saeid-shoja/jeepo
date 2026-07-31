@@ -1,18 +1,60 @@
 /**
  * Next.js standalone omits `.next/static` and `public` — copy them in or CSS/fonts 404.
  */
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const layouts = [join(appDir, '.next/standalone/apps/shop'), join(appDir, '.next/standalone')];
+function findStandaloneDir() {
+  const candidates = [join(appDir, '.next/standalone/apps/shop'), join(appDir, '.next/standalone')];
 
-const standaloneDir = layouts.find((dir) => existsSync(join(dir, 'server.js')));
+  for (const dir of candidates) {
+    if (existsSync(join(dir, 'server.js'))) return dir;
+  }
+
+  const standaloneRoot = join(appDir, '.next/standalone');
+  if (!existsSync(standaloneRoot)) return null;
+
+  const stack = [standaloneRoot];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    if (!dir) continue;
+    if (existsSync(join(dir, 'server.js'))) return dir;
+
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (entry === 'node_modules') continue;
+      const full = join(dir, entry);
+      try {
+        if (statSync(full).isDirectory()) stack.push(full);
+      } catch {
+        // skip unreadable paths
+      }
+    }
+  }
+
+  return null;
+}
+
+const standaloneDir = findStandaloneDir();
 
 if (!standaloneDir) {
-  console.error('Standalone server.js not found — run `npm run build` first.');
+  console.error(
+    'Standalone server.js not found under .next/standalone — run `npm run build` first.',
+  );
+  if (existsSync(join(appDir, '.next'))) {
+    console.error(
+      'Hint: ensure next.config has output: "standalone" and the build finished without errors.',
+    );
+  }
   process.exit(1);
 }
 

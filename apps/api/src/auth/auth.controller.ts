@@ -7,6 +7,7 @@ import {
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
+  RequestLoginCodeDto,
   ResendVerificationDto,
   VerifyEmailDto,
 } from './dto';
@@ -26,6 +27,18 @@ export class AuthController {
   @Post('login')
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Public()
+  @Post('login/request-code')
+  requestLoginCode(@Body() body: RequestLoginCodeDto) {
+    return this.authService.requestLoginCode(body);
+  }
+
+  @Public()
+  @Post('login/verify-code')
+  verifyLoginCode(@Body() body: VerifyEmailDto) {
+    return this.authService.verifyLoginCode(body);
   }
 
   @Public()

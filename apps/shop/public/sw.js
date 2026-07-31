@@ -1,8 +1,8 @@
 /**
- * Jeepo PWA service worker — installability + light static caching only.
+ * Jeepo PWA service worker — static caching + Web Push notifications.
  * Never caches API / HTML navigations (avoids stale listings & auth bugs).
  */
-const CACHE_VERSION = 'jeepo-static-v1';
+const CACHE_VERSION = 'jeepo-static-v2';
 const STATIC_CACHE = CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -61,12 +61,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Always network for API and cross-origin (payments, Telegram, etc.)
   if (isApiRequest(url) || url.origin !== self.location.origin) {
     return;
   }
 
-  // Navigations: network-only (fresh pages; no offline HTML shell to avoid confusion)
   if (request.mode === 'navigate') {
     return;
   }
@@ -87,6 +85,54 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => cached);
       return cached || networkPromise;
+    }),
+  );
+});
+
+self.addEventListener('push', (event) => {
+  const fallback = { title: 'جیپو', body: 'پیام جدید', url: '/' };
+  let payload = fallback;
+
+  try {
+    if (event.data) {
+      payload = { ...fallback, ...event.data.json() };
+    }
+  } catch {
+    payload = fallback;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      dir: 'rtl',
+      lang: 'fa',
+      tag: payload.tag || 'jeepo',
+      data: { url: payload.url || '/' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+  const absoluteUrl = new URL(targetUrl, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          return client.focus().then((focused) => {
+            if ('navigate' in focused) {
+              return focused.navigate(absoluteUrl);
+            }
+          });
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(absoluteUrl);
+      }
     }),
   );
 });

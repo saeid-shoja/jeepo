@@ -124,8 +124,24 @@ model User {
   sellerConversations ProductConversation[] @relation("ConversationSeller")
   productChatMessages ProductChatMessage[]
   paymentSessions PaymentSession[]
+  pushSubscriptions PushSubscription[]
 
   @@index([referredById])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, endpoint])
+  @@index([userId])
 }
 
 model PendingRegistration {

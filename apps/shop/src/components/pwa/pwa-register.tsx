@@ -2,10 +2,9 @@
 
 import { useEffect } from 'react';
 
-/** Registers the PWA service worker in production only (HTTPS / localhost). */
+/** Registers the PWA service worker (required for push notifications and install). */
 export function PwaRegister() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') return;
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
     const register = () => {

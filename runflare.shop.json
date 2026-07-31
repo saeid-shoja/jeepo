@@ -1,0 +1,8 @@
+{
+  "dockerfile": "Dockerfile.shop",
+  "installCommand": "npm install -g pnpm@11.6.0 && pnpm install --frozen-lockfile --filter @offroad/shop...",
+  "buildCommand": "npm install -g pnpm@11.6.0 && pnpm install --frozen-lockfile --filter @offroad/shop... && pnpm --filter @offroad/shop build",
+  "startCommand": "node apps/shop/.next/standalone/apps/shop/server.js",
+  "outputDirectory": "apps/shop/.next",
+  "port": 3002
+}

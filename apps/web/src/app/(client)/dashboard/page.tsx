@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  Heart,
+  Bookmark,
   LogOut,
   Mail,
   MapPin,
@@ -18,6 +18,7 @@ import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
 import { ProfileMessagesTab } from '@/components/profile/profile-messages-tab';
 import { ProfileProductsTab } from '@/components/profile/profile-products-tab';
+import { PushNotificationsCard } from '@/components/profile/push-notifications-card';
 import { ReferralInviteCard } from '@/components/profile/referral-invite-card';
 import { TelegramNotificationsCard } from '@/components/profile/telegram-notifications-card';
 import { Badge } from '@/components/ui/badge';
@@ -168,6 +169,7 @@ function DashboardContent() {
           />
         )}
         <TelegramNotificationsCard />
+        <PushNotificationsCard />
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -177,8 +179,8 @@ function DashboardContent() {
             آگهی‌های من
           </TabsTrigger>
           <TabsTrigger value="favorites" className="gap-2">
-            <Heart className="size-4" />
-            علاقه‌مندی‌ها
+            <Bookmark className="size-4" />
+            ذخیره‌ها
           </TabsTrigger>
           <TabsTrigger value="messages" className="gap-2">
             <Mail className="size-4" />

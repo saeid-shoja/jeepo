@@ -1,12 +1,13 @@
 'use client';
 
-import { Heart, LogOut, MapPin, Phone, ShoppingBag, User } from 'lucide-react';
+import { Bookmark, LogOut, MapPin, Phone, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { AuthPrompt } from '@/components/auth/auth-prompt';
 import { ProfileEditDialog } from '@/components/profile/profile-edit-dialog';
 import { ProfileFavoritesTab } from '@/components/profile/profile-favorites-tab';
+import { PushNotificationsCard } from '@/components/profile/push-notifications-card';
 import { TelegramNotificationsCard } from '@/components/profile/telegram-notifications-card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -112,13 +113,16 @@ function ProfileContent() {
         </div>
       </div>
 
-      <TelegramNotificationsCard />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <TelegramNotificationsCard />
+        <PushNotificationsCard />
+      </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="favorites" className="gap-2">
-            <Heart className="size-4" />
-            علاقه‌مندی‌ها
+            <Bookmark className="size-4" />
+            ذخیره‌ها
           </TabsTrigger>
         </TabsList>
         <TabsContent value="favorites">

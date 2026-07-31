@@ -17,6 +17,7 @@ import type {
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
+  RequestLoginCodeDto,
   ResendVerificationDto,
   VerifyEmailDto,
 } from './dto';
@@ -308,6 +309,79 @@ export class AuthService {
         'ایمیل شما هنوز تأیید نشده است. کد ارسال‌شده به ایمیل را وارد کنید',
       );
     }
+
+    return this.buildAuthResponse(user);
+  }
+
+  async requestLoginCode(data: RequestLoginCodeDto) {
+    const email = normalizeEmail(data.email);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('حسابی با این ایمیل یافت نشد');
+    }
+
+    if (!user.emailVerified) {
+      throw new ForbiddenException(
+        'ایمیل شما هنوز تأیید نشده است. کد ارسال‌شده به ایمیل را وارد کنید',
+      );
+    }
+
+    if (user.emailVerificationExpiresAt) {
+      const sentAt = user.emailVerificationExpiresAt.getTime() - VERIFICATION_TTL_MS;
+      if (sentAt + RESEND_COOLDOWN_MS > Date.now()) {
+        throw new BadRequestException('لطفاً یک دقیقه صبر کنید و دوباره درخواست دهید');
+      }
+    }
+
+    const code = generateVerificationCode();
+    const hashedCode = await bcrypt.hash(code, 10);
+    const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationCode: hashedCode,
+        emailVerificationExpiresAt: expiresAt,
+      },
+    });
+
+    try {
+      await this.mailService.sendLoginCode(email, user.name, code);
+    } catch {
+      throw new BadRequestException('ارسال کد ورود با خطا مواجه شد');
+    }
+
+    return {
+      message: 'کد ورود به ایمیل شما ارسال شد',
+      maskedEmail: maskEmail(email),
+    };
+  }
+
+  async verifyLoginCode(data: VerifyEmailDto) {
+    const email = normalizeEmail(data.email);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user?.emailVerificationCode || !user.emailVerificationExpiresAt) {
+      throw new BadRequestException('کد ورود نامعتبر است. دوباره درخواست ارسال کد دهید');
+    }
+
+    if (user.emailVerificationExpiresAt.getTime() <= Date.now()) {
+      throw new BadRequestException('کد ورود منقضی شده است. دوباره درخواست ارسال کد دهید');
+    }
+
+    const valid = await bcrypt.compare(data.code, user.emailVerificationCode);
+    if (!valid) {
+      throw new BadRequestException('کد ورود اشتباه است');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationCode: null,
+        emailVerificationExpiresAt: null,
+      },
+    });
 
     return this.buildAuthResponse(user);
   }

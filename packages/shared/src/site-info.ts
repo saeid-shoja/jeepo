@@ -12,6 +12,10 @@ export const SITE_TELEGRAM_URL = 'https://t.me/jjeepo';
 export const SITE_TELEGRAM_HANDLE = '@jjeepo';
 export const SITE_TELEGRAM_SUPPORT = '@jeepo_support';
 
+export const SITE_INSTAGRAM_URL =
+  'https://www.instagram.com/jeepo_stock_offroad?utm_source=qr&igsh=MTc0bGp5MjM5eXJhcA==';
+export const SITE_INSTAGRAM_HANDLE = '@jeepo_stock_offroad';
+
 /** Default public site URL (override with NEXT_PUBLIC_SITE_URL in production). */
 export const SITE_URL = 'https://jeepo.ir';
 

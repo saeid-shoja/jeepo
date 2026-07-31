@@ -40,7 +40,8 @@
     "provinces-and-cities": "^1.0.7",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.12.4",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -51,6 +52,7 @@
     "@types/node": "^22.0.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.11.10",
+    "@types/web-push": "^3.6.4",
     "source-map-support": "^0.5.21",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",

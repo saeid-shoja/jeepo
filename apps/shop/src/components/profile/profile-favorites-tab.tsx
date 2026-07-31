@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -26,7 +26,7 @@ export function ProfileFavoritesTab({ enabled }: ProfileFavoritesTabProps) {
       setProducts(list);
     } catch {
       setProducts([]);
-      toast.error('بارگذاری علاقه‌مندی‌ها ناموفق بود');
+      toast.error('بارگذاری ذخیره‌ها ناموفق بود');
     } finally {
       setLoading(false);
     }
@@ -53,8 +53,8 @@ export function ProfileFavoritesTab({ enabled }: ProfileFavoritesTabProps) {
   if (visibleProducts.length === 0) {
     return (
       <div className="rounded-lg border-2 border-dashed border-gray-300 py-16 text-center">
-        <Heart className="mx-auto h-12 w-12 text-gray-300" />
-        <p className="mt-4 text-gray-500">هنوز محصولی به علاقه‌مندی‌ها اضافه نکرده‌اید</p>
+        <Bookmark className="mx-auto h-12 w-12 text-gray-300" />
+        <p className="mt-4 text-gray-500">هنوز محصولی ذخیره نکرده‌اید</p>
         <Link
           href="/products"
           className="mt-4 inline-block rounded-sm bg-primary px-6 py-2 text-sm text-white hover:bg-primary-dark"

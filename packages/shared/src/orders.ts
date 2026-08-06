@@ -43,10 +43,7 @@ export const ORDER_NEEDS_ATTENTION_STATUSES: OrderStatusCode[] = [
   'SHIPPED',
 ];
 
-export function canTransitionOrderStatus(
-  from: string,
-  to: string,
-): from is OrderStatusCode {
+export function canTransitionOrderStatus(from: string, to: string): from is OrderStatusCode {
   if (!(from in ORDER_STATUS_TRANSITIONS)) return false;
   const allowed = ORDER_STATUS_TRANSITIONS[from as OrderStatusCode];
   return allowed.includes(to as OrderStatusCode);

@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPrice, formatProductLocation, timeAgo } from '@offroad/shared';
-import { Clock, MapPin, Shield, TrendingUp } from 'lucide-react';
+import { Clock, MapPin, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';

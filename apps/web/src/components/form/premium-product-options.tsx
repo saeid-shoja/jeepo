@@ -147,7 +147,8 @@ export function PremiumProductOptions({
                       می‌دهد و زمان انتشار (listedAt) به‌روز می‌شود.
                     </p>
                     <p>
-                      <strong>هزینه:</strong> <strong>{formatPrice(BOOST_LISTING_FEE)} تومان</strong>
+                      <strong>هزینه:</strong>{' '}
+                      <strong>{formatPrice(BOOST_LISTING_FEE)} تومان</strong>
                     </p>
                   </div>
                 </DialogDescription>

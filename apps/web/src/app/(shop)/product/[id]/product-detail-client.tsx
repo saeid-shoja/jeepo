@@ -14,7 +14,6 @@ import {
   MapPin,
   Package,
   Phone,
-  Shield,
   Trash2,
   TrendingUp,
   TriangleAlert,
@@ -176,8 +175,7 @@ export function ProductDetailClient() {
               <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 {product.color && (
                   <span>
-                    رنگ:{' '}
-                    <span className="text-foreground font-medium">{product.color}</span>
+                    رنگ: <span className="text-foreground font-medium">{product.color}</span>
                   </span>
                 )}
                 {product.mileageKm != null && (

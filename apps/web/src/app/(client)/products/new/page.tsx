@@ -25,7 +25,7 @@ import {
   ListingSubmitResultDialog,
   type ListingSubmitResultVariant,
 } from '@/components/form/listing-submit-result-dialog';
-import { PremiumProductOptions } from '@/components/form/premium-product-options';
+// import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
@@ -108,7 +108,7 @@ export default function NewProductPage() {
   });
 
   const isAuction = watch('isAuction');
-  const price = watch('price');
+  // const price = watch('price');
   // const _applyStrengthened = watch('applyStrengthened');
   const carBrands = watch('carBrands');
   const situation = watch('situation');
@@ -204,18 +204,18 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition
           ? {
-            mileageKm: data.mileageKm,
-            paintCondition: data.paintCondition,
-          }
+              mileageKm: data.mileageKm,
+              paintCondition: data.paintCondition,
+            }
           : {}),
         ...(data.isAuction
           ? {
-            auctionStartPrice: data.auctionStartPrice,
-            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-            realPriceMin: data.realPriceMin,
-            realPriceMax: data.realPriceMax,
-            buyNowPrice: data.buyNowPrice,
-          }
+              auctionStartPrice: data.auctionStartPrice,
+              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+              realPriceMin: data.realPriceMin,
+              realPriceMax: data.realPriceMax,
+              buyNowPrice: data.buyNowPrice,
+            }
           : {}),
       });
 

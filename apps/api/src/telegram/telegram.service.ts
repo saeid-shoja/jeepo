@@ -23,7 +23,7 @@ export class TelegramService {
   constructor(
     @Inject('TELEGRAM_BOT_TOKEN') private readonly botToken: string,
     @Inject('TELEGRAM_BOT_USERNAME') private readonly botUsername: string,
-  ) {}
+  ) { }
 
   isConfigured(): boolean {
     return Boolean(this.botToken && this.botUsername);
@@ -68,22 +68,29 @@ export class TelegramService {
       this.logger.warn(`Telegram skipped (${method}): TELEGRAM_BOT_TOKEN missing`);
       return null;
     }
+    try {
+      const res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/${method}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-    const res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+      const data = (await res.json()) as { ok: boolean; description?: string; result?: T };
+      if (!data.ok) {
+        this.logger.warn(
+          `Telegram ${method} failed: ${data.description ?? res.status}${formatApiContext(body)}`,
+        );
+        return null;
+      }
 
-    const data = (await res.json()) as { ok: boolean; description?: string; result?: T };
-    if (!data.ok) {
-      this.logger.warn(
-        `Telegram ${method} failed: ${data.description ?? res.status}${formatApiContext(body)}`,
+      return data.result ?? null;
+    }
+    catch (error) {
+      this.logger.error(
+        `Telegram ${method} network error: ${error instanceof Error ? error.message : error}`,
       );
       return null;
     }
-
-    return data.result ?? null;
   }
 
   async getWebhookInfo(): Promise<{

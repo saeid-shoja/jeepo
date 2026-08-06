@@ -312,6 +312,79 @@ export class MailService {
     );
   }
 
+  async sendBuyerOrderStatusUpdate(
+    to: string,
+    name: string,
+    payload: OrderEmailPayload,
+    copy: { subjectSuffix: string; heading: string; body: string },
+  ): Promise<void> {
+    const subject = `${copy.subjectSuffix} — سفارش ${payload.orderId.slice(-8)} | ${SITE_NAME_FA}`;
+    const html = buildOrderEmailHtml(
+      payload,
+      copy.heading,
+      `سلام ${escapeHtml(name)}، ${escapeHtml(copy.body)}`,
+    );
+    await this.send(to, subject, html);
+  }
+
+  async sendAdminOrdersDigest(
+    to: string,
+    orders: Array<{
+      id: string;
+      status: string;
+      statusLabel: string;
+      total: number;
+      buyerName: string;
+      createdAt: Date;
+      statusChangedAt: Date;
+      itemCount: number;
+    }>,
+  ): Promise<void> {
+    if (orders.length === 0) return;
+
+    const rows = orders
+      .map(
+        (o) => `
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;direction:ltr">${escapeHtml(o.id.slice(-8))}</td>
+          <td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(o.buyerName)}</td>
+          <td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(o.statusLabel)}</td>
+          <td style="padding:8px;border-bottom:1px solid #eee">${o.itemCount.toLocaleString('fa-IR')}</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;white-space:nowrap">${formatPrice(o.total)} تومان</td>
+          <td style="padding:8px;border-bottom:1px solid #eee">${o.statusChangedAt.toLocaleString('fa-IR')}</td>
+        </tr>
+      `,
+      )
+      .join('');
+
+    const html = buildEmailLayout({
+      title: 'یادآوری سفارش‌های نیازمند بررسی',
+      bodyHtml: `
+        <p style="margin:0 0 12px;">در پایان روز، ${orders.length.toLocaleString('fa-IR')} سفارش هنوز نیازمند اقدام ادمین است.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #e2e8f0;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="padding:8px;text-align:right;">کد</th>
+              <th style="padding:8px;text-align:right;">خریدار</th>
+              <th style="padding:8px;text-align:right;">وضعیت</th>
+              <th style="padding:8px;text-align:right;">اقلام</th>
+              <th style="padding:8px;text-align:right;">مبلغ</th>
+              <th style="padding:8px;text-align:right;">آخرین تغییر</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p style="margin:16px 0 0;font-size:13px;color:#64748b;">لطفاً از پنل ادمین → سفارشات، وضعیت این سفارش‌ها را به‌روز کنید.</p>
+      `,
+    });
+
+    await this.send(
+      to,
+      `یادآوری ${orders.length.toLocaleString('fa-IR')} سفارش باز | ${SITE_NAME_FA}`,
+      html,
+    );
+  }
+
   async sendListingApproved(
     to: string,
     name: string,

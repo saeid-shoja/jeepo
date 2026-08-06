@@ -1,4 +1,7 @@
-export const AD_ACTIVE_DAYS = 30;
+import { AD_ACTIVE_DAYS } from '@offroad/shared';
+
+export { AD_ACTIVE_DAYS };
+
 export const DEPRECATED_DELETE_DAYS = 10;
 
 export const AD_ACTIVE_MS = AD_ACTIVE_DAYS * 24 * 60 * 60 * 1000;

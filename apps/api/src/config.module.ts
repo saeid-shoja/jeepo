@@ -120,7 +120,12 @@ function vapidSubject(): string {
     },
     {
       provide: 'TELEGRAM_USE_POLLING',
-      useValue: process.env.TELEGRAM_USE_POLLING?.trim().toLowerCase() === 'true',
+      // Polling fights other instances and delays boot — production must use webhook.
+      // Opt-in only with TELEGRAM_FORCE_POLLING=true.
+      useValue:
+        process.env.TELEGRAM_FORCE_POLLING?.trim().toLowerCase() === 'true' ||
+        (process.env.NODE_ENV !== 'production' &&
+          process.env.TELEGRAM_USE_POLLING?.trim().toLowerCase() === 'true'),
     },
     {
       provide: 'TELEGRAM_CHANNEL_CHAT_ID',

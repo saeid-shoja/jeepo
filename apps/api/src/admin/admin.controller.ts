@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../auth/custom.decorator';
 import { CreateMessageDto } from '../messages/dto';
@@ -11,6 +11,7 @@ import {
   CreateAdminUserDto,
   FindAdminProductsQueryDto,
   FindAdminUsersQueryDto,
+  SetProductsGuaranteeDto,
   UpdateAdminUserDto,
   UpdateProductStatusDto,
 } from './dto';
@@ -32,6 +33,7 @@ export class AdminController {
   }
 
   @Get('users')
+  @Header('Cache-Control', 'no-store')
   getAllUsers(@Query() query: FindAdminUsersQueryDto) {
     return this.adminService.getAllUsers({ search: query.search });
   }
@@ -64,6 +66,7 @@ export class AdminController {
   }
 
   @Get('products')
+  @Header('Cache-Control', 'no-store')
   getAllProducts(@Query() query: FindAdminProductsQueryDto) {
     return this.adminService.getAllProducts({
       page: query.page ?? 1,
@@ -73,6 +76,11 @@ export class AdminController {
       status: query.status,
       search: query.search,
     });
+  }
+
+  @Post('products/guarantee')
+  setProductsGuarantee(@Body() body: SetProductsGuaranteeDto) {
+    return this.adminService.setProductsGuarantee(body);
   }
 
   @Patch('products/:id/status')

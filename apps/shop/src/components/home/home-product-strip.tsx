@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Skeleton } from '../ui/skeleton';
 
 const STRIP_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
 
@@ -25,9 +26,9 @@ export function HomeProductStrip<T>({
         <div className="overflow-x-auto overscroll-x-contain pb-1">
           <div className="flex w-max gap-3">
             {STRIP_SKELETON_KEYS.map((key) => (
-              <div
+              <Skeleton
                 key={key}
-                className="bg-muted h-[220px] w-[140px] shrink-0 animate-pulse rounded-sm sm:w-[160px]"
+                className="bg-muted h-55 w-35 shrink-0 animate-pulse rounded-sm sm:w-40"
               />
             ))}
           </div>
@@ -42,9 +43,9 @@ export function HomeProductStrip<T>({
 
   return (
     <div className="overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] scrollbar-thin">
-      <div className="flex w-max gap-3">
+      <div className="flex w-max gap-2">
         {items.map((item) => (
-          <div key={getItemKey(item)} className="w-[140px] shrink-0 sm:w-[160px]">
+          <div key={getItemKey(item)} className="md:w-35 w-50 shrink-0 sm:w-40">
             {renderItem(item)}
           </div>
         ))}

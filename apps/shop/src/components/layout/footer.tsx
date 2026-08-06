@@ -3,10 +3,11 @@ import {
   SITE_INSTAGRAM_HANDLE,
   SITE_INSTAGRAM_URL,
   SITE_NAME_FA,
+  SITE_PHONE_SUPPORT,
   SITE_TELEGRAM_HANDLE,
   SITE_TELEGRAM_URL,
 } from '@offroad/shared';
-import { Instagram, Mail, MapPin, Send } from 'lucide-react';
+import { Instagram, Mail, MapPin, Phone, Send } from 'lucide-react';
 import Link from 'next/link';
 import { EnamadTrustSeal } from '@/components/layout/enamad-trust-seal';
 import { SiteLogo } from '@/components/layout/site-logo';
@@ -22,7 +23,6 @@ const shopLinks = [
 const accountLinks = [
   { href: '/login', label: 'ورود' },
   { href: '/register', label: 'ثبت‌نام' },
-  { href: '/profile', label: 'پروفایل' },
   { href: '/orders', label: 'سفارش‌های من' },
   { href: '/cart', label: 'سبد خرید' },
 ];
@@ -61,7 +61,7 @@ export function SiteFooter() {
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <SiteLogo size="lg" />
             <p className="text-muted-foreground text-sm leading-relaxed">
-              فروشگاه {SITE_NAME_FA} — خرید آنلاین لوازم و قطعات آفرودی با ارسال به سراسر ایران.
+              فروشگاه {SITE_NAME_FA} — خرید آنلاین لوازم کمپی نو و استوک و قطعات آفرودی با ارسال به سراسر ایران.
             </p>
             <div className="text-muted-foreground space-y-2 text-sm">
               <p className="flex items-center gap-2">
@@ -93,14 +93,19 @@ export function SiteFooter() {
                 {SITE_EMAIL}
               </p>
               <p className="flex items-center gap-2">
+                <Phone className="h-4 w-4 shrink-0" />
+                {SITE_PHONE_SUPPORT}
+              </p>
+              <p className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 shrink-0" />
                 تهران، ایران
               </p>
             </div>
           </div>
-
-          <FooterColumn title="فروشگاه" links={shopLinks} />
-          <FooterColumn title="حساب کاربری" links={accountLinks} />
+          <div className="w-full grid grid-cols-2 gap-4 md:mt-20 mt-10">
+            <FooterColumn title="فروشگاه" links={shopLinks} />
+            <FooterColumn title="حساب کاربری" links={accountLinks} />
+          </div>
         </div>
         <Separator className="my-8" />
         <div className="text-muted-foreground flex w-full flex-col items-center justify-between gap-6 text-center text-xs sm:flex-row sm:text-sm">

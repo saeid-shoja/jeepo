@@ -189,11 +189,11 @@ export class ProductsService {
     });
   }
 
-  private assertClientListingOwner(
+  private assertListingOwner(
     product: { userId: string | null; advertiser: string },
     userId: string,
   ) {
-    if (product.advertiser !== 'CLIENT' || product.userId !== userId) {
+    if (product.userId !== userId) {
       throw new ForbiddenException('شما اجازه تغییر این آگهی را ندارید');
     }
   }
@@ -236,7 +236,10 @@ export class ProductsService {
     /** Admins have no free-listing or NEW-listing caps. */
     if (user?.role === 'ADMIN') {
       return {
-        activeCount,
+        /** Include admin-created SHOP listings in the admin's own active count. */
+        activeCount: await this.prisma.product.count({
+          where: { userId, status: 'ACTIVE' },
+        }),
         activeNewCount,
         freeLimit: null,
         newLimit: null,
@@ -437,6 +440,7 @@ export class ProductsService {
       listingFeePaid: options.listingFeePaid,
       listingPaymentDueAt: options.listingPaymentDueAt,
       stockQuantity: data.isAuction ? 1 : (data.stockQuantity ?? 1),
+      color: data.color?.trim() || null,
       activeUntil: isClient && options.status === 'ACTIVE' ? computeActiveUntil(now) : null,
       listedAt: data.isBoosted || options.status === 'ACTIVE' ? now : undefined,
       ...auctionData,
@@ -474,13 +478,16 @@ export class ProductsService {
       };
     }
 
-    await this.assertNewListingQuota(userId, data.situation);
+    // Guarantee badge is admin-only; ignore client-provided hasGuarantee.
+    const clientData = { ...data, hasGuarantee: false };
+
+    await this.assertNewListingQuota(userId, clientData.situation);
     const { requiresListingFee, freeLimit, activeCount, activeNewCount, newLimit } =
       await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.listingNeedsAdminApproval({
-      categoryId: data.categoryId,
-      hasGuarantee: data.hasGuarantee,
-      isAuction: data.isAuction,
+      categoryId: clientData.categoryId,
+      hasGuarantee: false,
+      isAuction: clientData.isAuction,
     });
 
     const createOptions = needsAdminApproval
@@ -508,7 +515,11 @@ export class ProductsService {
           };
 
     const product = await this.prisma.product.create({
-      data: await this.buildCreateData({ ...data, advertiser: 'CLIENT' }, userId, createOptions),
+      data: await this.buildCreateData(
+        { ...clientData, advertiser: 'CLIENT' },
+        userId,
+        createOptions,
+      ),
       include: productIncludeDetail,
     });
 
@@ -516,10 +527,6 @@ export class ProductsService {
 
     if (createOptions.status === 'ACTIVE') {
       this.telegramChannel.announceProductActive(product.id);
-    }
-
-    if (product.hasGuarantee && createOptions.listingFeePaid) {
-      void this.notifyAdminGuaranteeListing(product.id);
     }
 
     return {
@@ -559,7 +566,7 @@ export class ProductsService {
       },
     });
     if (!product) throw new NotFoundException('محصول یافت نشد');
-    this.assertClientListingOwner(product, userId);
+    this.assertListingOwner(product, userId);
     return product;
   }
 
@@ -670,7 +677,11 @@ export class ProductsService {
     const now = new Date();
     await this.prisma.product.update({
       where: { id: productId },
-      data: { isBoosted: true, listedAt: now },
+      data: {
+        isBoosted: true,
+        listedAt: now,
+        activeUntil: product.advertiser === 'CLIENT' ? computeActiveUntil(now) : null,
+      },
     });
 
     this.telegramChannel.announceBoost(productId);
@@ -858,7 +869,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundException('محصول یافت نشد');
 
-    if (product.advertiser === 'CLIENT' && product.userId !== userId && userRole !== 'ADMIN') {
+    if (product.userId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('شما اجازه ویرایش این محصول را ندارید');
     }
 
@@ -874,6 +885,10 @@ export class ProductsService {
 
     const updateData: any = { ...data };
     delete updateData.carBrands;
+    // Guarantee badge is admin-only — clients cannot set or clear it via product update.
+    if (userRole !== 'ADMIN') {
+      delete updateData.hasGuarantee;
+    }
     if (updateData.type != null && updateData.advertiser == null) {
       updateData.advertiser = updateData.type;
       delete updateData.type;
@@ -893,6 +908,7 @@ export class ProductsService {
     }
 
     const enablingGuarantee =
+      userRole === 'ADMIN' &&
       product.advertiser === 'CLIENT' &&
       data.hasGuarantee === true &&
       !product.hasGuarantee &&
@@ -900,10 +916,8 @@ export class ProductsService {
       !product.isAuction;
 
     if (enablingGuarantee) {
-      updateData.status = 'PENDING';
-      updateData.listingFeePaid = true;
-      updateData.listingPaymentDueAt = null;
-      updateData.activeUntil = null;
+      // Admin can grant without forcing PENDING (badge only).
+      updateData.hasGuarantee = true;
     }
 
     if (data.carBrands !== undefined) {
@@ -935,7 +949,13 @@ export class ProductsService {
     updateData.paintCondition = vehicleFields.paintCondition;
 
     if (data.isBoosted === true && !product.isBoosted) {
-      updateData.listedAt = new Date();
+      const now = new Date();
+      updateData.listedAt = now;
+      if (product.advertiser === 'CLIENT') {
+        updateData.activeUntil = computeActiveUntil(now);
+      } else {
+        updateData.activeUntil = null;
+      }
     }
 
     const updated = await this.prisma.product.update({
@@ -943,10 +963,6 @@ export class ProductsService {
       data: updateData,
       include: productIncludeDetail,
     });
-
-    if (enablingGuarantee) {
-      void this.notifyAdminGuaranteeListing(id);
-    }
 
     return this.mapProduct(updated);
   }
@@ -983,7 +999,11 @@ export class ProductsService {
       const now = new Date();
       await tx.product.update({
         where: { id },
-        data: { isBoosted: true, listedAt: now },
+        data: {
+          isBoosted: true,
+          listedAt: now,
+          activeUntil: product.advertiser === 'CLIENT' ? computeActiveUntil(now) : null,
+        },
       });
     });
 
@@ -998,7 +1018,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundException('محصول یافت نشد');
 
-    if (product.advertiser === 'CLIENT' && product.userId !== userId && userRole !== 'ADMIN') {
+    if (product.userId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('شما اجازه حذف این محصول را ندارید');
     }
 

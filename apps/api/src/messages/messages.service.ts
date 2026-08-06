@@ -150,7 +150,11 @@ export class MessagesService {
       }
     }
 
-    this.telegramChannel.announceNews(title, body);
+    // Group/channel (@jeeppo news topic): only platform-wide admin broadcasts.
+    // Personal notifications (e.g. listing expiry) use target=USER and must NOT hit the group.
+    if (dto.target === 'ALL') {
+      this.telegramChannel.announceNews(title, body);
+    }
 
     const pushBody = body.length > 120 ? `${body.slice(0, 117)}…` : body;
     void this.pushService.sendToUsers(
@@ -175,6 +179,10 @@ export class MessagesService {
     };
   }
 
+  /**
+   * In-app + optional private Telegram DM to the user who linked the bot.
+   * Never posts to the public channel/group (that is reserved for target=ALL).
+   */
   async sendNotificationToUser(userId: string, title: string, body: string) {
     const admin = await this.prisma.user.findFirst({
       where: { role: 'ADMIN' },
@@ -190,6 +198,7 @@ export class MessagesService {
       type: 'NOTIFICATION',
       target: 'USER',
       userId,
+      sendTelegram: true,
     });
   }
 

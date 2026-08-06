@@ -2,7 +2,7 @@
 
 import { formatPrice, isVehicleSaleCategory } from '@offroad/shared';
 import { CheckCircle, Gavel, Shield, Store, Tag, TrendingUp, User, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 
@@ -25,8 +25,10 @@ export default function AdminProductsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const fetchSeq = useRef(0);
 
   const fetchProducts = useCallback(() => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     const params: Record<string, string> = {
       page: String(page),
@@ -37,11 +39,18 @@ export default function AdminProductsPage() {
     adminApi
       .products(params)
       .then((res) => {
+        if (seq !== fetchSeq.current) return;
         setProducts(res.products);
         setTotalPages(res.totalPages);
       })
-      .catch(() => toast.error('بارگذاری محصولات ناموفق بود'))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (seq !== fetchSeq.current) return;
+        toast.error('بارگذاری محصولات ناموفق بود');
+      })
+      .finally(() => {
+        if (seq !== fetchSeq.current) return;
+        setLoading(false);
+      });
   }, [page, tab, search]);
 
   useEffect(() => {
@@ -50,7 +59,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [tab, page]);
+  }, [tab, page, search]);
 
   const activeProducts = useMemo(() => products.filter((p) => p.status === 'ACTIVE'), [products]);
   const allActiveSelected =
@@ -63,6 +72,39 @@ export default function AdminProductsPage() {
       fetchProducts();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی وضعیت');
+    }
+  };
+
+  const handleGuaranteeToggle = async (product: {
+    id: string;
+    title: string;
+    hasGuarantee?: boolean;
+    advertiser?: string;
+    type?: string;
+    isAuction?: boolean;
+  }) => {
+    const advertiser = product.advertiser ?? product.type;
+    if (advertiser !== 'CLIENT' || product.isAuction) {
+      toast.error('تضمین فقط برای آگهی‌های کاربری غیرمزایده است');
+      return;
+    }
+    const enabled = !product.hasGuarantee;
+    const ok = window.confirm(
+      enabled
+        ? `بج تضمین فروشگاه برای «${product.title}» اعمال شود؟`
+        : `بج تضمین فروشگاه از «${product.title}» برداشته شود؟`,
+    );
+    if (!ok) return;
+    try {
+      const result = await adminApi.setProductsGuarantee({ enabled, productId: product.id });
+      toast.success(
+        enabled
+          ? `تضمین اعمال شد (${result.updated.toLocaleString('fa-IR')})`
+          : `تضمین برداشته شد (${result.updated.toLocaleString('fa-IR')})`,
+      );
+      fetchProducts();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
     }
   };
 
@@ -125,6 +167,11 @@ export default function AdminProductsPage() {
     }
   };
 
+  const applySearch = () => {
+    setPage(1);
+    setSearch(searchInput.trim());
+  };
+
   const colSpan = tab === 'shop' || tab === 'client' ? 7 : 8;
 
   return (
@@ -152,8 +199,7 @@ export default function AdminProductsPage() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              setPage(1);
-              setSearch(searchInput.trim());
+              applySearch();
             }
           }}
           placeholder="جستجو بر اساس عنوان محصول یا نام/ایمیل فروشنده…"
@@ -162,10 +208,7 @@ export default function AdminProductsPage() {
         <button
           type="button"
           disabled={loading}
-          onClick={() => {
-            setPage(1);
-            setSearch(searchInput.trim());
-          }}
+          onClick={applySearch}
           className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
         >
           {loading ? 'در حال جستجو…' : 'جستجو'}
@@ -184,6 +227,11 @@ export default function AdminProductsPage() {
           </button>
         ) : null}
       </div>
+      {search ? (
+        <p className="text-muted-foreground text-xs">
+          فیلتر جستجو فعال: «{search}» — نتایج فقط در تب فعلی اعمال می‌شود
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-2 border-b pb-1">
         {TABS.map(({ id, label, icon: Icon }) => (
@@ -232,6 +280,7 @@ export default function AdminProductsPage() {
           <tbody>
             {products.map((p) => {
               const selectable = p.status === 'ACTIVE';
+              const isClientAd = (p.advertiser ?? p.type) === 'CLIENT' && !p.isAuction;
               return (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="px-3 py-3 text-center">
@@ -295,6 +344,20 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex justify-center gap-1">
+                      {isClientAd ? (
+                        <button
+                          type="button"
+                          onClick={() => handleGuaranteeToggle(p)}
+                          className={`rounded px-2 py-1 text-xs ${
+                            p.hasGuarantee
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین فروشگاه'}
+                        >
+                          <Shield className="inline size-3.5" />
+                        </button>
+                      ) : null}
                       {tab === 'pending_approval' && p.status === 'PENDING' ? (
                         <>
                           <button

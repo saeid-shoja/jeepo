@@ -3,7 +3,7 @@
 import { FREE_CLIENT_LISTING_LIMIT, FREE_CLIENT_NEW_LISTING_LIMIT } from '@offroad/shared';
 import { Calendar, MapPin, Package, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { PasswordInput } from '@/components/ui/password-input';
 import { adminApi } from '@/lib/api';
@@ -45,15 +45,26 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState(emptyForm);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const fetchSeq = useRef(0);
 
   const load = useCallback(() => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     const params = search ? { search } : undefined;
     adminApi
       .users(params)
-      .then(setUsers)
-      .catch((e) => toast.error(e instanceof Error ? e.message : 'خطا در بارگذاری'))
-      .finally(() => setLoading(false));
+      .then((rows) => {
+        if (seq !== fetchSeq.current) return;
+        setUsers(rows);
+      })
+      .catch((e) => {
+        if (seq !== fetchSeq.current) return;
+        toast.error(e instanceof Error ? e.message : 'خطا در بارگذاری');
+      })
+      .finally(() => {
+        if (seq !== fetchSeq.current) return;
+        setLoading(false);
+      });
   }, [search]);
 
   useEffect(() => {

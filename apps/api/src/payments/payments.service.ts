@@ -334,6 +334,7 @@ export class PaymentsService {
 
     if (
       order.status === 'CONFIRMED' ||
+      order.status === 'PACKAGING' ||
       order.status === 'SHIPPED' ||
       order.status === 'DELIVERED'
     ) {

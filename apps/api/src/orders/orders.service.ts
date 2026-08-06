@@ -5,7 +5,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { SITE_NAME_FA } from '@offroad/shared';
+import {
+  canTransitionOrderStatus,
+  getOrderStatusEmailCopy,
+  getOrderStatusLabel,
+  ORDER_NEEDS_ATTENTION_STATUSES,
+  type OrderStatusCode,
+  SITE_EMAIL,
+  SITE_NAME_FA,
+} from '@offroad/shared';
 import { getProductSalePrice, isPurchasableProduct } from '../common/purchasable';
 import type { OrderEmailPayload } from '../mail/mail.service';
 import { MailService } from '../mail/mail.service';
@@ -28,13 +36,14 @@ const orderInclude = {
       product: {
         include: {
           user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+          category: { select: { id: true, name: true, slug: true } },
         },
       },
     },
   },
 } as const;
 
-const ORDER_ADMIN_EMAIL = 'jeepoinfo@gmail.com';
+const ORDER_ADMIN_EMAIL = SITE_EMAIL;
 
 /** Remove sold client listings (تضمین فروشگاه) and auctions from public lists. */
 function shouldDeactivateSoldListing(product: {
@@ -55,7 +64,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
-  ) {}
+  ) { }
 
   private async resolveItems(items: OrderItemDto[], buyerId: string): Promise<ResolvedLine[]> {
     if (!items.length) {
@@ -82,8 +91,12 @@ export class OrdersService {
       if (!isPurchasableProduct(product)) {
         throw new BadRequestException(`محصول «${product.title}» قابل خرید آنلاین نیست`);
       }
-      if (buyerId && product.userId === buyerId && product.hasGuarantee) {
-        throw new BadRequestException('نمی‌توانید آگهی تضمین‌شده خود را خریداری کنید');
+      if (
+        buyerId &&
+        product.userId === buyerId &&
+        (product.hasGuarantee || product.advertiser === 'SHOP')
+      ) {
+        throw new BadRequestException('نمی‌توانید آگهی خود را خریداری کنید');
       }
 
       const available = product.stockQuantity ?? 1;
@@ -130,10 +143,7 @@ export class OrdersService {
 
   async findAll() {
     return this.prisma.order.findMany({
-      include: {
-        user: { select: { id: true, name: true, phone: true } },
-        items: { include: { product: true } },
-      },
+      include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -151,10 +161,7 @@ export class OrdersService {
   async findOne(id: string, userId: string, userRole: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: {
-        user: { select: { id: true, name: true, phone: true } },
-        items: { include: { product: true } },
-      },
+      include: orderInclude,
     });
 
     if (!order) {
@@ -183,7 +190,7 @@ export class OrdersService {
     note: string | null;
     user: {
       name: string;
-      phone: string;
+      phone: string | null;
       email: string | null;
       city: string | null;
     };
@@ -195,7 +202,7 @@ export class OrdersService {
         advertiser: string;
         user: {
           name: string;
-          phone: string;
+          phone: string | null;
           email: string | null;
           city: string | null;
         } | null;
@@ -220,17 +227,17 @@ export class OrdersService {
         const seller =
           item.product.advertiser === 'SHOP' || !item.product.user
             ? {
-                name: `فروشگاه ${SITE_NAME_FA}`,
-                phone: null,
-                email: null,
-                city: null,
-              }
+              name: `فروشگاه ${SITE_NAME_FA}`,
+              phone: null,
+              email: null,
+              city: null,
+            }
             : {
-                name: item.product.user.name,
-                phone: item.product.user.phone,
-                email: item.product.user.email,
-                city: item.product.user.city,
-              };
+              name: item.product.user.name,
+              phone: item.product.user.phone,
+              email: item.product.user.email,
+              city: item.product.user.city,
+            };
 
         return {
           title: item.product.title,
@@ -455,6 +462,7 @@ export class OrdersService {
           paymentTrackId: payment.trackId,
           paymentRefNumber: payment.refNumber,
           paidAt: payment.paidAt,
+          statusChangedAt: payment.paidAt,
         },
         include: orderInclude,
       });
@@ -466,9 +474,77 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: OrderStatus) {
-    return this.prisma.order.update({
+    const existing = await this.prisma.order.findUnique({
       where: { id },
-      data: { status },
+      include: orderInclude,
     });
+    if (!existing) throw new NotFoundException('سفارش یافت نشد');
+
+    if (existing.status === status) {
+      return existing;
+    }
+
+    if (!canTransitionOrderStatus(existing.status, status)) {
+      throw new BadRequestException(
+        `تغییر وضعیت از «${getOrderStatusLabel(existing.status)}» به «${getOrderStatusLabel(status)}» مجاز نیست`,
+      );
+    }
+
+    const now = new Date();
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: { status, statusChangedAt: now },
+      include: orderInclude,
+    });
+
+    void this.notifyBuyerStatusChange(updated, status as OrderStatusCode);
+
+    return updated;
+  }
+
+  /** Orders still needing admin follow-up (for daily digest). */
+  async findOrdersNeedingAttention() {
+    return this.prisma.order.findMany({
+      where: {
+        status: { in: [...ORDER_NEEDS_ATTENTION_STATUSES] as OrderStatus[] },
+      },
+      include: {
+        user: { select: { name: true, email: true, phone: true } },
+        items: { select: { id: true } },
+      },
+      orderBy: [{ statusChangedAt: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async listAdminNotificationEmails(): Promise<string[]> {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN', email: { not: null } },
+      select: { email: true },
+    });
+    const emails = new Set<string>();
+    emails.add(ORDER_ADMIN_EMAIL.toLowerCase());
+    for (const admin of admins) {
+      if (admin.email) emails.add(admin.email.toLowerCase());
+    }
+    return [...emails];
+  }
+
+  private async notifyBuyerStatusChange(
+    order: Parameters<OrdersService['buildOrderEmailPayload']>[0],
+    status: OrderStatusCode,
+  ) {
+    const buyerEmail = order.user.email;
+    if (!buyerEmail) {
+      this.logger.warn(`Order ${order.id}: buyer has no email — skip status mail`);
+      return;
+    }
+
+    const payload = this.buildOrderEmailPayload(order);
+    const copy = getOrderStatusEmailCopy(status);
+    await this.mailService
+      .sendBuyerOrderStatusUpdate(buyerEmail, order.user.name, payload, copy)
+      .catch((err) => {
+        this.logger.warn(`Buyer status email failed for ${order.id}: ${String(err)}`);
+      });
   }
 }

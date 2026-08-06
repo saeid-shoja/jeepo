@@ -25,6 +25,7 @@ export default function UserProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [guaranteeing, setGuaranteeing] = useState(false);
 
   const fetchProducts = useCallback(() => {
     setLoading(true);
@@ -53,6 +54,51 @@ export default function UserProductsPage() {
     }
   };
 
+  const handleGuaranteeToggle = async (product: {
+    id: string;
+    title: string;
+    hasGuarantee?: boolean;
+    advertiser?: string;
+    isAuction?: boolean;
+  }) => {
+    if (product.advertiser !== 'CLIENT' || product.isAuction) {
+      toast.error('تضمین فقط برای آگهی‌های کاربری غیرمزایده است');
+      return;
+    }
+    const enabled = !product.hasGuarantee;
+    const ok = window.confirm(
+      enabled
+        ? `بج تضمین فروشگاه برای «${product.title}» اعمال شود؟`
+        : `بج تضمین فروشگاه از «${product.title}» برداشته شود؟`,
+    );
+    if (!ok) return;
+    try {
+      await adminApi.setProductsGuarantee({ enabled, productId: product.id });
+      toast.success(enabled ? 'تضمین اعمال شد' : 'تضمین برداشته شد');
+      fetchProducts();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
+    }
+  };
+
+  const handleUserGuarantee = async (enabled: boolean) => {
+    const label = enabled ? 'اعمال' : 'برداشتن';
+    const ok = window.confirm(`${label} بج تضمین فروشگاه برای همه آگهی‌های کاربری این شخص؟`);
+    if (!ok) return;
+    setGuaranteeing(true);
+    try {
+      const result = await adminApi.setProductsGuarantee({ enabled, userId });
+      toast.success(
+        `${result.updated.toLocaleString('fa-IR')} آگهی ${enabled ? 'تضمین شد' : 'از تضمین خارج شد'}`,
+      );
+      fetchProducts();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
+    } finally {
+      setGuaranteeing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -65,15 +111,36 @@ export default function UserProductsPage() {
         </Link>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-bold">آگهی‌های {user?.name ?? 'کاربر'}</h1>
-        {user && (
-          <p className="mt-1 text-sm text-gray-500" dir="ltr">
-            {user.phone}
-            {user.email ? ` · ${user.email}` : ''}
-            {user.city ? ` · ${user.city}` : ''}
-          </p>
-        )}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">آگهی‌های {user?.name ?? 'کاربر'}</h1>
+          {user && (
+            <p className="mt-1 text-sm text-gray-500" dir="ltr">
+              {user.phone}
+              {user.email ? ` · ${user.email}` : ''}
+              {user.city ? ` · ${user.city}` : ''}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={guaranteeing}
+            onClick={() => handleUserGuarantee(true)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <Shield className="size-4" />
+            تضمین همه آگهی‌ها
+          </button>
+          <button
+            type="button"
+            disabled={guaranteeing}
+            onClick={() => handleUserGuarantee(false)}
+            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            برداشتن تضمین همه
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-white">
@@ -137,6 +204,20 @@ export default function UserProductsPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex justify-center gap-1">
+                      {p.advertiser === 'CLIENT' && !p.isAuction ? (
+                        <button
+                          type="button"
+                          onClick={() => handleGuaranteeToggle(p)}
+                          className={`rounded px-2 py-1 text-xs ${
+                            p.hasGuarantee
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین فروشگاه'}
+                        >
+                          <Shield className="inline size-3.5" />
+                        </button>
+                      ) : null}
                       {p.status === 'PENDING' ? (
                         <>
                           <button

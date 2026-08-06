@@ -74,7 +74,6 @@ export function Navbar() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3">
         <div className="flex items-center justify-between gap-2 lg:gap-3">
           <div className="flex items-center gap-1 sm:gap-2 lg:hidden">
-            <CartNavButton />
             <Button
               variant="ghost"
               size="icon"
@@ -106,6 +105,10 @@ export function Navbar() {
                 <Link href="/login">ورود</Link>
               </Button>
             )}
+            <Button variant="outline" size="sm" asChild className="h-8 px-2 text-xs border-none">
+              <Link href="/products">فروشگاه</Link>
+            </Button>
+            <CartNavButton />
           </div>
 
           <div className="hidden min-w-0 flex-1 items-center gap-2 lg:flex lg:gap-3">
@@ -178,22 +181,13 @@ export function Navbar() {
             >
               سفارش‌ها
             </Link>
-            <Link
+            {user ? <Link
               href="/profile"
               onClick={closeMenu}
               className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
             >
               پروفایل
-            </Link>
-            {!user ? (
-              <Link
-                href="/register"
-                onClick={closeMenu}
-                className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
-              >
-                ثبت‌نام
-              </Link>
-            ) : null}
+            </Link> : null}
             <hr className="my-2" />
             <CategoriesNavLinks onNavigate={closeMenu} />
             <hr className="my-2" />

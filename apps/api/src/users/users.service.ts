@@ -30,10 +30,8 @@ export class UsersService {
             createdAt: true,
           },
         }),
-        this.productsService.countActiveClientListings(userId),
-        this.prisma.product.count({
-          where: { userId, advertiser: 'CLIENT' },
-        }),
+        this.prisma.product.count({ where: { userId, status: 'ACTIVE' } }),
+        this.prisma.product.count({ where: { userId } }),
         this.prisma.user.count({ where: { referredById: userId } }),
         ensureUserReferralCode(this.prisma, userId),
       ]);
@@ -52,7 +50,7 @@ export class UsersService {
 
   async getUserProducts(userId: string) {
     const products = await this.prisma.product.findMany({
-      where: { userId, advertiser: 'CLIENT' },
+      where: { userId },
       include: { category: true, carBrands: true },
       orderBy: [{ listedAt: 'desc' }, { createdAt: 'desc' }],
     });

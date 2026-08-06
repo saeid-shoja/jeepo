@@ -1,5 +1,5 @@
 {
   "buildCommand": "npm run build",
-  "startCommand": "npm start",
-  "port": 4000
+  "startCommand": "node dist/main.js",
+  "port": 8000
 }

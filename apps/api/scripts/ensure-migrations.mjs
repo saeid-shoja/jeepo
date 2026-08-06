@@ -84,7 +84,10 @@ resolveStuck('applied');
 
 let result = capturePrisma(['migrate', 'deploy']);
 
-if (!result.ok && (result.output.includes('P3009') || result.output.includes('failed migrations'))) {
+if (
+  !result.ok &&
+  (result.output.includes('P3009') || result.output.includes('failed migrations'))
+) {
   console.warn('[migrate] still blocked — try rolled-back then re-apply');
   resolveStuck('rolled-back');
   result = capturePrisma(['migrate', 'deploy']);

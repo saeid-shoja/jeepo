@@ -17,8 +17,9 @@ export function canViewerPurchase(
   viewerUserId?: string | null,
 ): boolean {
   if (!isPurchasable(product)) return false;
-  if (viewerUserId && product.userId === viewerUserId && product.hasGuarantee) {
-    return false;
+  /* Owners can't buy their own listings (guaranteed ads or admin-created SHOP items). */
+  if (viewerUserId && product.userId === viewerUserId) {
+    if (product.hasGuarantee || product.type === 'SHOP') return false;
   }
   return true;
 }

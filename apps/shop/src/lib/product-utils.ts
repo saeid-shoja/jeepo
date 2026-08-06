@@ -20,7 +20,9 @@ export function resolveProductSituation(product: {
   stockQuantity?: number;
 }): ProductSituation {
   if (isShopProduct(product)) {
-    if ((product.stockQuantity ?? 1) < 1) return 'OUT_OF_STOCK';
+    if ((product.stockQuantity ?? 1) < 1 || product.situation === 'OUT_OF_STOCK') {
+      return 'OUT_OF_STOCK';
+    }
     return 'IN_STOCK';
   }
   return product.situation ?? null;

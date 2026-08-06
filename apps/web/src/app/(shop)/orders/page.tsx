@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice } from '@offroad/shared';
+import { formatPrice, getOrderStatusLabel } from '@offroad/shared';
 import { Package } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,14 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'در انتظار پرداخت',
-  CONFIRMED: 'تأیید شده',
-  SHIPPED: 'ارسال شده',
-  DELIVERED: 'تحویل شده',
-  CANCELLED: 'لغو شده',
-};
 
 const PAYMENT_LABELS: Record<string, string> = {
   ONLINE: 'آنلاین',
@@ -68,7 +60,7 @@ export default function OrdersPage() {
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-sm font-medium">سفارش {order.id.slice(-8)}</CardTitle>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">{STATUS_LABELS[order.status] ?? order.status}</Badge>
+                  <Badge variant="secondary">{getOrderStatusLabel(order.status)}</Badge>
                   {order.paymentMethod && (
                     <Badge variant="outline">
                       {PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}

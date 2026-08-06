@@ -64,7 +64,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
-  ) { }
+  ) {}
 
   private async resolveItems(items: OrderItemDto[], buyerId: string): Promise<ResolvedLine[]> {
     if (!items.length) {
@@ -227,17 +227,17 @@ export class OrdersService {
         const seller =
           item.product.advertiser === 'SHOP' || !item.product.user
             ? {
-              name: `فروشگاه ${SITE_NAME_FA}`,
-              phone: null,
-              email: null,
-              city: null,
-            }
+                name: `فروشگاه ${SITE_NAME_FA}`,
+                phone: null,
+                email: null,
+                city: null,
+              }
             : {
-              name: item.product.user.name,
-              phone: item.product.user.phone,
-              email: item.product.user.email,
-              city: item.product.user.city,
-            };
+                name: item.product.user.name,
+                phone: item.product.user.phone,
+                email: item.product.user.email,
+                city: item.product.user.city,
+              };
 
         return {
           title: item.product.title,

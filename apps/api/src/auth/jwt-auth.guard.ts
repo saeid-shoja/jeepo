@@ -10,7 +10,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
-    const req = context.switchToHttp().getRequest<{ method?: string; headers?: { authorization?: string } }>();
+    const req = context
+      .switchToHttp()
+      .getRequest<{ method?: string; headers?: { authorization?: string } }>();
     if (req.method === 'OPTIONS') {
       return true;
     }

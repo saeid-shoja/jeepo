@@ -59,7 +59,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [tab, page, search]);
+  }, []);
 
   const activeProducts = useMemo(() => products.filter((p) => p.status === 'ACTIVE'), [products]);
   const allActiveSelected =

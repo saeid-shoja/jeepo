@@ -172,8 +172,14 @@ export function ProductDetailClient() {
                 </span>
               </p>
             )}
-            {(product.mileageKm != null || product.paintCondition) && (
+            {(product.mileageKm != null || product.paintCondition || product.color) && (
               <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {product.color && (
+                  <span>
+                    رنگ:{' '}
+                    <span className="text-foreground font-medium">{product.color}</span>
+                  </span>
+                )}
                 {product.mileageKm != null && (
                   <span className="inline-flex items-center gap-1">
                     <Gauge className="h-4 w-4 shrink-0" aria-hidden />
@@ -195,6 +201,7 @@ export function ProductDetailClient() {
         )}
 
         <div className="flex flex-wrap gap-2">
+          <ProductSituationBadge situation={situation} />
           {product.carBrands?.map((b: { value: string; label: string }) => (
             <span
               key={b.value}

@@ -181,13 +181,15 @@ export function Navbar() {
             >
               سفارش‌ها
             </Link>
-            {user ? <Link
-              href="/profile"
-              onClick={closeMenu}
-              className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
-            >
-              پروفایل
-            </Link> : null}
+            {user ? (
+              <Link
+                href="/profile"
+                onClick={closeMenu}
+                className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
+              >
+                پروفایل
+              </Link>
+            ) : null}
             <hr className="my-2" />
             <CategoriesNavLinks onNavigate={closeMenu} />
             <hr className="my-2" />

@@ -61,7 +61,8 @@ export function SiteFooter() {
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <SiteLogo size="lg" />
             <p className="text-muted-foreground text-sm leading-relaxed">
-              فروشگاه {SITE_NAME_FA} — خرید آنلاین لوازم کمپی نو و استوک و قطعات آفرودی با ارسال به سراسر ایران.
+              فروشگاه {SITE_NAME_FA} — خرید آنلاین لوازم کمپی نو و استوک و قطعات آفرودی با ارسال به
+              سراسر ایران.
             </p>
             <div className="text-muted-foreground space-y-2 text-sm">
               <p className="flex items-center gap-2">

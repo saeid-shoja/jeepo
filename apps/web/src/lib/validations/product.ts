@@ -2,6 +2,7 @@ import {
   containsLinkOrPhone,
   isVehicleSaleCategory,
   NO_CONTACT_IN_TEXT_MESSAGE,
+  PRODUCT_COLOR_MAX_LENGTH,
   PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
   toEnglishDigits,
   VEHICLE_PAINT_CONDITIONS,
@@ -110,8 +111,14 @@ const sharedProductFields = {
   stockQuantity: z
     .number()
     .int('تعداد باید عدد صحیح باشد')
-    .min(1, 'حداقل ۱ عدد')
+    .min(0, 'موجودی نمی‌تواند منفی باشد')
     .max(9999, 'حداکثر ۹۹۹۹ عدد'),
+  /** Optional product color. */
+  color: z
+    .string()
+    .max(PRODUCT_COLOR_MAX_LENGTH, `رنگ حداکثر ${PRODUCT_COLOR_MAX_LENGTH} کاراکتر باشد`)
+    .optional()
+    .or(z.literal('')),
   /** Approximate retail / new price; required when situation is USED (non-auction). */
   newPrice: z.number(),
   mileageKm: z.number().nullable(),
@@ -244,7 +251,7 @@ export const editProductSchema = z
     stockQuantity: z
       .number()
       .int('تعداد باید عدد صحیح باشد')
-      .min(1, 'حداقل ۱ عدد')
+      .min(0, 'موجودی نمی‌تواند منفی باشد')
       .max(9999, 'حداکثر ۹۹۹۹ عدد'),
   })
   .superRefine((data, ctx) => {

@@ -23,7 +23,7 @@ export class TelegramService {
   constructor(
     @Inject('TELEGRAM_BOT_TOKEN') private readonly botToken: string,
     @Inject('TELEGRAM_BOT_USERNAME') private readonly botUsername: string,
-  ) { }
+  ) {}
 
   isConfigured(): boolean {
     return Boolean(this.botToken && this.botUsername);
@@ -84,8 +84,7 @@ export class TelegramService {
       }
 
       return data.result ?? null;
-    }
-    catch (error) {
+    } catch (error) {
       this.logger.error(
         `Telegram ${method} network error: ${error instanceof Error ? error.message : error}`,
       );

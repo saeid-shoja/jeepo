@@ -12,7 +12,6 @@ import {
   getPaymentPurposeLabel,
   PAYMENT_GATEWAYS,
   PAYMENT_PURPOSES,
-  type PaymentGateway,
   type PaymentPurpose,
   SITE_NAME_FA,
 } from '@offroad/shared';

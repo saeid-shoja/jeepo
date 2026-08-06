@@ -99,6 +99,7 @@ export default function NewProductPage() {
       realPriceMax: 0,
       buyNowPrice: 0,
       stockQuantity: 1,
+      color: '',
       newPrice: 0,
       categorySlug: '',
       mileageKm: null,
@@ -108,7 +109,6 @@ export default function NewProductPage() {
 
   const isAuction = watch('isAuction');
   const price = watch('price');
-  const hasGuarantee = watch('hasGuarantee');
   // const _applyStrengthened = watch('applyStrengthened');
   const carBrands = watch('carBrands');
   const situation = watch('situation');
@@ -179,10 +179,6 @@ export default function NewProductPage() {
     }
   }, [user, authLoading, router]);
 
-  useEffect(() => {
-    if (price <= 0 && hasGuarantee) setValue('hasGuarantee', false);
-  }, [price, hasGuarantee, setValue]);
-
   const submitListing = async (data: NewProductFormValues) => {
     setIsSubmittingListing(true);
     try {
@@ -199,26 +195,27 @@ export default function NewProductPage() {
         city: data.city || undefined,
         neighborhood: data.neighborhood?.trim() || undefined,
         phone: data.isAuction ? undefined : data.phone || undefined,
-        hasGuarantee: data.isAuction ? false : data.hasGuarantee,
+        hasGuarantee: false,
         applyStrengthened: data.applyStrengthened,
         situation: data.situation,
         images: data.images,
         stockQuantity: data.isAuction ? 1 : data.stockQuantity,
+        color: data.isAuction ? undefined : data.color?.trim() || undefined,
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition
           ? {
-              mileageKm: data.mileageKm,
-              paintCondition: data.paintCondition,
-            }
+            mileageKm: data.mileageKm,
+            paintCondition: data.paintCondition,
+          }
           : {}),
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -371,9 +368,23 @@ export default function NewProductPage() {
                   {...register('stockQuantity', { setValueAs: parseIntegerInput })}
                 />
                 <p className="text-muted-foreground text-xs">
-                  پیش‌فرض ۱ عدد است. اگر بیش از یک عدد دارید، تعداد را افزایش دهید.
+                  پیش‌فرض ۱ عدد است. برای محصول ناموجود می‌توانید ۰ بگذارید و بعداً موجودی را افزایش
+                  دهید.
                 </p>
                 <FieldError message={errors.stockQuantity?.message} />
+              </div>
+            )}
+
+            {!isAuction && (
+              <div className="space-y-2">
+                <Label htmlFor="color">رنگ (اختیاری)</Label>
+                <Input
+                  id="color"
+                  placeholder="مثلاً مشکی، سفید، قرمز…"
+                  maxLength={40}
+                  {...register('color')}
+                />
+                <FieldError message={errors.color?.message} />
               </div>
             )}
           </CardContent>
@@ -494,10 +505,8 @@ export default function NewProductPage() {
         {/* {!isAuction && (
           <PremiumProductOptions
             productPrice={price}
-            hasGuarantee={hasGuarantee}
             applyStrengthened={false}
             showStrengthened={false}
-            onGuaranteeChange={(v) => setValue('hasGuarantee', v)}
             onStrengthenedChange={() => {}}
           />
         )} */}

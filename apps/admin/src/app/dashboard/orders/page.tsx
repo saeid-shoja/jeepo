@@ -7,6 +7,7 @@ import {
   type OrderStatusCode,
 } from '@offroad/shared';
 import { Check, ChevronDown, ChevronUp, Package, Truck, X } from 'lucide-react';
+import Image from 'next/image';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
@@ -100,9 +101,7 @@ export default function AdminOrdersPage() {
   const filtered = useMemo(() => {
     if (filter === 'all') return orders;
     if (filter === 'open') {
-      return orders.filter((o) =>
-        ['CONFIRMED', 'PACKAGING', 'SHIPPED'].includes(o.status),
-      );
+      return orders.filter((o) => ['CONFIRMED', 'PACKAGING', 'SHIPPED'].includes(o.status));
     }
     return orders.filter((o) => o.status === filter);
   }, [orders, filter]);
@@ -126,11 +125,17 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const nextActions = (status: string): Array<{ status: OrderStatusCode; label: string; tone: string }> => {
+  const nextActions = (
+    status: string,
+  ): Array<{ status: OrderStatusCode; label: string; tone: string }> => {
     const allowed = ORDER_STATUS_TRANSITIONS[status as OrderStatusCode] ?? [];
     return allowed.map((s) => {
       if (s === 'PACKAGING') {
-        return { status: s, label: 'تأیید و بسته‌بندی', tone: 'bg-green-600 text-white hover:bg-green-700' };
+        return {
+          status: s,
+          label: 'تأیید و بسته‌بندی',
+          tone: 'bg-green-600 text-white hover:bg-green-700',
+        };
       }
       if (s === 'CANCELLED') {
         return { status: s, label: 'رد / لغو', tone: 'bg-red-600 text-white hover:bg-red-700' };
@@ -139,9 +144,17 @@ export default function AdminOrdersPage() {
         return { status: s, label: 'ارسال شد', tone: 'bg-sky-600 text-white hover:bg-sky-700' };
       }
       if (s === 'DELIVERED') {
-        return { status: s, label: 'تحویل شد', tone: 'bg-emerald-600 text-white hover:bg-emerald-700' };
+        return {
+          status: s,
+          label: 'تحویل شد',
+          tone: 'bg-emerald-600 text-white hover:bg-emerald-700',
+        };
       }
-      return { status: s, label: getOrderStatusLabel(s), tone: 'bg-gray-700 text-white hover:bg-gray-800' };
+      return {
+        status: s,
+        label: getOrderStatusLabel(s),
+        tone: 'bg-gray-700 text-white hover:bg-gray-800',
+      };
     });
   };
 
@@ -176,7 +189,9 @@ export default function AdminOrdersPage() {
             type="button"
             onClick={() => setFilter(id)}
             className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-              filter === id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === id
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {label}
@@ -220,7 +235,11 @@ export default function AdminOrdersPage() {
                           className="rounded p-1 text-gray-500 hover:bg-gray-100"
                           aria-label={open ? 'بستن جزئیات' : 'مشاهده جزئیات'}
                         >
-                          {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                          {open ? (
+                            <ChevronUp className="size-4" />
+                          ) : (
+                            <ChevronDown className="size-4" />
+                          )}
                         </button>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs" dir="ltr">
@@ -326,21 +345,25 @@ export default function AdminOrdersPage() {
                                       className="flex gap-3 border-b border-dashed pb-3 last:border-0 last:pb-0"
                                     >
                                       {img ? (
-                                        <img
+                                        <Image
                                           src={img}
                                           alt=""
+                                          width={80}
+                                          height={80}
                                           className="size-14 rounded object-cover"
                                         />
                                       ) : (
                                         <div className="bg-muted size-14 rounded" />
                                       )}
                                       <div className="min-w-0 flex-1">
-                                        <p className="font-medium">{item.product?.title ?? 'محصول'}</p>
+                                        <p className="font-medium">
+                                          {item.product?.title ?? 'محصول'}
+                                        </p>
                                         <p className="text-xs text-gray-500">
                                           {item.product?.category?.name ?? '—'} ·{' '}
                                           {item.product?.advertiser === 'SHOP'
                                             ? 'فروشگاه'
-                                            : item.product?.user?.name ?? 'فروشنده'}
+                                            : (item.product?.user?.name ?? 'فروشنده')}
                                         </p>
                                         <p className="text-primary mt-1 text-sm">
                                           {item.quantity.toLocaleString('fa-IR')} ×{' '}

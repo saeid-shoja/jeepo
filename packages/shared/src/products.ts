@@ -30,7 +30,7 @@ export const PERSIAN_MONTHS = [
 ] as const;
 
 /** Free active client listings per user; each additional listing requires a fee. */
-export const FREE_CLIENT_LISTING_LIMIT = 10;
+export const FREE_CLIENT_LISTING_LIMIT = 5;
 
 /** Max active client listings with situation=NEW per user (hard cap). */
 export const FREE_CLIENT_NEW_LISTING_LIMIT = 2;
@@ -51,9 +51,15 @@ export function resolveUserNewListingLimit(maxActiveNewListings?: number | null)
   return FREE_CLIENT_NEW_LISTING_LIMIT;
 }
 /** Fee per listing beyond the free quota (Toman). */
-export const EXTRA_LISTING_FEE = 35_000;
+export const EXTRA_LISTING_FEE = 45_000;
 /** Days to pay for a pending listing draft before it is removed. */
 export const LISTING_PAYMENT_GRACE_DAYS = 3;
+
+/**
+ * Active lifetime for CLIENT marketplace listings (~2.5 months).
+ * SHOP catalog products never expire while in stock.
+ */
+export const AD_ACTIVE_DAYS = 75;
 
 /** Listing premium fees (Toman) */
 export const GUARANTEE_FEE_RATE = 0.05;
@@ -89,7 +95,10 @@ export function getGuaranteeFee(productPrice: number): number {
 }
 
 /** Max length for product neighborhood (محله). */
-export const PRODUCT_NEIGHBORHOOD_MAX_LENGTH = 15;
+export const PRODUCT_NEIGHBORHOOD_MAX_LENGTH = 20;
+
+/** Max length for optional product color (رنگ). */
+export const PRODUCT_COLOR_MAX_LENGTH = 40;
 
 /** Format city + neighborhood for display (e.g. «تهران، ونک»). */
 export function formatProductLocation(city?: string | null, neighborhood?: string | null): string {

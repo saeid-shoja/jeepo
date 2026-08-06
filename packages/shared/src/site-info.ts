@@ -1,4 +1,4 @@
-import { GUARANTEE_FEE_LABEL } from './products';
+import { AD_ACTIVE_DAYS, FREE_CLIENT_LISTING_LIMIT, GUARANTEE_FEE_LABEL } from './products';
 
 /** Persian display name */
 export const SITE_NAME_FA = 'جیپو';
@@ -11,6 +11,7 @@ export const SITE_EMAIL = `jeepoinfo@gmail.com`;
 export const SITE_TELEGRAM_URL = 'https://t.me/jjeepo';
 export const SITE_TELEGRAM_HANDLE = '@jjeepo';
 export const SITE_TELEGRAM_SUPPORT = '@jeepo_support';
+export const SITE_PHONE_SUPPORT = '+989333092013';
 
 export const SITE_INSTAGRAM_URL =
   'https://www.instagram.com/jeepo_stock_offroad?utm_source=qr&igsh=MTc0bGp5MjM5eXJhcA==';
@@ -100,7 +101,7 @@ export const ABOUT_US_BLOCKS: SiteContentBlock[] = [
   {
     title: 'فروشگاه و آگهی کاربران',
     description:
-      'محصولات فروشگاه جیپو با ضمانت اصالت عرضه می‌شوند. کاربران نیز می‌توانند آگهی شخصی ثبت کنند — تا ۱۰ آگهی اول رایگان است و برای آگهی‌های بیشتر یا ویژگی‌هایی مثل «پله شده» هزینه جداگانه پرداخت می‌شود.',
+      `محصولات فروشگاه جیپو با ضمانت اصالت عرضه می‌شوند. کاربران نیز می‌توانند آگهی شخصی ثبت کنند — تا ${FREE_CLIENT_LISTING_LIMIT} آگهی اول رایگان است و برای آگهی‌های بیشتر یا ویژگی‌هایی مثل «پله شده» هزینه جداگانه پرداخت می‌شود.`,
   },
   {
     title: 'مزایده و تضمین فروشگاه',
@@ -249,7 +250,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'منظور از برچسب پله شده چیست؟',
     answer:
-      'برچسب پله شده به شما این امکان را می دهد که محصول خود را به بالای لیست محصولات آگهی شده تا تاریخ حال حاضر انتقال دهید و برچسب پله شده روی آگهی شما ثبت شود. همچنین تاریخ ۳۰ روزه آگهی شما به روز شده و از اون لحظه به بعد آگهی شما دارای ۳۰ روز جدید اعتبار می شود.',
+      `برچسب پله شده به شما این امکان را می دهد که محصول خود را به بالای لیست محصولات آگهی شده تا تاریخ حال حاضر انتقال دهید و برچسب پله شده روی آگهی شما ثبت شود. همچنین مهلت ${AD_ACTIVE_DAYS.toLocaleString('fa-IR')} روزه (حدود دو و نیم ماه) آگهی شما به‌روز می‌شود و از همان لحظه دوباره ${AD_ACTIVE_DAYS.toLocaleString('fa-IR')} روز اعتبار خواهد داشت.`,
   },
   {
     question: 'منظور از برچسب تقویت شده چیست؟',

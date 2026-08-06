@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, timeAgo } from '@offroad/shared';
+import { formatPrice } from '@offroad/shared';
 import { ArrowRight, Edit3, Flag, Package, Shield, Trash2, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -129,9 +129,7 @@ export function ProductDetailClient() {
               )}
             </div>
           </div>
-          <p className="mt-1 text-sm text-gray-400">
-            در {product.category?.name}
-          </p>
+          <p className="mt-1 text-sm text-gray-400">در {product.category?.name}</p>
         </div>
 
         {!product.isAuction && (

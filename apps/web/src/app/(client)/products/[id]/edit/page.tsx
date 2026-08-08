@@ -10,7 +10,6 @@ import { CarBrandPicker } from '@/components/form/car-brand-picker';
 import { CitySelect } from '@/components/form/city-select';
 import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
-import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
@@ -45,6 +44,7 @@ export default function EditProductPage() {
   const router = useRouter();
   const { carBrands: carBrandOptions, parts } = useCategories();
   const [fetching, setFetching] = useState(true);
+  const [isShop, setIsShop] = useState(false);
 
   const {
     register,
@@ -70,14 +70,13 @@ export default function EditProductPage() {
       images: [],
       hasGuarantee: false,
       stockQuantity: 1,
+      color: '',
       newPrice: 0,
       mileageKm: null,
       paintCondition: '',
     },
   });
 
-  const price = watch('price');
-  const hasGuarantee = watch('hasGuarantee');
   const carBrands = watch('carBrands');
   const situation = watch('situation');
   const categoryId = watch('categoryId');
@@ -114,6 +113,7 @@ export default function EditProductPage() {
     api.products
       .get(id)
       .then((product) => {
+        setIsShop(product.advertiser === 'SHOP' || product.type === 'SHOP');
         reset({
           title: product.title,
           description: product.description,
@@ -125,10 +125,11 @@ export default function EditProductPage() {
           city: product.city || '',
           neighborhood: product.neighborhood || '',
           phone: product.phone || '',
-          hasGuarantee: product.hasGuarantee,
+          hasGuarantee: false,
           situation: product.situation === 'USED' ? 'USED' : 'NEW',
           images: product.images || [],
           stockQuantity: product.stockQuantity ?? 1,
+          color: product.color ?? '',
           mileageKm: product.mileageKm ?? null,
           paintCondition: product.paintCondition ?? '',
         });
@@ -140,28 +141,30 @@ export default function EditProductPage() {
       .finally(() => setFetching(false));
   }, [id, user, authLoading, router, reset]);
 
-  useEffect(() => {
-    if (price <= 0 && hasGuarantee) setValue('hasGuarantee', false);
-  }, [price, hasGuarantee, setValue]);
-
   const onSubmit = async (data: EditProductFormValues) => {
     try {
       await api.products.update(id, {
         title: data.title,
         description: data.description,
         price: data.price,
-        newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
         categoryId: data.categoryId,
         carBrands: data.carBrands,
         city: data.city || undefined,
         neighborhood: data.neighborhood?.trim() || null,
         phone: data.phone || undefined,
-        hasGuarantee: data.hasGuarantee,
-        situation: data.situation,
         images: data.images,
         stockQuantity: data.stockQuantity,
+        color: data.color?.trim() || null,
         mileageKm: showVehicleFields ? data.mileageKm : null,
         paintCondition: showVehicleFields && data.paintCondition ? data.paintCondition : null,
+        /* Shop catalog listings (registered by admins) keep their stored situation/
+           newPrice/guarantee — those fields are managed in the admin panel. */
+        ...(isShop
+          ? {}
+          : {
+              newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
+              situation: data.situation,
+            }),
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -262,7 +265,21 @@ export default function EditProductPage() {
                 maxLength={4}
                 {...register('stockQuantity', { setValueAs: parseIntegerInput })}
               />
+              <p className="text-muted-foreground text-xs">
+                برای ناموجود بودن، ۰ بگذارید؛ بعداً می‌توانید موجودی را افزایش دهید.
+              </p>
               <FieldError message={errors.stockQuantity?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="color">رنگ (اختیاری)</Label>
+              <Input
+                id="color"
+                placeholder="مثلاً مشکی، سفید، قرمز…"
+                maxLength={40}
+                {...register('color')}
+              />
+              <FieldError message={errors.color?.message} />
             </div>
           </CardContent>
         </Card>
@@ -275,13 +292,15 @@ export default function EditProductPage() {
 
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <Controller
-              name="situation"
-              control={control}
-              render={({ field }) => (
-                <ProductSituationSelect value={field.value} onChange={field.onChange} />
-              )}
-            />
+            {!isShop && (
+              <Controller
+                name="situation"
+                control={control}
+                render={({ field }) => (
+                  <ProductSituationSelect value={field.value} onChange={field.onChange} />
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Controller
@@ -319,15 +338,6 @@ export default function EditProductPage() {
             <FieldError message={firstErrorMessage(errors.images)} />
           </CardContent>
         </Card>
-
-        <PremiumProductOptions
-          productPrice={price}
-          hasGuarantee={hasGuarantee}
-          applyStrengthened={false}
-          showStrengthened={false}
-          onGuaranteeChange={(v) => setValue('hasGuarantee', v)}
-          onStrengthenedChange={() => {}}
-        />
 
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
           {isSubmitting ? 'در حال ذخیره...' : 'ذخیره تغییرات'}

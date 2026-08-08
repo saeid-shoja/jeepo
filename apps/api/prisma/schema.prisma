@@ -39,6 +39,7 @@ enum VehiclePaintCondition {
 enum OrderStatus {
   PENDING
   CONFIRMED
+  PACKAGING
   SHIPPED
   DELIVERED
   CANCELLED
@@ -235,6 +236,7 @@ model Product {
   listingFeePaid     Boolean            @default(true)
   listingPaymentDueAt DateTime?
   stockQuantity      Int                @default(1)
+  color              String?
   listedAt           DateTime           @default(now())
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -281,11 +283,14 @@ model Order {
   paymentTrackId  String?        @unique
   paymentRefNumber String?
   paidAt          DateTime?
+  /** Last time admin (or payment fulfillment) changed status — used for daily reminders. */
+  statusChangedAt DateTime       @default(now())
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   items     OrderItem[]
 
   @@index([userId])
+  @@index([status, statusChangedAt])
 }
 
 model PaymentSession {

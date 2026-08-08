@@ -3,14 +3,10 @@
 import {
   BOOST_LISTING_FEE,
   formatPrice,
-  GUARANTEE_FEE_LABEL,
-  GUARANTEE_FEE_RATE,
-  GUARANTEE_LISTING_RULES,
-  getGuaranteeFee,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
 } from '@offroad/shared';
-import { Shield, Sparkles, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,9 +22,7 @@ import { Label } from '@/components/ui/label';
 
 type PremiumProductOptionsProps = {
   productPrice: number;
-  hasGuarantee: boolean;
   applyStrengthened: boolean;
-  onGuaranteeChange: (value: boolean) => void;
   onStrengthenedChange: (value: boolean) => void;
   showStrengthened?: boolean;
   /** پله شده — profile / legacy flows */
@@ -47,19 +41,21 @@ function ReadMoreButton({ label = 'اطلاعات بیشتر' }: { label?: strin
   );
 }
 
+/**
+ * Client listing premiums (strengthen / boost).
+ * Shop-guarantee badge is admin-only and is not offered here.
+ */
 export function PremiumProductOptions({
-  productPrice,
-  hasGuarantee,
   applyStrengthened,
-  onGuaranteeChange,
   onStrengthenedChange,
   showStrengthened = true,
   showBoost = false,
   isBoosted = false,
   onBoostedChange,
 }: PremiumProductOptionsProps) {
-  const guaranteeFee = getGuaranteeFee(productPrice);
-  const hasValidPrice = productPrice > 0;
+  if (!showStrengthened && !(showBoost && onBoostedChange)) {
+    return null;
+  }
 
   return (
     <Card>
@@ -67,97 +63,6 @@ export function PremiumProductOptions({
         <CardTitle className="text-base">آپشن های ویژه</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Dialog>
-          <div className="flex gap-3">
-            <Checkbox
-              id="has-guarantee"
-              checked={hasGuarantee}
-              disabled={!hasValidPrice}
-              onCheckedChange={(checked) => onGuaranteeChange(checked === true)}
-              className="mt-0.5"
-            />
-            <div className="min-w-0 flex-1 space-y-1">
-              <Label
-                htmlFor="has-guarantee"
-                className={`flex cursor-pointer items-center gap-1 font-medium ${!hasValidPrice ? 'text-muted-foreground' : ''}`}
-              >
-                <Shield className="size-4 text-green-600" />
-                با تضمین فروشگاه
-              </Label>
-              {!hasValidPrice ? (
-                <p className="text-xs text-amber-600">ابتدا قیمت محصول را وارد کنید.</p>
-              ) : hasGuarantee ? (
-                <p className="text-xs font-medium text-green-700">
-                  هزینه پس از فروش: {formatPrice(guaranteeFee)} تومان
-                  <span className="text-muted-foreground font-normal">
-                    {' '}
-                    ({GUARANTEE_FEE_LABEL})
-                  </span>
-                </p>
-              ) : (
-                <p className="text-muted-foreground text-xs">
-                  پس از فروش در سایت: {formatPrice(guaranteeFee)} تومان ({GUARANTEE_FEE_LABEL})
-                </p>
-              )}
-              {hasGuarantee && (
-                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-50">
-                  <p className="mb-2 font-semibold">توجه — شرایط تأیید آگهی تضمین‌شده:</p>
-                  <ul className="list-disc space-y-1 pr-4">
-                    {GUARANTEE_LISTING_RULES.map((rule) => (
-                      <li key={rule}>{rule}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <ReadMoreButton />
-            </div>
-          </div>
-          <DialogContent className="max-h-[85vh] overflow-y-auto p-6 sm:p-10">
-            <DialogHeader>
-              <DialogTitle>آگهی تضمین شده</DialogTitle>
-              <DialogDescription asChild>
-                <div className="text-foreground space-y-3 text-start text-sm">
-                  <p>
-                    با فعال‌سازی تضمین فروشگاه، محصول شما با نشان ویژه دارای تضمین فروشگاه نمایش داده
-                    می‌شود و خریداران می‌توانند آن را مستقیماً با ضمانت فروشگاه از طریق سایت خریداری
-                    کنند. در این حالت مبلغ خرید به حساب فروشگاه واریز شده و پس از ارسال محصول توسط
-                    فروشنده و تایید خریدار مبلغ با کسر کارمزد فروشگاه و مالیات به حساب فروشنده واریز
-                    خواهد شد. همچنین کارشناسان جیپو آگهی شما را در گروه های تلگرامی مربوط قرار داده
-                    و در تسریع فروش کمک خواهند کرد. البته قیمت رقابتی شما کمک کننده نیز خواهد بود.
-                  </p>
-                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-50">
-                    <p className="mb-2 font-semibold">شرایط اجباری تأیید:</p>
-                    <ul className="list-disc space-y-1 pr-4">
-                      {GUARANTEE_LISTING_RULES.map((rule) => (
-                        <li key={rule}>{rule}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <p>
-                    <strong>هزینه:</strong> <strong>{GUARANTEE_FEE_LABEL}</strong>
-                    {hasValidPrice && (
-                      <>
-                        {' '}
-                        (سهم {GUARANTEE_FEE_RATE.toLocaleString('fa-IR')}٪ برای این آگهی:{' '}
-                        <strong>{formatPrice(guaranteeFee)} تومان</strong>)
-                      </>
-                    )}
-                  </p>
-                  <p>
-                    <strong>زمان پرداخت:</strong> این مبلغ پس از{' '}
-                    <strong>فروش موفق محصول در وب‌سایت</strong> از شما دریافت می‌شود، نه هنگام ثبت
-                    آگهی.
-                  </p>
-                  <p>
-                    <strong>انتشار:</strong> آگهی با تضمین فروشگاه ابتدا در وضعیت انتظار تأیید باقی
-                    می‌ماند و پس از بررسی ادمین منتشر می‌شود.
-                  </p>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-
         {showStrengthened && (
           <Dialog>
             <div className="flex gap-3">
@@ -238,8 +143,8 @@ export function PremiumProductOptions({
                 <DialogDescription asChild>
                   <div className="text-foreground space-y-3 text-start text-sm">
                     <p>
-                      آگهی پله‌شده یک‌بار به بالای لیست منتقل می‌شود و زمان انتشار (listedAt) به‌روز
-                      می‌شود.
+                      آگهی پله‌شده یک‌بار به بالای لیست محصولات آگهی شده تا تاریخ حال حاضر انتقال
+                      می‌دهد و زمان انتشار (listedAt) به‌روز می‌شود.
                     </p>
                     <p>
                       <strong>هزینه:</strong>{' '}

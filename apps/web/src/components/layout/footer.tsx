@@ -63,7 +63,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t bg-card mt-12">
       <div className="mx-auto max-w-7xl px-4 py-10">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <SiteLogo size="lg" />
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -108,10 +108,11 @@ export function SiteFooter() {
               <PwaInstallButton />
             </div>
           </div>
-
-          <FooterColumn title="فروشگاه" links={shopLinks} />
-          <FooterColumn title="حساب کاربری" links={accountLinks} />
-          <FooterColumn title="راهنما" links={infoLinks} />
+          <div className="col-span-2 lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4 md:mt-20 mt-10">
+            <FooterColumn title="فروشگاه" links={shopLinks} />
+            <FooterColumn title="حساب کاربری" links={accountLinks} />
+            <FooterColumn title="راهنما" links={infoLinks} />
+          </div>
         </div>
         <Separator className="my-8" />
         <div className="text-muted-foreground flex w-full flex-col items-center justify-between gap-6 text-center text-xs sm:flex-row sm:text-sm">

@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, timeAgo } from '@offroad/shared';
+import { formatPrice } from '@offroad/shared';
 import { ArrowRight, Edit3, Flag, Package, Shield, Trash2, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -82,11 +82,11 @@ export function ProductDetailClient() {
     setDeleting(true);
     try {
       await api.products.delete(product.id ?? id);
-      toast.success('آگهی حذف شد');
+      toast.success('محصول حذف شد');
       setDeleteOpen(false);
       router.push('/dashboard');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'حذف آگهی ناموفق بود');
+      toast.error(err instanceof Error ? err.message : 'حذف محصول ناموفق بود');
     } finally {
       setDeleting(false);
     }
@@ -129,9 +129,7 @@ export function ProductDetailClient() {
               )}
             </div>
           </div>
-          <p className="mt-1 text-sm text-gray-400">
-            {timeAgo(new Date(product.createdAt))} در {product.category?.name}
-          </p>
+          <p className="mt-1 text-sm text-gray-400">در {product.category?.name}</p>
         </div>
 
         {!product.isAuction && (
@@ -139,18 +137,24 @@ export function ProductDetailClient() {
             <p className="text-3xl font-bold text-primary">
               {formatPrice(product.price)} <span className="text-lg">تومان</span>
             </p>
-            {product.newPrice != null && product.newPrice > 0 && (
+            {product.color ? (
+              <p className="text-muted-foreground text-sm">
+                رنگ: <span className="text-foreground font-medium">{product.color}</span>
+              </p>
+            ) : null}
+            {/* {product.newPrice != null && product.newPrice > 0 && (
               <p className="text-sm text-muted-foreground">
                 قیمت نو محصول:{' '}
                 <span className="font-medium text-foreground">
                   {formatPrice(product.newPrice)} تومان
                 </span>
               </p>
-            )}
+            )} */}
           </div>
         )}
 
         <div className="flex flex-wrap gap-2">
+          <ProductSituationBadge situation={situation} />
           {product.carBrands?.map((b: { value: string; label: string }) => (
             <span
               key={b.value}

@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPrice, formatProductLocation, timeAgo } from '@offroad/shared';
-import { Clock, MapPin, Shield, TrendingUp } from 'lucide-react';
+import { Clock, MapPin, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
@@ -94,13 +94,16 @@ export function ProductCard({ product }: ProductCardProps) {
                 تضمین شده
               </Badge>
             )}
-            {product.isBoosted && (
+            {/* {product.isBoosted && (
               <Badge className="bg-amber-500 text-white hover:bg-amber-500">
                 <TrendingUp className="h-3 w-3" />
                 پله شده
               </Badge>
-            )}
+            )} */}
           </div>
+          {situation === 'OUT_OF_STOCK' && (
+            <div className="pointer-events-none absolute inset-0 bg-background/35" aria-hidden />
+          )}
         </div>
 
         <CardContent className="space-y-2 p-3">

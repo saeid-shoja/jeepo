@@ -12,7 +12,6 @@ import {
   getPaymentPurposeLabel,
   PAYMENT_GATEWAYS,
   PAYMENT_PURPOSES,
-  type PaymentGateway,
   type PaymentPurpose,
   SITE_NAME_FA,
 } from '@offroad/shared';
@@ -334,6 +333,7 @@ export class PaymentsService {
 
     if (
       order.status === 'CONFIRMED' ||
+      order.status === 'PACKAGING' ||
       order.status === 'SHIPPED' ||
       order.status === 'DELIVERED'
     ) {

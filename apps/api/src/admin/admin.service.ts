@@ -12,6 +12,7 @@ import {
   isAdminApprovalRequiredCategory,
   resolveUserListingLimit,
   resolveUserNewListingLimit,
+  toEnglishDigits,
 } from '@offroad/shared';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
@@ -20,9 +21,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { computeActiveUntil } from '../products/product-lifecycle.constants';
 import { ProductsService } from '../products/products.service';
 import { TelegramChannelService } from '../telegram/telegram-channel.service';
-import type { CreateAdminUserDto, UpdateAdminUserDto } from './dto';
+import type { CreateAdminUserDto, SetProductsGuaranteeDto, UpdateAdminUserDto } from './dto';
 import type { AdminProductTab } from './dto/find-admin-products-query.dto';
 
+function normalizeAdminSearch(raw?: string): string | undefined {
+  const trimmed = raw?.trim();
+  if (!trimmed) return undefined;
+  return toEnglishDigits(trimmed);
+}
 @Injectable()
 export class AdminService {
   constructor(
@@ -67,7 +73,7 @@ export class AdminService {
   }
 
   async getAllUsers(params: { search?: string } = {}) {
-    const search = params.search?.trim();
+    const search = normalizeAdminSearch(params.search);
     const users = await this.prisma.user.findMany({
       where: search
         ? {
@@ -314,7 +320,7 @@ export class AdminService {
         if (params.status) where.status = params.status;
     }
 
-    const search = params.search?.trim();
+    const search = normalizeAdminSearch(params.search);
     if (search) {
       const searchOr = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -504,5 +510,87 @@ export class AdminService {
       failedProducts: failed,
       skippedIds: skipped,
     };
+  }
+
+  /**
+   * Admin-only: set hasGuarantee on CLIENT (non-auction) listings.
+   * Scope: one product, all listings in a category tree, or all listings of a user.
+   */
+  async setProductsGuarantee(dto: SetProductsGuaranteeDto) {
+    const scopes = [dto.productId, dto.categoryId, dto.userId].filter(Boolean);
+    if (scopes.length !== 1) {
+      throw new BadRequestException(
+        'دقیقاً یکی از فیلدهای productId، categoryId یا userId را ارسال کنید',
+      );
+    }
+
+    const where: {
+      advertiser: 'CLIENT';
+      isAuction: false;
+      id?: string;
+      userId?: string;
+      categoryId?: { in: string[] };
+    } = {
+      advertiser: 'CLIENT',
+      isAuction: false,
+    };
+
+    if (dto.productId) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: dto.productId },
+        select: { id: true, advertiser: true, isAuction: true },
+      });
+      if (!product) throw new NotFoundException('محصول یافت نشد');
+      if (product.advertiser !== 'CLIENT' || product.isAuction) {
+        throw new BadRequestException('تضمین فروشگاه فقط برای آگهی‌های کاربری غیرمزایده است');
+      }
+      where.id = dto.productId;
+    } else if (dto.userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: dto.userId },
+        select: { id: true },
+      });
+      if (!user) throw new NotFoundException('کاربر یافت نشد');
+      where.userId = dto.userId;
+    } else if (dto.categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: dto.categoryId },
+        select: { id: true },
+      });
+      if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
+      where.categoryId = { in: await this.collectCategoryIds(dto.categoryId) };
+    }
+
+    const result = await this.prisma.product.updateMany({
+      where,
+      data: { hasGuarantee: dto.enabled },
+    });
+
+    return { updated: result.count };
+  }
+
+  /** Category id + all descendant category ids. */
+  private async collectCategoryIds(rootId: string): Promise<string[]> {
+    const rows = await this.prisma.category.findMany({
+      select: { id: true, parentId: true },
+    });
+    const childrenByParent = new Map<string, string[]>();
+    for (const row of rows) {
+      if (!row.parentId) continue;
+      const list = childrenByParent.get(row.parentId) ?? [];
+      list.push(row.id);
+      childrenByParent.set(row.parentId, list);
+    }
+
+    const ids: string[] = [];
+    const stack = [rootId];
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      ids.push(id);
+      for (const childId of childrenByParent.get(id) ?? []) {
+        stack.push(childId);
+      }
+    }
+    return ids;
   }
 }

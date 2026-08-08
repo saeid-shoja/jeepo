@@ -8,7 +8,15 @@ export class CategoriesBootstrapService implements OnApplicationBootstrap {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async onApplicationBootstrap(): Promise<void> {
+  onApplicationBootstrap(): void {
+    // Do not await — Nest runs this hook before the HTTP server listens.
+    // Blocking here delayed PORT readiness by ~45–60s and failed health probes.
+    setImmediate(() => {
+      void this.syncInBackground();
+    });
+  }
+
+  private async syncInBackground(): Promise<void> {
     try {
       await syncDefaultCategories({
         library: this.prisma.library,

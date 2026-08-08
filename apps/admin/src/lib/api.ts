@@ -12,7 +12,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  // Avoid CDN/browser reuse of a previous unfiltered admin list after search.
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+    cache: 'no-store',
+  });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'خطا' }));
     const message = Array.isArray(error.message)
@@ -85,6 +90,23 @@ export const adminApi = {
     request<any>(`/admin/products/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }),
+  orders: () => request<any[]>('/orders'),
+  order: (id: string) => request<any>(`/orders/${id}`),
+  updateOrderStatus: (id: string, status: string) =>
+    request<any>(`/orders/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  setProductsGuarantee: (data: {
+    enabled: boolean;
+    productId?: string;
+    categoryId?: string;
+    userId?: string;
+  }) =>
+    request<{ updated: number }>('/admin/products/guarantee', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
   announceBestPrice: (productIds: string[]) =>
     request<{

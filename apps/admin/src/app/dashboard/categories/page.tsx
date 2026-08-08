@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Shield, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
@@ -92,6 +92,22 @@ export default function AdminCategoriesPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleCategoryGuarantee = async (cat: CategoryRow, enabled: boolean) => {
+    const label = enabled ? 'اعمال' : 'برداشتن';
+    const ok = window.confirm(
+      `${label} بج تضمین فروشگاه برای همه آگهی‌های کاربری دسته «${cat.name}» (و زیردسته‌ها)؟`,
+    );
+    if (!ok) return;
+    try {
+      const result = await adminApi.setProductsGuarantee({ enabled, categoryId: cat.id });
+      toast.success(
+        `${result.updated.toLocaleString('fa-IR')} آگهی ${enabled ? 'تضمین شد' : 'از تضمین خارج شد'}`,
+      );
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
+    }
+  };
 
   const partLibraries = libraryRecords.filter((l) => l.kind === 'PART_TREE');
   const carBrandsLibrary = libraryRecords.find((l) => l.kind === 'CAR_BRANDS');
@@ -663,6 +679,14 @@ export default function AdminCategoriesPage() {
                         <td className="px-4 py-2">{cat._count?.products ?? 0}</td>
                         <td className="px-4 py-2">
                           <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleCategoryGuarantee(cat, true)}
+                              className="rounded p-1 text-green-700 hover:bg-green-50"
+                              title="اعمال تضمین فروشگاه روی آگهی‌های این دسته"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </button>
                             <button
                               type="button"
                               onClick={() => openEditPart(cat)}

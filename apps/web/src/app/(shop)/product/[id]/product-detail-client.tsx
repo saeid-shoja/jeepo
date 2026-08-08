@@ -14,7 +14,6 @@ import {
   MapPin,
   Package,
   Phone,
-  Shield,
   Trash2,
   TrendingUp,
   TriangleAlert,
@@ -172,8 +171,13 @@ export function ProductDetailClient() {
                 </span>
               </p>
             )}
-            {(product.mileageKm != null || product.paintCondition) && (
+            {(product.mileageKm != null || product.paintCondition || product.color) && (
               <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {product.color && (
+                  <span>
+                    رنگ: <span className="text-foreground font-medium">{product.color}</span>
+                  </span>
+                )}
                 {product.mileageKm != null && (
                   <span className="inline-flex items-center gap-1">
                     <Gauge className="h-4 w-4 shrink-0" aria-hidden />
@@ -195,6 +199,7 @@ export function ProductDetailClient() {
         )}
 
         <div className="flex flex-wrap gap-2">
+          <ProductSituationBadge situation={situation} />
           {product.carBrands?.map((b: { value: string; label: string }) => (
             <span
               key={b.value}
@@ -203,7 +208,7 @@ export function ProductDetailClient() {
               {b.label}
             </span>
           ))}
-          {product.hasGuarantee && (
+          {/* {product.hasGuarantee && (
             <button
               type="button"
               className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
@@ -213,7 +218,7 @@ export function ProductDetailClient() {
               <Shield className="h-4 w-4" />
               با تضمین فروشگاه
             </button>
-          )}
+          )} */}
           {/* مزایده — موقتاً غیرفعال
           {product.isAuction && (
             <Badge className="bg-violet-600 text-white hover:bg-violet-600">مزایده</Badge>

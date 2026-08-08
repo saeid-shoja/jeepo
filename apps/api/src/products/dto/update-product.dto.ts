@@ -1,4 +1,4 @@
-import { PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
+import { PRODUCT_COLOR_MAX_LENGTH, PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
@@ -145,7 +145,20 @@ export class UpdateProductDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
-  @Min(1, { message: 'حداقل موجودی ۱ عدد است' })
+  @IsInt({ message: 'موجودی باید عدد صحیح باشد' })
+  @Min(0, { message: 'موجودی نمی‌تواند منفی باشد' })
   stockQuantity?: number;
+
+  /** Optional product color (e.g. مشکی). Empty string clears. */
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === null) return null;
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+  })
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  @MaxLength(PRODUCT_COLOR_MAX_LENGTH, { message: 'رنگ حداکثر ۴۰ کاراکتر باشد' })
+  color?: string | null;
 }

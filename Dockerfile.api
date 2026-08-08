@@ -22,7 +22,9 @@ COPY . .
 RUN node apps/api/scripts/sync-shared-vendor.mjs
 RUN pnpm --filter @offroad/api build
 RUN pnpm deploy --filter @offroad/api --prod /prod/api
-RUN cp -r apps/api/dist /prod/api/dist && cp -r apps/api/prisma /prod/api/prisma
+RUN cp -r apps/api/dist /prod/api/dist \
+  && cp -r apps/api/prisma /prod/api/prisma \
+  && cp -r apps/api/scripts /prod/api/scripts
 
 FROM base AS runner
 WORKDIR /app
@@ -34,4 +36,4 @@ COPY --from=builder --chown=nestjs:nodejs /prod/api ./
 
 USER nestjs
 EXPOSE 4000
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "PORT=${PORT:-4000} node dist/main.js"]

@@ -1,10 +1,27 @@
-import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { PrismaClient } from './generated/client';
+
+const DB_CONNECT_TIMEOUT_MS = Number(process.env.DB_CONNECT_TIMEOUT_MS || 8_000);
+
+function withConnectTimeout(url: string, seconds: number): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.searchParams.has('connect_timeout')) {
+      parsed.searchParams.set('connect_timeout', String(seconds));
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(PrismaService.name);
   private readonly client: PrismaClient;
+  private readonly pool: Pool;
 
   constructor() {
     const connectionString = process.env.DATABASE_URL;
@@ -12,7 +29,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       throw new Error('DATABASE_URL environment variable is required');
     }
 
-    const adapter = new PrismaPg({ connectionString });
+    const timeoutSec = Math.max(1, Math.ceil(DB_CONNECT_TIMEOUT_MS / 1000));
+    this.pool = new Pool({
+      connectionString: withConnectTimeout(connectionString, timeoutSec),
+      connectionTimeoutMillis: DB_CONNECT_TIMEOUT_MS,
+      max: 10,
+    });
+    const adapter = new PrismaPg(this.pool);
     this.client = new PrismaClient({ adapter });
   }
 
@@ -89,10 +112,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    this.logger.log(`Connecting to database (timeout ${DB_CONNECT_TIMEOUT_MS}ms)…`);
     await this.client.$connect();
+    this.logger.log('Database connected');
   }
 
   async onModuleDestroy() {
     await this.client.$disconnect();
+    await this.pool.end();
   }
 }

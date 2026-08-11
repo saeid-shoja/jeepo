@@ -106,17 +106,14 @@ export function TelegramNotificationsCard() {
           ۳. بعد از پیام موفقیت، «بررسی اتصال» را بزنید.
           <br />
           {state.linkCode ? (
-            <p className="text-muted-foreground shrink-0">
-              ۴. برای کپی روی کد بزنید:
-              <button
-                type="button"
-                onClick={() => void copyLinkCode()}
-                className="font-mono text-base font-bold tracking-[0.2em]"
-                dir="ltr"
-              >
-                {state.linkCode}
-              </button>
-            </p>
+            <button
+              type="button"
+              onClick={() => void copyLinkCode()}
+              className="text-xs font-bold shrink-0"
+              dir="rtl"
+            >
+              ۴. برای کپی روی کد بزنید:<span className='text-base font-mono tracking-[0.2em]'>{state.linkCode}</span>
+            </button>
           ) : null}
         </p>
         <div className="grid grid-cols-2 gap-3">

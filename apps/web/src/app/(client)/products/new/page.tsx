@@ -37,12 +37,45 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import {
+  buildLoginUrlForListingPublish,
+  clearListingDraft,
+  loadListingDraft,
+  saveListingDraft,
+} from '@/lib/listing-draft';
 import { buildPaymentPageUrl } from '@/lib/payment-url';
 import { toastFormValidationErrors } from '@/lib/toast-form-errors';
 import { parseIntegerInput } from '@/lib/validations/digits';
-import { type NewProductFormValues, newProductSchema } from '@/lib/validations/product';
+import { createNewProductSchema, type NewProductFormValues } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
 import { useCategories } from '@/stores/categories-store';
+
+const EMPTY_FORM_VALUES: NewProductFormValues = {
+  title: '',
+  description: '',
+  price: 0,
+  categoryId: '',
+  city: '',
+  neighborhood: '',
+  phone: '',
+  situation: 'USED',
+  carBrands: [],
+  images: [],
+  hasGuarantee: false,
+  applyStrengthened: false,
+  isAuction: false,
+  auctionStartPrice: 0,
+  auctionEndsAtLocal: defaultMinDateTimeLocal(),
+  realPriceMin: 0,
+  realPriceMax: 0,
+  buyNowPrice: 0,
+  stockQuantity: 1,
+  color: '',
+  newPrice: 0,
+  categorySlug: '',
+  mileageKm: null,
+  paintCondition: '',
+};
 
 function firstErrorMessage(error: unknown): string | undefined {
   if (!error || typeof error !== 'object') return undefined;
@@ -64,6 +97,11 @@ export default function NewProductPage() {
     useState<ListingSubmitResultVariant>('published');
   const listingPaymentResolvedRef = useRef(false);
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
+  const autoPublishStartedRef = useRef(false);
+  const draftHydratedRef = useRef(false);
+  /** Admin shop catalog may set stock to 0; client ads require ≥ 1. */
+  const allowZeroStockRef = useRef(false);
+  allowZeroStockRef.current = user?.role === 'ADMIN';
   const [newQuota, setNewQuota] = useState<{
     activeNewCount: number;
     newLimit: number;
@@ -76,35 +114,16 @@ export default function NewProductPage() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<NewProductFormValues>({
-    resolver: zodResolver(newProductSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      price: 0,
-      categoryId: '',
-      city: '',
-      neighborhood: '',
-      phone: '',
-      situation: 'USED',
-      carBrands: [],
-      images: [],
-      hasGuarantee: false,
-      applyStrengthened: false,
-      isAuction: false,
-      auctionStartPrice: 0,
-      auctionEndsAtLocal: defaultMinDateTimeLocal(),
-      realPriceMin: 0,
-      realPriceMax: 0,
-      buyNowPrice: 0,
-      stockQuantity: 1,
-      color: '',
-      newPrice: 0,
-      categorySlug: '',
-      mileageKm: null,
-      paintCondition: '',
-    },
+    resolver: (values, context, options) =>
+      zodResolver(createNewProductSchema({ allowZeroStock: allowZeroStockRef.current }))(
+        values,
+        context,
+        options,
+      ),
+    defaultValues: EMPTY_FORM_VALUES,
   });
 
   const isAuction = watch('isAuction');
@@ -173,11 +192,25 @@ export default function NewProductPage() {
     router.push(isAdmin ? '/products?advertiserType=SHOP' : '/dashboard');
   };
 
+  // Restore draft after login/register (or when returning to the form).
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
+    if (draftHydratedRef.current) return;
+    const draft = loadListingDraft();
+    if (!draft?.values) return;
+    draftHydratedRef.current = true;
+    reset({
+      ...EMPTY_FORM_VALUES,
+      ...draft.values,
+      auctionEndsAtLocal: draft.values.auctionEndsAtLocal || defaultMinDateTimeLocal(),
+      images: Array.isArray(draft.values.images) ? draft.values.images : [],
+      carBrands: Array.isArray(draft.values.carBrands) ? draft.values.carBrands : [],
+    });
+    if (draft.pendingPublish && !draft.values.images?.length) {
+      toast.message('پیش‌نویس بازیابی شد', {
+        description: 'به‌خاطر حجم تصاویر، لطفاً تصاویر را دوباره اضافه کنید و ثبت را بزنید.',
+      });
     }
-  }, [user, authLoading, router]);
+  }, [reset]);
 
   const submitListing = async (data: NewProductFormValues) => {
     setIsSubmittingListing(true);
@@ -219,6 +252,8 @@ export default function NewProductPage() {
           : {}),
       });
 
+      clearListingDraft();
+
       if (result.requiresListingFee) {
         listingPaymentResolvedRef.current = true;
         const nextPurpose =
@@ -253,15 +288,48 @@ export default function NewProductPage() {
     }
   };
 
+  const submitListingRef = useRef(submitListing);
+  submitListingRef.current = submitListing;
+
+  // After auth redirect: auto-publish saved draft once.
+  useEffect(() => {
+    if (authLoading || !user || autoPublishStartedRef.current) return;
+    const draft = loadListingDraft();
+    if (!draft?.pendingPublish) return;
+    if (!draft.values.images?.length) {
+      // Keep draft for manual resubmit after user re-adds images.
+      saveListingDraft(draft.values, false);
+      return;
+    }
+    autoPublishStartedRef.current = true;
+    saveListingDraft(draft.values, false);
+    void submitListingRef.current(draft.values);
+  }, [authLoading, user]);
+
   const onValidSubmit = async (data: NewProductFormValues) => {
-    // if (!data.isAuction && data.applyStrengthened) {
-    //   setStrengthenedPaymentOpen(true);
-    //   return;
-    // }
+    if (authLoading) return;
+
+    if (!user) {
+      const saved = saveListingDraft(data, true);
+      if (!saved) {
+        toast.error('ذخیره پیش‌نویس ممکن نشد. لطفاً تصاویر کمتری اضافه کنید یا ابتدا وارد شوید.');
+        return;
+      }
+      toast.message('برای انتشار آگهی وارد شوید یا ثبت‌نام کنید', {
+        description: 'اطلاعات فرم ذخیره شد و بعد از ورود به‌صورت خودکار ثبت می‌شود.',
+      });
+      router.push(buildLoginUrlForListingPublish());
+      return;
+    }
+
+    // Keep a non-pending backup while submitting (cleared on success).
+    saveListingDraft(data, false);
     await submitListing(data);
   };
 
-  if (authLoading) return null;
+  if (authLoading) {
+    return <div className="text-muted-foreground px-4 py-16 text-center">در حال بارگذاری...</div>;
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
@@ -368,8 +436,9 @@ export default function NewProductPage() {
                   {...register('stockQuantity', { setValueAs: parseIntegerInput })}
                 />
                 <p className="text-muted-foreground text-xs">
-                  پیش‌فرض ۱ عدد است. برای محصول ناموجود می‌توانید ۰ بگذارید و بعداً موجودی را افزایش
-                  دهید.
+                  {isAdmin
+                    ? 'پیش‌فرض ۱ عدد است. برای محصول ناموجود می‌توانید ۰ بگذارید و بعداً موجودی را افزایش دهید.'
+                    : 'حداقل ۱ عدد. اگر چند عدد برای فروش دارید، تعداد را وارد کنید.'}
                 </p>
                 <FieldError message={errors.stockQuantity?.message} />
               </div>
@@ -426,7 +495,7 @@ export default function NewProductPage() {
                 )}
               />
               <div className="space-y-2">
-                <Label htmlFor="neighborhood">محله آدرس</Label>
+                <Label htmlFor="neighborhood">محله</Label>
                 <Input
                   id="neighborhood"
                   type="text"

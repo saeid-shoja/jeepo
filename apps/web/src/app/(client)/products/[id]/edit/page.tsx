@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isVehicleSaleCategory, type VehiclePaintCondition } from '@offroad/shared';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { CarBrandPicker } from '@/components/form/car-brand-picker';
@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { toastFormValidationErrors } from '@/lib/toast-form-errors';
 import { parseIntegerInput } from '@/lib/validations/digits';
-import { type EditProductFormValues, editProductSchema } from '@/lib/validations/product';
+import { createEditProductSchema, type EditProductFormValues } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
 import { useCategories } from '@/stores/categories-store';
 
@@ -45,6 +45,9 @@ export default function EditProductPage() {
   const { carBrands: carBrandOptions, parts } = useCategories();
   const [fetching, setFetching] = useState(true);
   const [isShop, setIsShop] = useState(false);
+  /** Shop catalog may set stock to 0; client ads require ≥ 1. */
+  const allowZeroStockRef = useRef(false);
+  allowZeroStockRef.current = isShop;
 
   const {
     register,
@@ -55,7 +58,12 @@ export default function EditProductPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditProductFormValues>({
-    resolver: zodResolver(editProductSchema),
+    resolver: (values, context, options) =>
+      zodResolver(createEditProductSchema({ allowZeroStock: allowZeroStockRef.current }))(
+        values,
+        context,
+        options,
+      ),
     defaultValues: {
       title: '',
       description: '',
@@ -162,9 +170,9 @@ export default function EditProductPage() {
         ...(isShop
           ? {}
           : {
-              newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
-              situation: data.situation,
-            }),
+            newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
+            situation: data.situation,
+          }),
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -266,7 +274,9 @@ export default function EditProductPage() {
                 {...register('stockQuantity', { setValueAs: parseIntegerInput })}
               />
               <p className="text-muted-foreground text-xs">
-                برای ناموجود بودن، ۰ بگذارید؛ بعداً می‌توانید موجودی را افزایش دهید.
+                {isShop
+                  ? 'برای ناموجود بودن، ۰ بگذارید؛ بعداً می‌توانید موجودی را افزایش دهید.'
+                  : 'حداقل ۱ عدد. اگر چند عدد برای فروش دارید، تعداد را وارد کنید.'}
               </p>
               <FieldError message={errors.stockQuantity?.message} />
             </div>

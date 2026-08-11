@@ -143,6 +143,7 @@ export class UpdateProductDto {
   @Min(1)
   buyNowPrice?: number;
 
+  /** Shop may use 0 (out of stock); client listings require ≥ 1 (enforced in service). */
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'موجودی باید عدد صحیح باشد' })

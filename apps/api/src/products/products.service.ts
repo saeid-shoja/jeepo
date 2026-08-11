@@ -400,6 +400,28 @@ export class ProductsService {
     };
   }
 
+  /**
+   * Shop catalog may be 0 (out of stock). Client marketplace listings must be ≥ 1.
+   */
+  private assertStockQuantity(params: {
+    advertiser: Advertiser | string;
+    stockQuantity?: number | null;
+    isAuction?: boolean;
+  }) {
+    if (params.isAuction) return;
+    if (params.stockQuantity == null) return;
+    const qty = Number(params.stockQuantity);
+    if (!Number.isFinite(qty) || !Number.isInteger(qty)) {
+      throw new BadRequestException('موجودی باید عدد صحیح باشد');
+    }
+    if (qty < 0) {
+      throw new BadRequestException('موجودی نمی‌تواند منفی باشد');
+    }
+    if (params.advertiser === 'CLIENT' && qty < 1) {
+      throw new BadRequestException('تعداد موجودی آگهی باید حداقل ۱ باشد');
+    }
+  }
+
   private async buildCreateData(
     data: CreateProductDto,
     userId: string,
@@ -414,6 +436,12 @@ export class ProductsService {
     const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
     const now = new Date();
     const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
+    const advertiser = (data.advertiser ?? 'CLIENT') as Advertiser;
+    this.assertStockQuantity({
+      advertiser,
+      stockQuantity: data.stockQuantity,
+      isAuction: data.isAuction,
+    });
     const newPrice =
       data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
     const vehicleFields = await this.resolveVehicleSaleFields(data.categoryId, data);
@@ -872,6 +900,12 @@ export class ProductsService {
     if (product.userId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('شما اجازه ویرایش این محصول را ندارید');
     }
+
+    this.assertStockQuantity({
+      advertiser: product.advertiser,
+      stockQuantity: data.stockQuantity,
+      isAuction: product.isAuction,
+    });
 
     if (
       product.advertiser === 'CLIENT' &&

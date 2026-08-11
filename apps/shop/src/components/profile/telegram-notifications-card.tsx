@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Copy, ExternalLink, Send } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Send } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -107,7 +107,7 @@ export function TelegramNotificationsCard() {
           <br />
           {state.linkCode ? (
             <div className="flex items-center gap-2 min-w-0">
-              ۴. <p className="text-muted-foreground text-xs shrink-0">برای کپی روی کد بزنید:</p>
+              <p className="text-muted-foreground text-xs shrink-0"> ۴. برای کپی روی کد بزنید:</p>
               <button
                 type="button"
                 onClick={() => void copyLinkCode()}

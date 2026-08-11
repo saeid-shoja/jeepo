@@ -112,7 +112,8 @@ export function TelegramNotificationsCard() {
               className="text-xs font-bold shrink-0"
               dir="rtl"
             >
-              ۴. برای کپی روی کد بزنید:<span className='text-base font-mono tracking-[0.2em]'>{state.linkCode}</span>
+              ۴. برای کپی روی کد بزنید:
+              <span className="text-base font-mono tracking-[0.2em]">{state.linkCode}</span>
             </button>
           ) : null}
         </p>

@@ -26,11 +26,12 @@ const defaultFilters: ProductsFilters = {
 };
 
 const PRODUCT_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
-const PRODUCTS_PAGE_SIZE = 20;
+const PRODUCTS_PAGE_SIZE = 24;
 
 export function ProductsPageClient() {
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get('search') ?? '';
+  const libraryId = searchParams.get('libraryId') ?? '';
 
   const [products, setProducts] = useState<any[]>([]);
   const { libraries, loading: categoriesLoading } = useCategories();
@@ -68,6 +69,7 @@ export function ProductsPageClient() {
         advertiser: 'SHOP',
       };
       if (searchQuery.trim()) p.search = searchQuery.trim();
+      if (libraryId) p.libraryId = libraryId;
       if (filters.categoryId) p.categoryId = filters.categoryId;
       if (filters.carBrand) p.carBrand = filters.carBrand;
       if (filters.minPrice > 0) p.minPrice = String(filters.minPrice);
@@ -76,10 +78,13 @@ export function ProductsPageClient() {
       if (filters.hasGuarantee) p.hasGuarantee = filters.hasGuarantee;
       return p;
     },
-    [searchQuery, filters],
+    [searchQuery, filters, libraryId],
   );
 
-  const queryKey = useMemo(() => JSON.stringify({ searchQuery, filters }), [searchQuery, filters]);
+  const queryKey = useMemo(
+    () => JSON.stringify({ searchQuery, filters, libraryId }),
+    [searchQuery, filters, libraryId],
+  );
 
   useEffect(() => {
     if (categoriesLoading) return;

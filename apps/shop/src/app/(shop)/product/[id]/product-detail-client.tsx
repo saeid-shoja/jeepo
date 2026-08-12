@@ -142,14 +142,14 @@ export function ProductDetailClient() {
                 رنگ: <span className="text-foreground font-medium">{product.color}</span>
               </p>
             ) : null}
-            {/* {product.newPrice != null && product.newPrice > 0 && (
+            {product.newPrice != null && product.newPrice > 0 && (
               <p className="text-sm text-muted-foreground">
                 قیمت نو محصول:{' '}
                 <span className="font-medium text-foreground">
                   {formatPrice(product.newPrice)} تومان
                 </span>
               </p>
-            )} */}
+            )}
           </div>
         )}
 
@@ -196,7 +196,7 @@ export function ProductDetailClient() {
         </div>
 
         {showStock && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm dark:text-gray-200">
             <span className="flex items-center gap-1">
               <Package className="h-4 w-4" />
               {stockQuantity > 0 ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود` : 'ناموجود'}
@@ -208,7 +208,7 @@ export function ProductDetailClient() {
 
         <div>
           <h3 className="mb-2 font-bold">توضیحات</h3>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-400">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed dark:text-gray-200">
             {product.description}
           </p>
         </div>

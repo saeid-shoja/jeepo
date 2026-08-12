@@ -1,12 +1,13 @@
 'use client';
 
 import { FREE_CLIENT_LISTING_LIMIT, FREE_CLIENT_NEW_LISTING_LIMIT } from '@offroad/shared';
-import { Calendar, MapPin, Package, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Loader2, MapPin, Package, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { PasswordInput } from '@/components/ui/password-input';
 import { adminApi } from '@/lib/api';
+import { ADMIN_LIST_PAGE_SIZE, useInfiniteScrollList } from '@/lib/use-infinite-scroll-list';
 
 type UserRow = {
   id: string;
@@ -38,38 +39,38 @@ const emptyForm = {
 };
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const fetchSeq = useRef(0);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  const load = useCallback(() => {
-    const seq = ++fetchSeq.current;
-    setLoading(true);
-    const params = search ? { search } : undefined;
-    adminApi
-      .users(params)
-      .then((rows) => {
-        if (seq !== fetchSeq.current) return;
-        setUsers(rows);
-      })
-      .catch((e) => {
-        if (seq !== fetchSeq.current) return;
-        toast.error(e instanceof Error ? e.message : 'خطا در بارگذاری');
-      })
-      .finally(() => {
-        if (seq !== fetchSeq.current) return;
-        setLoading(false);
-      });
-  }, [search]);
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(ADMIN_LIST_PAGE_SIZE),
+      };
+      if (search) params.search = search;
+      const res = await adminApi.users(params);
+      return { items: res.users as UserRow[], totalPages: res.totalPages };
+    },
+    [search],
+  );
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const {
+    items: users,
+    initialLoading,
+    loadingMore,
+    hasMore,
+    sentinelRef,
+  } = useInfiniteScrollList<UserRow>({
+    fetchPage,
+    deps: [search, reloadToken],
+  });
+
+  const reload = () => setReloadToken((token) => token + 1);
 
   const openCreate = () => {
     setEditingId(null);
@@ -137,7 +138,7 @@ export default function AdminUsersPage() {
       setForm(emptyForm);
       setEditingId(null);
       toast.success(wasEditing ? 'کاربر به‌روزرسانی شد' : 'کاربر ایجاد شد');
-      load();
+      reload();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'خطا در ذخیره');
     }
@@ -148,7 +149,7 @@ export default function AdminUsersPage() {
     try {
       await adminApi.deleteUser(user.id);
       toast.success('کاربر حذف شد');
-      load();
+      reload();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'خطا در حذف');
     }
@@ -198,11 +199,11 @@ export default function AdminUsersPage() {
         />
         <button
           type="button"
-          disabled={loading}
+          disabled={initialLoading}
           onClick={() => setSearch(searchInput.trim())}
           className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? 'در حال جستجو…' : 'جستجو'}
+          {initialLoading ? 'در حال جستجو…' : 'جستجو'}
         </button>
         {search ? (
           <button
@@ -337,8 +338,10 @@ export default function AdminUsersPage() {
       )}
 
       <div className="overflow-x-auto rounded-lg border bg-white">
-        {loading ? (
-          <p className="px-4 py-6 text-sm text-gray-500">در حال بارگذاری…</p>
+        {initialLoading && users.length === 0 ? (
+          <div className="flex justify-center px-4 py-6">
+            <Loader2 className="text-primary size-6 animate-spin" />
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b bg-gray-50">
@@ -432,6 +435,14 @@ export default function AdminUsersPage() {
           </table>
         )}
       </div>
+
+      {loadingMore ? (
+        <div className="flex justify-center py-3">
+          <Loader2 className="text-muted-foreground size-5 animate-spin" />
+        </div>
+      ) : null}
+
+      {hasMore ? <div ref={sentinelRef} className="h-1" aria-hidden /> : null}
     </div>
   );
 }

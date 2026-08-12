@@ -37,8 +37,8 @@ export default function AdminMessagesPage() {
         toast.error('بارگذاری پیام‌ها ناموفق بود');
       });
     adminApi
-      .users()
-      .then(setUsers)
+      .users({ page: '1', limit: '100' })
+      .then((res) => setUsers(res.users))
       .catch(() => {
         setUsers([]);
         toast.error('بارگذاری کاربران ناموفق بود');

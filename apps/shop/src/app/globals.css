@@ -129,3 +129,24 @@
 .safe-area-pb {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
+
+/* Home horizontal strips — ultra-thin primary scrollbar (WebKit + Firefox). */
+.home-strip-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+
+.home-strip-scrollbar::-webkit-scrollbar {
+  height: 2px !important;
+}
+
+.home-strip-scrollbar::-webkit-scrollbar-track {
+  margin-inline: 2px;
+  background: color-mix(in srgb, var(--border) 35%, transparent);
+  border-radius: 9999px;
+}
+
+.home-strip-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: 9999px;
+}

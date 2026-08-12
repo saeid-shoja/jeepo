@@ -72,36 +72,47 @@ export class AdminService {
     };
   }
 
-  async getAllUsers(params: { search?: string } = {}) {
+  async getAllUsers(params: { search?: string; page?: number; limit?: number } = {}) {
     const search = normalizeAdminSearch(params.search);
-    const users = await this.prisma.user.findMany({
-      where: search
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-              { phone: { contains: search } },
-            ],
-          }
-        : undefined,
-      select: {
-        id: true,
-        phone: true,
-        email: true,
-        name: true,
-        role: true,
-        city: true,
-        maxActiveListings: true,
-        maxActiveNewListings: true,
-        createdAt: true,
-        _count: {
-          select: {
-            products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
+    const page = params.page || 1;
+    const limit = params.limit || 24;
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+            { phone: { contains: search } },
+          ],
+        }
+      : undefined;
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          phone: true,
+          email: true,
+          name: true,
+          role: true,
+          city: true,
+          maxActiveListings: true,
+          maxActiveNewListings: true,
+          createdAt: true,
+          _count: {
+            select: {
+              products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
 
     const userIds = users.map((u) => u.id);
     const newCounts =
@@ -119,7 +130,7 @@ export class AdminService {
           });
     const newCountByUser = new Map(newCounts.map((row) => [row.userId!, row._count._all] as const));
 
-    return users.map((user) => ({
+    const mapped = users.map((user) => ({
       id: user.id,
       phone: user.phone,
       email: user.email,
@@ -136,6 +147,13 @@ export class AdminService {
       defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: user.createdAt,
     }));
+
+    return {
+      users: mapped,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
   }
 
   async createUser(data: CreateAdminUserDto) {

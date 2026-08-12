@@ -3,7 +3,16 @@
 import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const STRIP_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
+const STRIP_SKELETON_KEYS = [
+  'sk-1',
+  'sk-2',
+  'sk-3',
+  'sk-4',
+  'sk-5',
+  'sk-6',
+  'sk-7',
+  'sk-8',
+] as const;
 
 type HomeProductStripProps<T> = {
   loading: boolean;
@@ -23,10 +32,10 @@ export function HomeProductStrip<T>({
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="overflow-x-auto overscroll-x-contain pb-1">
+        <div className="home-strip-scrollbar overflow-x-auto overscroll-x-contain pb-1">
           <div className="flex w-max gap-3">
             {STRIP_SKELETON_KEYS.map((key) => (
-              <Skeleton key={key} className="bg-muted h-55 w-35 shrink-0 rounded-sm sm:w-40" />
+              <Skeleton key={key} className="bg-muted h-55 shrink-0 rounded-sm w-50 md:w-45" />
             ))}
           </div>
         </div>
@@ -39,10 +48,10 @@ export function HomeProductStrip<T>({
   }
 
   return (
-    <div className="overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] scrollbar-thin">
+    <div className="home-strip-scrollbar overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] scrollbar-thin">
       <div className="flex w-max gap-3">
         {items.map((item) => (
-          <div key={getItemKey(item)} className="md:w-35 w-50 shrink-0 sm:w-40">
+          <div key={getItemKey(item)} className="w-50 shrink-0 md:w-45">
             {renderItem(item)}
           </div>
         ))}

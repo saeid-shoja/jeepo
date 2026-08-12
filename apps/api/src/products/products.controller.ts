@@ -22,6 +22,7 @@ export class ProductsController {
     return this.productsService.findAll({
       advertiser: query.advertiser,
       categoryId: query.categoryId,
+      libraryId: query.libraryId,
       carBrand: query.carBrand,
       search: query.search,
       page: query.page ?? 1,

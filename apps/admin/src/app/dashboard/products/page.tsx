@@ -1,10 +1,21 @@
 'use client';
 
 import { formatPrice, isVehicleSaleCategory } from '@offroad/shared';
-import { CheckCircle, Gavel, Shield, Store, Tag, TrendingUp, User, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  CheckCircle,
+  Gavel,
+  Loader2,
+  Shield,
+  Store,
+  Tag,
+  TrendingUp,
+  User,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
+import { ADMIN_LIST_PAGE_SIZE, useInfiniteScrollList } from '@/lib/use-infinite-scroll-list';
 
 type ProductTab = 'shop' | 'client' | 'pending_approval' | 'auction';
 
@@ -16,60 +27,53 @@ const TABS: Array<{ id: ProductTab; label: string; icon: typeof Store }> = [
 ];
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<any[]>([]);
   const [tab, setTab] = useState<ProductTab>('shop');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [announcing, setAnnouncing] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
-  const fetchSeq = useRef(0);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  const fetchProducts = useCallback(() => {
-    const seq = ++fetchSeq.current;
-    setLoading(true);
-    const params: Record<string, string> = {
-      page: String(page),
-      limit: '20',
-      tab,
-    };
-    if (search) params.search = search;
-    adminApi
-      .products(params)
-      .then((res) => {
-        if (seq !== fetchSeq.current) return;
-        setProducts(res.products);
-        setTotalPages(res.totalPages);
-      })
-      .catch(() => {
-        if (seq !== fetchSeq.current) return;
-        toast.error('بارگذاری محصولات ناموفق بود');
-      })
-      .finally(() => {
-        if (seq !== fetchSeq.current) return;
-        setLoading(false);
-      });
-  }, [page, tab, search]);
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(ADMIN_LIST_PAGE_SIZE),
+        tab,
+      };
+      if (search) params.search = search;
+      const res = await adminApi.products(params);
+      return { items: res.products, totalPages: res.totalPages };
+    },
+    [tab, search],
+  );
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  const {
+    items: products,
+    initialLoading,
+    loadingMore,
+    hasMore,
+    sentinelRef,
+  } = useInfiniteScrollList<any>({
+    fetchPage,
+    deps: [tab, search, reloadToken],
+  });
 
   useEffect(() => {
     setSelectedIds(new Set());
-  }, []);
+  }, [tab, search]);
 
   const activeProducts = useMemo(() => products.filter((p) => p.status === 'ACTIVE'), [products]);
   const allActiveSelected =
     activeProducts.length > 0 && activeProducts.every((p) => selectedIds.has(p.id));
 
+  const refreshList = () => setReloadToken((token) => token + 1);
+
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await adminApi.updateProductStatus(id, newStatus);
       toast.success('وضعیت محصول به‌روزرسانی شد');
-      fetchProducts();
+      refreshList();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی وضعیت');
     }
@@ -102,7 +106,7 @@ export default function AdminProductsPage() {
           ? `تضمین اعمال شد (${result.updated.toLocaleString('fa-IR')})`
           : `تضمین برداشته شد (${result.updated.toLocaleString('fa-IR')})`,
       );
-      fetchProducts();
+      refreshList();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
     }
@@ -168,7 +172,6 @@ export default function AdminProductsPage() {
   };
 
   const applySearch = () => {
-    setPage(1);
     setSearch(searchInput.trim());
   };
 
@@ -207,11 +210,11 @@ export default function AdminProductsPage() {
         />
         <button
           type="button"
-          disabled={loading}
+          disabled={initialLoading}
           onClick={applySearch}
           className="bg-primary rounded-md px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? 'در حال جستجو…' : 'جستجو'}
+          {initialLoading ? 'در حال جستجو…' : 'جستجو'}
         </button>
         {search ? (
           <button
@@ -219,7 +222,6 @@ export default function AdminProductsPage() {
             onClick={() => {
               setSearchInput('');
               setSearch('');
-              setPage(1);
             }}
             className="rounded-md border px-4 py-2 text-sm"
           >
@@ -238,10 +240,7 @@ export default function AdminProductsPage() {
           <button
             key={id}
             type="button"
-            onClick={() => {
-              setTab(id);
-              setPage(1);
-            }}
+            onClick={() => setTab(id)}
             className={`flex items-center gap-2 rounded-t-sm border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               tab === id
                 ? 'border-primary text-primary'
@@ -396,7 +395,7 @@ export default function AdminProductsPage() {
                 </tr>
               );
             })}
-            {products.length === 0 && (
+            {!initialLoading && products.length === 0 && (
               <tr>
                 <td colSpan={colSpan} className="px-4 py-8 text-center text-gray-500">
                   محصولی یافت نشد
@@ -407,20 +406,19 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              type="button"
-              key={p}
-              onClick={() => setPage(p)}
-              className={`h-9 w-9 rounded-sm text-sm ${page === p ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}
-            >
-              {p}
-            </button>
-          ))}
+      {initialLoading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="text-primary size-6 animate-spin" />
         </div>
-      )}
+      ) : null}
+
+      {loadingMore ? (
+        <div className="flex justify-center py-3">
+          <Loader2 className="text-muted-foreground size-5 animate-spin" />
+        </div>
+      ) : null}
+
+      {hasMore ? <div ref={sentinelRef} className="h-1" aria-hidden /> : null}
     </div>
   );
 }

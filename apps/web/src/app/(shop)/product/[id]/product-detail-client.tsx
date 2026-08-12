@@ -35,7 +35,7 @@ import { ReportProductDialog } from '@/components/shop/report-product-dialog';
 import { TransactionSafetyDialog } from '@/components/shop/transaction-safety-dialog';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
-import { canStartProductChat, isClientProduct } from '@/lib/product-advertiser';
+import { canStartProductChat, isClientProduct, isShopProduct } from '@/lib/product-advertiser';
 import { resolveProductSituation } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
@@ -240,9 +240,9 @@ export function ProductDetailClient() {
           )}
         </div>
 
-        <div className="flex flex-wrap items-start gap-x-4 gap-y-2 text-sm text-gray-400 sm:items-center">
-          {(product.city || product.neighborhood) && (
-            <span className="inline-flex min-w-0 max-w-full items-start gap-1 sm:items-center">
+        <div className="flex flex-wrap sm:items-start gap-x-4 gap-y-2 text-sm dark:text-gray-200 items-center">
+          {(product.city || product.neighborhood) && !isShopProduct(product) && (
+            <span className="inline-flex min-w-0 max-w-full sm:items-start gap-1 items-center">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" aria-hidden />
               <span className="wrap-break leading-relaxed">
                 {formatProductLocationWithProvince(product.city, product.neighborhood)}
@@ -273,7 +273,7 @@ export function ProductDetailClient() {
 
         <div>
           <h3 className="mb-2 font-bold">توضیحات</h3>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-400">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed dark:text-gray-200">
             {product.description}
           </p>
         </div>
@@ -355,7 +355,7 @@ export function ProductDetailClient() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1 text-sm text-gray-300 hover:text-primary"
+          className="flex items-center gap-1 text-sm dark:text-gray-200 hover:text-primary"
         >
           <ArrowRight className="h-4 w-4" />
           بازگشت به لیست

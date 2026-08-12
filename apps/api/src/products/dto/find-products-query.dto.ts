@@ -13,6 +13,11 @@ export class FindProductsQueryDto extends PaginationQueryDto {
   @IsString()
   categoryId?: string;
 
+  /** Filter products whose category belongs to this library (all descendants). */
+  @IsOptional()
+  @IsString()
+  libraryId?: string;
+
   @IsOptional()
   @IsString()
   search?: string;

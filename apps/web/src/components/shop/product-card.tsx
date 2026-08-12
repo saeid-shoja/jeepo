@@ -10,6 +10,7 @@ import { ProductSituationBadge } from '@/components/shop/product-situation-badge
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { saveListScroll } from '@/lib/list-scroll-restore';
+import { isShopProduct } from '@/lib/product-advertiser';
 import { type ProductSituation, resolveProductSituation } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
 import { useAuth } from '@/stores/auth-store';
@@ -60,6 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const situation = resolveProductSituation(product);
   const postedAt = timeAgo(new Date(product.listedAt ?? product.createdAt));
   const canBuy = canViewerPurchase(product, user?.id);
+  const showLocation = !isShopProduct(product);
 
   return (
     <Card
@@ -117,10 +119,12 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
 
           <div className="text-muted-foreground flex flex-col gap-1 text-[10px]">
-            <span className="flex items-center gap-0.5">
-              <MapPin className="h-3 w-3 shrink-0" />
-              {formatProductLocation(product.city, product.neighborhood) || 'نامشخص'}
-            </span>
+            {showLocation ? (
+              <span className="flex items-center gap-0.5">
+                <MapPin className="h-3 w-3 shrink-0" />
+                {formatProductLocation(product.city, product.neighborhood) || 'نامشخص'}
+              </span>
+            ) : null}
             <span className="flex items-center gap-1">
               <Clock className="h-2.5 w-2.5 shrink-0" />
               {postedAt}

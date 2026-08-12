@@ -715,9 +715,25 @@ export class ProductsService {
     this.telegramChannel.announceBoost(productId);
   }
 
+  /** Include root category and all nested descendants (any depth). */
+  private async collectCategoryAndDescendantIds(rootId: string): Promise<string[]> {
+    const ids = [rootId];
+    let frontier = [rootId];
+    while (frontier.length) {
+      const children = await this.prisma.category.findMany({
+        where: { parentId: { in: frontier } },
+        select: { id: true },
+      });
+      frontier = children.map((c) => c.id).filter((id) => !ids.includes(id));
+      ids.push(...frontier);
+    }
+    return ids;
+  }
+
   async findAll(params: {
     advertiser?: string;
     categoryId?: string;
+    libraryId?: string;
     carBrand?: string;
     search?: string;
     page?: number;
@@ -743,18 +759,12 @@ export class ProductsService {
     if (params.advertiser === 'CLIENT' && params.auction !== true) {
       where.isAuction = false;
     }
+    if (params.libraryId) {
+      where.category = { ...(where.category ?? {}), libraryId: params.libraryId };
+    }
     if (params.categoryId) {
-      const category = await this.prisma.category.findUnique({
-        where: { id: params.categoryId },
-        include: { children: { select: { id: true } } },
-      });
-      if (category?.children.length) {
-        where.categoryId = {
-          in: [category.id, ...category.children.map((c) => c.id)],
-        };
-      } else {
-        where.categoryId = params.categoryId;
-      }
+      const categoryIds = await this.collectCategoryAndDescendantIds(params.categoryId);
+      where.categoryId = categoryIds.length > 1 ? { in: categoryIds } : params.categoryId;
     }
     if (params.cities?.length) {
       where.city = { in: params.cities };

@@ -11,8 +11,10 @@ import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog'
 import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductGallery } from '@/components/shop/product-gallery';
+import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductShareButton } from '@/components/shop/product-share-button';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
+import { RelatedProductsStrip } from '@/components/shop/related-products-strip';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
@@ -93,93 +95,98 @@ export function ProductDetailClient() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 container">
-      <ProductGallery
-        images={images}
-        title={product.title}
-        resetKey={product.id ?? id}
-        badge={<ProductSituationBadge situation={situation} />}
-      />
-
-      <div className="space-y-5">
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <h1 className="text-2xl font-bold">{product.title}</h1>
-            <div className="flex shrink-0 items-center gap-1">
-              <FavoriteButton productId={product.id ?? id} />
-              <ProductShareButton productId={product.id ?? id} title={product.title} />
-              {isOwner && (
-                <>
-                  <Link
-                    href={`/products/${product.id}/edit`}
-                    className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 mt-1"
-                  >
-                    <Edit3 className="h-5 w-4" />
-                  </Link>
-                  <button
-                    type="button"
-                    className="rounded-sm p-2 text-red-500 hover:bg-red-50 disabled:opacity-50"
-                    disabled={deleting}
-                    aria-label="حذف آگهی"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <Trash2 className={`h-4 w-4 ${deleting ? 'animate-pulse' : ''}`} />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-          <p className="mt-1 text-sm text-gray-400">در {product.category?.name}</p>
+    <div className="space-y-8">
+      <div className="grid gap-8 lg:grid-cols-2 container">
+        <div className="min-w-0 max-w-full">
+          <ProductGallery
+            images={images}
+            title={product.title}
+            resetKey={product.id ?? id}
+            badge={<ProductSituationBadge situation={situation} />}
+          />
         </div>
 
-        {!product.isAuction && (
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-primary">
-              {formatPrice(product.price)} <span className="text-lg">تومان</span>
-            </p>
-            {product.color ? (
-              <p className="text-muted-foreground text-sm">
-                رنگ: <span className="text-foreground font-medium">{product.color}</span>
-              </p>
-            ) : null}
-            {product.newPrice != null && product.newPrice > 0 && (
-              <p className="text-sm text-muted-foreground">
-                قیمت نو محصول:{' '}
-                <span className="font-medium text-foreground">
-                  {formatPrice(product.newPrice)} تومان
-                </span>
-              </p>
-            )}
+        <div className="space-y-5">
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-2xl font-bold">{product.title}</h1>
+              <div className="flex shrink-0 items-center gap-1">
+                <FavoriteButton productId={product.id ?? id} />
+                <ProductShareButton productId={product.id ?? id} title={product.title} />
+                {isOwner && (
+                  <>
+                    <Link
+                      href={`/products/${product.id}/edit`}
+                      className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 mt-1"
+                    >
+                      <Edit3 className="h-5 w-4" />
+                    </Link>
+                    <button
+                      type="button"
+                      className="rounded-sm p-2 text-red-500 hover:bg-red-50 disabled:opacity-50"
+                      disabled={deleting}
+                      aria-label="حذف آگهی"
+                      onClick={() => setDeleteOpen(true)}
+                    >
+                      <Trash2 className={`h-4 w-4 ${deleting ? 'animate-pulse' : ''}`} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+            <p className="mt-1 text-sm text-gray-400">در {product.category?.name}</p>
           </div>
-        )}
 
-        <div className="flex flex-wrap gap-2">
-          <ProductSituationBadge situation={situation} />
-          {product.carBrands?.map((b: { value: string; label: string }) => (
-            <span
-              key={b.value}
-              className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
-            >
-              {b.label}
-            </span>
-          ))}
-          {product.hasGuarantee && (
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
-              aria-label="اطلاعات تضمین فروشگاه"
-              onClick={() => setGuaranteeOpen(true)}
-            >
-              <Shield className="h-4 w-4" />
-              با تضمین فروشگاه
-            </button>
+          {!product.isAuction && (
+            <div className="space-y-1">
+              <ProductPriceDisplay
+                price={product.price}
+                salePrice={product.salePrice}
+                variant="detail"
+              />
+              {product.color ? (
+                <p className="text-muted-foreground text-sm">
+                  رنگ: <span className="text-foreground font-medium">{product.color}</span>
+                </p>
+              ) : null}
+              {product.newPrice != null && product.newPrice > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  قیمت نو محصول:{' '}
+                  <span className="font-medium text-foreground">
+                    {formatPrice(product.newPrice)} تومان
+                  </span>
+                </p>
+              )}
+            </div>
           )}
-          {/* مزایده — موقتاً غیرفعال
+
+          <div className="flex flex-wrap gap-2">
+            <ProductSituationBadge situation={situation} />
+            {product.carBrands?.map((b: { value: string; label: string }) => (
+              <span
+                key={b.value}
+                className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
+              >
+                {b.label}
+              </span>
+            ))}
+            {product.hasGuarantee && (
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
+                aria-label="اطلاعات تضمین فروشگاه"
+                onClick={() => setGuaranteeOpen(true)}
+              >
+                <Shield className="h-4 w-4" />
+                با تضمین فروشگاه
+              </button>
+            )}
+            {/* مزایده — موقتاً غیرفعال
           {product.isAuction && (
             <Badge className="bg-violet-600 text-white hover:bg-violet-600">مزایده</Badge>
           )}
           */}
-          {/* تقویت شده — موقتاً غیرفعال
+            {/* تقویت شده — موقتاً غیرفعال
           {product.isStrengthenedActive && (
             <span className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm text-violet-700">
               <Sparkles className="h-4 w-4" />
@@ -187,121 +194,125 @@ export function ProductDetailClient() {
             </span>
           )}
           */}
-          {product.isBoosted && (
-            <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-700">
-              <TrendingUp className="h-4 w-4" />
-              پله شده
-            </span>
-          )}
-        </div>
-
-        {showStock && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm dark:text-gray-200">
-            <span className="flex items-center gap-1">
-              <Package className="h-4 w-4" />
-              {stockQuantity > 0 ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود` : 'ناموجود'}
-            </span>
+            {product.isBoosted && (
+              <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-700">
+                <TrendingUp className="h-4 w-4" />
+                پله شده
+              </span>
+            )}
           </div>
-        )}
 
-        <GuaranteeInfoDialog open={guaranteeOpen} onOpenChange={setGuaranteeOpen} />
+          {showStock && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm dark:text-gray-200">
+              <span className="flex items-center gap-1">
+                <Package className="h-4 w-4" />
+                {stockQuantity > 0
+                  ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود`
+                  : 'ناموجود'}
+              </span>
+            </div>
+          )}
 
-        <div>
-          <h3 className="mb-2 font-bold">توضیحات</h3>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed dark:text-gray-200">
-            {product.description}
-          </p>
-        </div>
+          <GuaranteeInfoDialog open={guaranteeOpen} onOpenChange={setGuaranteeOpen} />
 
-        {/* مزایده — موقتاً غیرفعال
+          <div>
+            <h3 className="mb-2 font-bold">توضیحات</h3>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed dark:text-gray-200">
+              {product.description}
+            </p>
+          </div>
+
+          {/* مزایده — موقتاً غیرفعال
         {product.isAuction && <AuctionPanel product={product} />}
         */}
 
-        {canBuy && !product.isAuction && stockQuantity > 0 && (
-          <div className="rounded-lg border bg-card p-4 space-y-4">
-            <h3 className="font-bold">خرید از فروشگاه</h3>
-            {stockQuantity > 1 ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">تعداد:</span>
-                <div className="flex items-center gap-2 rounded-lg border">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  >
-                    −
-                  </Button>
-                  <span className="min-w-8 text-center font-medium">{quantity}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    onClick={() => setQuantity((q) => Math.min(stockQuantity, q + 1))}
-                    disabled={quantity >= stockQuantity}
-                  >
-                    +
-                  </Button>
+          {canBuy && !product.isAuction && stockQuantity > 0 && (
+            <div className="rounded-lg border bg-card p-4 space-y-4">
+              <h3 className="font-bold">خرید از فروشگاه</h3>
+              {stockQuantity > 1 ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">تعداد:</span>
+                  <div className="flex items-center gap-2 rounded-lg border">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    >
+                      −
+                    </Button>
+                    <span className="min-w-8 text-center font-medium">{quantity}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setQuantity((q) => Math.min(stockQuantity, q + 1))}
+                      disabled={quantity >= stockQuantity}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <span className="text-muted-foreground text-xs">
+                    حداکثر {stockQuantity.toLocaleString('fa-IR')} عدد
+                  </span>
                 </div>
-                <span className="text-muted-foreground text-xs">
-                  حداکثر {stockQuantity.toLocaleString('fa-IR')} عدد
-                </span>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">۱ عدد موجود برای خرید</p>
-            )}
-            <AddToCartButton
-              product={product}
-              quantity={quantity}
-              maxQuantity={stockQuantity}
-              className="w-full"
-            />
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/cart">رفتن به سبد خرید</Link>
-            </Button>
-          </div>
-        )}
+              ) : (
+                <p className="text-muted-foreground text-sm">۱ عدد موجود برای خرید</p>
+              )}
+              <AddToCartButton
+                product={product}
+                quantity={quantity}
+                maxQuantity={stockQuantity}
+                className="w-full"
+              />
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/cart">رفتن به سبد خرید</Link>
+              </Button>
+            </div>
+          )}
 
-        <Link
-          href="/products"
-          className="flex items-center gap-1 text-sm text-gray-300 hover:text-primary"
-        >
-          <ArrowRight className="h-4 w-4" />
-          بازگشت به لیست
-        </Link>
+          <Link
+            href="/products"
+            className="flex items-center gap-1 text-sm text-gray-300 hover:text-primary"
+          >
+            <ArrowRight className="h-4 w-4" />
+            بازگشت به لیست
+          </Link>
 
-        {!isOwner && (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
-              onClick={() => setReportOpen(true)}
-            >
-              <Flag className="size-4" />
-              گزارش مشکل
-            </Button>
-            <ReportProductDialog
-              open={reportOpen}
-              onOpenChange={setReportOpen}
-              productId={product.id ?? id}
-              productTitle={product.title}
-              isAuthenticated={Boolean(user)}
-            />
-          </>
-        )}
+          {!isOwner && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => setReportOpen(true)}
+              >
+                <Flag className="size-4" />
+                گزارش مشکل
+              </Button>
+              <ReportProductDialog
+                open={reportOpen}
+                onOpenChange={setReportOpen}
+                productId={product.id ?? id}
+                productTitle={product.title}
+                isAuthenticated={Boolean(user)}
+              />
+            </>
+          )}
+        </div>
+
+        <DeleteListingDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          listingTitle={product.title}
+          loading={deleting}
+          onConfirm={handleDelete}
+        />
       </div>
-
-      <DeleteListingDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        listingTitle={product.title}
-        loading={deleting}
-        onConfirm={handleDelete}
-      />
+      <RelatedProductsStrip productId={product.id ?? id} />
     </div>
   );
 }

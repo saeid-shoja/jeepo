@@ -2,11 +2,12 @@
 
 import { ArrowLeft, Store } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { HomeProductStrip } from '@/components/home/home-product-strip';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
-import { type LibraryNode, useCategories } from '@/stores/categories-store';
+import { filterShopSaleCategories } from '@/lib/shop-category-filters';
+import { type LibraryNode, useCategoriesStore } from '@/stores/categories-store';
 
 const HOME_SECTION_LIMIT = '10';
 const LIBRARY_SKELETON_KEYS = [
@@ -28,7 +29,9 @@ function emptyStripMap(libraries: LibraryNode[]): Record<string, LibraryStripSta
 }
 
 export default function MainSection() {
-  const { libraries, loading: categoriesLoading } = useCategories();
+  const rawLibraries = useCategoriesStore((s) => s.libraries);
+  const categoriesLoading = useCategoriesStore((s) => s.loading);
+  const libraries = useMemo(() => filterShopSaleCategories(rawLibraries), [rawLibraries]);
   const [strips, setStrips] = useState<Record<string, LibraryStripState>>({});
 
   useEffect(() => {

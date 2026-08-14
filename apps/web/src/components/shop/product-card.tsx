@@ -1,11 +1,12 @@
 'use client';
 
-import { formatPrice, formatProductLocation, timeAgo } from '@offroad/shared';
+import { formatProductLocation, timeAgo } from '@offroad/shared';
 import { Clock, MapPin, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
 import { ProductMedia } from '@/components/shop/product-media';
+import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,7 @@ interface ProductCardProps {
     id: string;
     title: string;
     price: number;
+    salePrice?: number | null;
     images?: string[];
     city?: string | null;
     neighborhood?: string | null;
@@ -66,7 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Card
       data-product-id={product.id}
-      className="hover:border-primary/40 flex h-full flex-col gap-0 overflow-hidden py-0 transition-all hover:shadow-lg hover:scale-102"
+      className="hover:border-primary/40 flex h-full flex-col justify-between gap-0 overflow-hidden py-0 transition-all hover:shadow-lg hover:scale-102"
       dir="rtl"
     >
       <Link
@@ -109,27 +111,24 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <CardContent className="space-y-2 p-3">
-          <h3 className="line-clamp-2 min-h-6 text-xs leading-snug font-semibold">
+          <h3 className="line-clamp-2 min-h-6 text-sm leading-snug font-bold">
             {product.title}
           </h3>
 
-          <p className="text-foreground text-xs font-semibold">
-            {formatPrice(product.price)}{' '}
-            <span className="text-foreground text-xs font-normal">تومان</span>
-          </p>
+          <ProductPriceDisplay price={product.price} salePrice={product.salePrice} variant="card" />
 
-          <div className="text-muted-foreground flex flex-col gap-1 text-[10px]">
-            {showLocation ? (
+          {showLocation ? (
+            <div className="text-muted-foreground flex flex-col gap-1 text-[10px]">
               <span className="flex items-center gap-0.5">
                 <MapPin className="h-3 w-3 shrink-0" />
                 {formatProductLocation(product.city, product.neighborhood) || 'نامشخص'}
               </span>
-            ) : null}
-            <span className="flex items-center gap-1">
-              <Clock className="h-2.5 w-2.5 shrink-0" />
-              {postedAt}
-            </span>
-          </div>
+              <span className="flex items-center gap-1">
+                <Clock className="h-2.5 w-2.5 shrink-0" />
+                {postedAt}
+              </span>
+            </div>
+          ) : null}
         </CardContent>
       </Link>
 

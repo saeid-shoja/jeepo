@@ -1,10 +1,10 @@
 'use client';
 
-import { formatPrice } from '@offroad/shared';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
 import { ProductImage } from '@/components/shop/product-image';
+import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { type ProductSituation, resolveProductSituation } from '@/lib/product-utils';
@@ -16,6 +16,7 @@ interface ProductCardProps {
     id: string;
     title: string;
     price: number;
+    salePrice?: number | null;
     images?: string[];
     city?: string | null;
     neighborhood?: string | null;
@@ -58,7 +59,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const canBuy = canViewerPurchase(product, user?.id);
 
   return (
-    <Card className="hover:border-primary/40 flex h-full flex-col gap-0 overflow-hidden py-0 transition-all hover:shadow-lg hover:scale-102">
+    <Card className="hover:border-primary/40 flex h-full flex-col justify-between gap-0 overflow-hidden py-0 transition-all hover:shadow-lg hover:scale-102">
       <Link href={`/product/${product.id}`} className="group block">
         <div className="relative aspect-square overflow-hidden bg-muted">
           <div className="absolute top-2 left-2 z-10">
@@ -83,10 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.title}
           </h3>
 
-          <p className="text-foreground text-xs font-semibold">
-            {formatPrice(product.price)}{' '}
-            <span className="text-foreground text-xs font-normal">تومان</span>
-          </p>
+          <ProductPriceDisplay price={product.price} salePrice={product.salePrice} variant="card" />
         </CardContent>
       </Link>
 

@@ -84,7 +84,8 @@ export function ProductImage({
             setLoaded(true);
           }}
           className={cn(
-            'object-cover transition-opacity duration-300',
+            'transition-opacity duration-300',
+            !imageClassName?.includes('object-') && 'object-cover',
             loaded ? 'opacity-100' : 'opacity-0',
             imageClassName,
           )}

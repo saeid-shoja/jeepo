@@ -5,13 +5,14 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ProductCard } from '@/components/shop/product-card';
 import { api } from '@/lib/api';
-import { useCategories } from '@/stores/categories-store';
+import { useCategoriesStore } from '@/stores/categories-store';
 
 const CATEGORY_PAGE_SIZE = 24;
 
 export function CategoryPageClient() {
   const { slug } = useParams<{ slug: string }>();
-  const { parts, loading: categoriesLoading } = useCategories();
+  const parts = useCategoriesStore((s) => s.parts);
+  const categoriesLoading = useCategoriesStore((s) => s.loading);
   const category = parts.find((c) => c.slug === slug);
 
   const [products, setProducts] = useState<any[]>([]);

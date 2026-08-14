@@ -33,6 +33,13 @@ export class CreateProductDto {
   @Min(0, { message: 'قیمت نمی‌تواند منفی باشد' })
   price!: number;
 
+  /** Optional discounted selling price (must be lower than price). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1, { message: 'قیمت با تخفیف باید بیشتر از صفر باشد' })
+  salePrice?: number;
+
   /** Approximate retail / new price (optional; mainly for USED listings). */
   @IsOptional()
   @Type(() => Number)

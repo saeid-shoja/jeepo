@@ -41,6 +41,12 @@ export class ProductsController {
   }
 
   @Public()
+  @Get(':id/related')
+  findRelated(@Param('id') id: string) {
+    return this.productsService.findRelated(id);
+  }
+
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req: { user?: { userId: string } | null }) {
     return this.productsService.findOne(id, req.user?.userId ?? null);

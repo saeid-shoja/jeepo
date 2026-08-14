@@ -1,6 +1,7 @@
 import { SITE_DESCRIPTION } from '@offroad/shared';
 import type { Metadata } from 'next';
 import { HeroSlider } from '@/components/home/hero';
+import { HomeCategoryCircles } from '@/components/home/home-category-circles';
 import MainSection from '@/components/home/main-section';
 import { JsonLd } from '@/components/seo/json-ld';
 import { buildHomePageJsonLd, buildMetadata } from '@/lib/seo';
@@ -26,6 +27,7 @@ export default function HomePage() {
       <div className="relative -mx-4 -mt-12 mb-4">
         <HeroSlider />
       </div>
+      <HomeCategoryCircles />
       <MainSection />
     </>
   );

@@ -136,6 +136,7 @@ export const api = {
       );
     },
     get: (id: string) => request<any>(`/products/${id}`),
+    related: (id: string) => request<{ products: any[] }>(`/products/${id}/related`),
     listingQuota: () =>
       request<{
         activeCount: number;

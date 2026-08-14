@@ -128,6 +128,8 @@ const sharedProductFieldsBase = {
     .or(z.literal('')),
   /** Approximate retail / new price; required when situation is USED (non-auction). */
   newPrice: z.number(),
+  /** Optional discounted selling price; must be lower than price when set. */
+  salePrice: z.number(),
   mileageKm: z.number().nullable(),
   paintCondition: z.union([paintConditionSchema, z.literal('')]),
 };
@@ -164,6 +166,7 @@ function refineNewProductForm(
     paintCondition: string;
     isAuction: boolean;
     price: number;
+    salePrice: number;
     situation: 'NEW' | 'USED';
     newPrice: number;
     auctionStartPrice: number;
@@ -190,6 +193,21 @@ function refineNewProductForm(
         message: 'قیمت تقریبی نو محصول را وارد کنید',
         path: ['newPrice'],
       });
+    }
+    if (data.salePrice > 0) {
+      if (data.price <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'ابتدا قیمت اصلی را وارد کنید',
+          path: ['price'],
+        });
+      } else if (data.salePrice >= data.price) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'قیمت با تخفیف باید کمتر از قیمت اصلی باشد',
+          path: ['salePrice'],
+        });
+      }
     }
     return;
   }
@@ -258,6 +276,7 @@ export function createNewProductSchema(options: { allowZeroStock: boolean }) {
       stockQuantity: stockQuantityField(options.allowZeroStock),
       images: createImagesField(true),
       price: z.number(),
+      salePrice: z.number(),
       isAuction: z.boolean(),
       auctionStartPrice: z.number(),
       auctionEndsAtLocal: z.string(),
@@ -281,6 +300,7 @@ export function createEditProductSchema(options: { allowZeroStock: boolean }) {
       /** Legacy JPEG/PNG data-URLs allowed until re-uploaded; size is always enforced. */
       images: createImagesField(false),
       price: z.number().positive('قیمت محصول را وارد کنید'),
+      salePrice: z.number(),
     })
     .superRefine((data, ctx) => {
       refineVehicleSaleFields(data, ctx);
@@ -290,6 +310,13 @@ export function createEditProductSchema(options: { allowZeroStock: boolean }) {
           code: z.ZodIssueCode.custom,
           message: 'قیمت تقریبی نو محصول را وارد کنید',
           path: ['newPrice'],
+        });
+      }
+      if (data.salePrice > 0 && data.salePrice >= data.price) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'قیمت با تخفیف باید کمتر از قیمت اصلی باشد',
+          path: ['salePrice'],
         });
       }
     });

@@ -8,15 +8,16 @@ const OPTIONS_CARD_DESC = 'text-muted-foreground mt-1 text-xs lg:text-sm';
 function BadgeInfo() {
   return (
     <section className="container grid grid-cols-1 gap-2 lg:gap-x-4 sm:grid-cols-2 xl:grid-cols-4">
-      {/* <div className={OPTION_CARD_STYLE}>
+      <div className={OPTION_CARD_STYLE}>
         <Shield className={OPTIONS_CARD_ICON} />
         <div>
           <h3 className={OPTIONS_CARD_TITLE}>با تضمین فروشگاه</h3>
           <p className={OPTIONS_CARD_DESC}>
-            محصولات دارای نشان تضمین، اصالت کالا را از فروشگاه ما دارند
+            محصولات دارای نشان تضمین دارای دکمه خرید مستقیم هستند و تضمین کالا را از فروشگاه ما دارند
+            برای ضمانت محصول خود توسط فروشگاه با پشتیبانی در ارتباط باشید.
           </p>
         </div>
-      </div> */}
+      </div>
       <div className={OPTION_CARD_STYLE}>
         <TrendingUp className={OPTIONS_CARD_ICON} />
         <div>

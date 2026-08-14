@@ -72,6 +72,7 @@ const EMPTY_FORM_VALUES: NewProductFormValues = {
   stockQuantity: 1,
   color: '',
   newPrice: 0,
+  salePrice: 0,
   categorySlug: '',
   mileageKm: null,
   paintCondition: '',
@@ -219,6 +220,7 @@ export default function NewProductPage() {
         title: data.title,
         description: data.description,
         price: data.isAuction ? data.auctionStartPrice : data.price,
+        salePrice: !data.isAuction && data.salePrice > 0 ? data.salePrice : undefined,
         newPrice:
           !data.isAuction && data.situation === 'USED' && data.newPrice > 0
             ? data.newPrice
@@ -408,6 +410,20 @@ export default function NewProductPage() {
               />
               <FieldError message={errors.price?.message} />
             </div>
+
+            {!isAuction && (
+              <div className="space-y-2">
+                <Label htmlFor="salePrice">قیمت با تخفیف (اختیاری)</Label>
+                <Controller
+                  name="salePrice"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput id="salePrice" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <FieldError message={errors.salePrice?.message} />
+              </div>
+            )}
 
             {!isAuction && situation === 'USED' && (
               <div className="space-y-2">

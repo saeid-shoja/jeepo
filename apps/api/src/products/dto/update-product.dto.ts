@@ -44,6 +44,13 @@ export class UpdateProductDto {
   @ValidateIf((_, value) => value != null)
   @Type(() => Number)
   @IsNumber()
+  @Min(1, { message: 'قیمت با تخفیف باید بیشتر از صفر باشد' })
+  salePrice?: number | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @Type(() => Number)
+  @IsNumber()
   @Min(1, { message: 'قیمت نو محصول باید بیشتر از صفر باشد' })
   newPrice?: number | null;
 

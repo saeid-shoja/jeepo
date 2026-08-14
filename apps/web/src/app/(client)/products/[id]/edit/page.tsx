@@ -80,6 +80,7 @@ export default function EditProductPage() {
       stockQuantity: 1,
       color: '',
       newPrice: 0,
+      salePrice: 0,
       mileageKm: null,
       paintCondition: '',
     },
@@ -126,6 +127,7 @@ export default function EditProductPage() {
           title: product.title,
           description: product.description,
           price: product.price,
+          salePrice: product.salePrice ?? 0,
           newPrice: product.newPrice ?? 0,
           categoryId: product.categoryId,
           categorySlug: product.category?.slug ?? '',
@@ -155,6 +157,7 @@ export default function EditProductPage() {
         title: data.title,
         description: data.description,
         price: data.price,
+        salePrice: data.salePrice > 0 ? data.salePrice : null,
         categoryId: data.categoryId,
         carBrands: data.carBrands,
         city: data.city || undefined,
@@ -246,6 +249,18 @@ export default function EditProductPage() {
                 )}
               />
               <FieldError message={errors.price?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="salePrice">قیمت با تخفیف (اختیاری)</Label>
+              <Controller
+                name="salePrice"
+                control={control}
+                render={({ field }) => (
+                  <PriceInput id="salePrice" value={field.value} onChange={field.onChange} />
+                )}
+              />
+              <FieldError message={errors.salePrice?.message} />
             </div>
 
             {situation === 'USED' && (

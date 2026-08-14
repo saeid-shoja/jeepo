@@ -1,5 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { formatPrice, formatProductLocationWithProvince, SITE_URL } from '@offroad/shared';
+import {
+  formatDiscountPercent,
+  formatPrice,
+  formatProductLocationWithProvince,
+  resolveProductDiscount,
+  SITE_URL,
+} from '@offroad/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { escapeTelegramHtml, TelegramService } from './telegram.service';
 import type { TelegramChannelTopics, TelegramProductAnnouncementKind } from './telegram-channels';
@@ -103,6 +109,7 @@ export class TelegramChannelService {
         id: true,
         title: true,
         price: true,
+        salePrice: true,
         images: true,
         status: true,
         advertiser: true,
@@ -121,6 +128,7 @@ export class TelegramChannelService {
       id: string;
       title: string;
       price: number;
+      salePrice?: number | null;
       isAuction: boolean;
       auctionStartPrice: number | null;
       city: string | null;
@@ -131,16 +139,23 @@ export class TelegramChannelService {
     kind?: TelegramProductAnnouncementKind,
   ): string {
     const url = this.buildProductPublicUrl(product.id);
-    const price =
+    const listPrice =
       product.isAuction && product.auctionStartPrice != null
         ? product.auctionStartPrice
         : product.price;
+    const discount = resolveProductDiscount(listPrice, product.salePrice);
     const location = formatProductLocationWithProvince(product.city, product.neighborhood);
-    const lines = [
-      `<b>${escapeTelegramHtml(product.title)}</b>`,
-      `💰 ${escapeTelegramHtml(formatPrice(price))}`,
-    ];
-    if (location) lines.push(`📍 ${escapeTelegramHtml(location)}`);
+    const lines = [`<b>${escapeTelegramHtml(product.title)}</b>`];
+
+    if (discount.hasDiscount) {
+      lines.push(
+        `💰 <s>${escapeTelegramHtml(formatPrice(discount.originalPrice))}</s> <b>${escapeTelegramHtml(formatPrice(discount.effectivePrice))}</b> (${escapeTelegramHtml(formatDiscountPercent(discount.discountPercent!))} تخفیف)`,
+      );
+    } else {
+      lines.push(`💰 ${escapeTelegramHtml(formatPrice(listPrice))}`);
+    }
+
+    if (kind !== 'SHOP' && location) lines.push(`📍 ${escapeTelegramHtml(location)}`);
     if (kind === 'BEST_PRICE') lines.push('🏷 قیمت مناسب');
     if (product.hasGuarantee) lines.push('🛡 تضمین جیپو');
     if (product.isBoosted) lines.push('📈 پله‌شده');

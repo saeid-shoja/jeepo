@@ -141,9 +141,7 @@ export function resolveProductDiscount(
   const originalPrice = price;
   const hasDiscount = salePrice != null && salePrice > 0 && salePrice < price;
   const effectivePrice = hasDiscount ? salePrice : price;
-  const discountPercent = hasDiscount
-    ? Math.round(((price - salePrice) / price) * 100)
-    : null;
+  const discountPercent = hasDiscount ? Math.round(((price - salePrice) / price) * 100) : null;
   return { hasDiscount, originalPrice, effectivePrice, discountPercent };
 }
 

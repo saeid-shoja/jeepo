@@ -39,15 +39,8 @@ export function ProductPriceDisplay({
 
   return (
     <div className={cn('space-y-0.5', className)}>
-      <p
-        className={cn(
-          'text-destructive',
-          variant === 'detail' ? 'text-base' : 'text-xs',
-        )}
-      >
-        <span className='line-through'>
-          {formatPrice(originalPrice)} تومان
-        </span>
+      <p className={cn('text-destructive', variant === 'detail' ? 'text-base' : 'text-xs')}>
+        <span className="line-through">{formatPrice(originalPrice)} تومان</span>
         {discountPercent != null && (
           <span
             className={cn(
@@ -66,7 +59,11 @@ export function ProductPriceDisplay({
         )}
       >
         {formatPrice(effectivePrice)}{' '}
-        <span className={variant === 'detail' ? 'text-lg font-normal text-destructive' : 'text-[8px] font-normal'}>
+        <span
+          className={
+            variant === 'detail' ? 'text-lg font-normal text-destructive' : 'text-[8px] font-normal'
+          }
+        >
           تومان
         </span>
       </p>

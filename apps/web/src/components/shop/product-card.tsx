@@ -111,9 +111,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <CardContent className="space-y-2 p-3">
-          <h3 className="line-clamp-2 min-h-6 text-sm leading-snug font-bold">
-            {product.title}
-          </h3>
+          <h3 className="line-clamp-2 min-h-6 text-sm leading-snug font-bold">{product.title}</h3>
 
           <ProductPriceDisplay price={product.price} salePrice={product.salePrice} variant="card" />
 

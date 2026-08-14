@@ -22,7 +22,10 @@ import { type LibraryNode, useCategories } from '@/stores/categories-store';
 /** Shared row size for parent + submenu panels */
 export const LIBRARY_MENU_WIDTH = 'w-66';
 const MENU_ROW = 'flex h-10 w-64 items-center justify-between gap-2 px-3 text-sm outline-none';
-const SUBMENU_PANEL = cn(LIBRARY_MENU_WIDTH, 'min-w-62 overflow-y-auto p-1 shadow-lg');
+const SUBMENU_PANEL = cn(
+  LIBRARY_MENU_WIDTH,
+  'min-w-62 max-h-[50vh] overflow-y-auto overscroll-contain p-1 shadow-lg',
+);
 
 /** Chevron on the left, label on the right (RTL) */
 const MENU_ROW_RTL = cn(MENU_ROW, '[&>svg]:shrink-0');
@@ -261,7 +264,12 @@ function MobileLibrarySection({
         <span className="flex-1 truncate text-start">{library.name}</span>
         <ChevronDown className="size-4 shrink-0 opacity-70 transition-transform" />
       </CollapsibleTrigger>
-      <CollapsibleContent className="border-border/60 mr-2 space-y-0.5 border-r-2 pr-2">
+      <CollapsibleContent
+        className={cn(
+          'border-border/60 mr-2 space-y-0.5 border-r-2 pr-2',
+          isFlat && 'max-h-[50vh] overflow-y-auto overscroll-contain',
+        )}
+      >
         {isFlat
           ? library.children.map((item) => (
               <Link

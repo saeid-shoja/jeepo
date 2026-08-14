@@ -23,7 +23,7 @@ export function HomeCategoryCircles() {
   if (!loading && categories.length === 0) return null;
 
   return (
-    <section className="container py-3 sm:py-4">
+    <section className="container pt-1 md:pt-2 pb-3 md:pb-4">
       <div className="flex justify-center">
         <div className="home-strip-scrollbar max-w-full overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] scrollbar-thin">
           <div className="mx-auto flex w-max gap-4 px-1 sm:gap-5">
@@ -38,7 +38,7 @@ export function HomeCategoryCircles() {
                   <Link
                     key={category.id}
                     href={category.href}
-                    className="group flex w-26 shrink-0 flex-col items-center gap-2"
+                    className="group flex w-26 shrink-0 flex-col items-center gap-2 pt-2 md:pt-2"
                   >
                     <span
                       className={cn(

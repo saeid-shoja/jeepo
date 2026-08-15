@@ -89,6 +89,7 @@ export class ProductsService {
       listedAt?: Date;
       strengthenedUntil?: Date | null;
       price: number;
+      salePrice?: number | null;
       _count?: { auctionBids: number };
       category?: { slug: string } | null;
     },
@@ -105,6 +106,9 @@ export class ProductsService {
     const currentPrice = isAuction
       ? getAuctionCurrentPrice(startPrice, product.auctionCurrentPrice)
       : product.price;
+    const salePrice = (product as { salePrice?: number | null }).salePrice ?? null;
+    const hasDiscount = salePrice != null && salePrice > 0 && salePrice < product.price;
+    const effectivePrice = hasDiscount ? salePrice : currentPrice;
     const auctionActive =
       isAuction &&
       product.auctionEndsAt != null &&
@@ -153,7 +157,7 @@ export class ProductsService {
       isStrengthenedActive: strengthenedActive,
       auctionActive,
       bidCount: product._count?.auctionBids ?? 0,
-      displayPrice: isAuction ? currentPrice : product.price,
+      displayPrice: isAuction ? currentPrice : effectivePrice,
       hideSellerPhone: isAuction,
       listingFeePaid: (product as { listingFeePaid?: boolean }).listingFeePaid ?? true,
       listingPaymentDueAt:
@@ -400,6 +404,36 @@ export class ProductsService {
     };
   }
 
+  /**
+   * Shop catalog may be 0 (out of stock). Client marketplace listings must be ≥ 1.
+   */
+  private assertStockQuantity(params: {
+    advertiser: Advertiser | string;
+    stockQuantity?: number | null;
+    isAuction?: boolean;
+  }) {
+    if (params.isAuction) return;
+    if (params.stockQuantity == null) return;
+    const qty = Number(params.stockQuantity);
+    if (!Number.isFinite(qty) || !Number.isInteger(qty)) {
+      throw new BadRequestException('موجودی باید عدد صحیح باشد');
+    }
+    if (qty < 0) {
+      throw new BadRequestException('موجودی نمی‌تواند منفی باشد');
+    }
+    if (params.advertiser === 'CLIENT' && qty < 1) {
+      throw new BadRequestException('تعداد موجودی آگهی باید حداقل ۱ باشد');
+    }
+  }
+
+  private normalizeSalePrice(listPrice: number, salePrice?: number | null): number | null {
+    if (salePrice == null || salePrice <= 0) return null;
+    if (salePrice >= listPrice) {
+      throw new BadRequestException('قیمت با تخفیف باید کمتر از قیمت اصلی باشد');
+    }
+    return salePrice;
+  }
+
   private async buildCreateData(
     data: CreateProductDto,
     userId: string,
@@ -414,14 +448,22 @@ export class ProductsService {
     const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
     const now = new Date();
     const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
+    const advertiser = (data.advertiser ?? 'CLIENT') as Advertiser;
+    this.assertStockQuantity({
+      advertiser,
+      stockQuantity: data.stockQuantity,
+      isAuction: data.isAuction,
+    });
     const newPrice =
       data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
+    const salePrice = data.isAuction ? null : this.normalizeSalePrice(listingPrice, data.salePrice);
     const vehicleFields = await this.resolveVehicleSaleFields(data.categoryId, data);
 
     return {
       title: data.title,
       description: data.description,
       price: listingPrice,
+      salePrice,
       newPrice,
       images: JSON.stringify(data.images || []),
       categoryId: data.categoryId,
@@ -687,9 +729,48 @@ export class ProductsService {
     this.telegramChannel.announceBoost(productId);
   }
 
+  /** Include root category and all nested descendants (any depth). */
+  private async collectCategoryAndDescendantIds(rootId: string): Promise<string[]> {
+    const ids = [rootId];
+    let frontier = [rootId];
+    while (frontier.length) {
+      const children = await this.prisma.category.findMany({
+        where: { parentId: { in: frontier } },
+        select: { id: true },
+      });
+      frontier = children.map((c) => c.id).filter((id) => !ids.includes(id));
+      ids.push(...frontier);
+    }
+    return ids;
+  }
+
+  /** Categories in a library, including descendants that may not have libraryId set. */
+  private async collectLibraryCategoryIds(libraryId: string): Promise<string[]> {
+    const inLibrary = await this.prisma.category.findMany({
+      where: { libraryId },
+      select: { id: true },
+    });
+    const ids = new Set(inLibrary.map((row) => row.id));
+    let frontier = [...ids];
+    while (frontier.length) {
+      const children = await this.prisma.category.findMany({
+        where: { parentId: { in: frontier } },
+        select: { id: true },
+      });
+      frontier = [];
+      for (const child of children) {
+        if (ids.has(child.id)) continue;
+        ids.add(child.id);
+        frontier.push(child.id);
+      }
+    }
+    return [...ids];
+  }
+
   async findAll(params: {
     advertiser?: string;
     categoryId?: string;
+    libraryId?: string;
     carBrand?: string;
     search?: string;
     page?: number;
@@ -715,18 +796,16 @@ export class ProductsService {
     if (params.advertiser === 'CLIENT' && params.auction !== true) {
       where.isAuction = false;
     }
-    if (params.categoryId) {
-      const category = await this.prisma.category.findUnique({
-        where: { id: params.categoryId },
-        include: { children: { select: { id: true } } },
-      });
-      if (category?.children.length) {
-        where.categoryId = {
-          in: [category.id, ...category.children.map((c) => c.id)],
-        };
-      } else {
-        where.categoryId = params.categoryId;
+    if (params.libraryId) {
+      const categoryIds = await this.collectLibraryCategoryIds(params.libraryId);
+      if (categoryIds.length === 0) {
+        return { products: [], total: 0, page, totalPages: 0 };
       }
+      where.categoryId = { in: categoryIds };
+    }
+    if (params.categoryId) {
+      const categoryIds = await this.collectCategoryAndDescendantIds(params.categoryId);
+      where.categoryId = categoryIds.length > 1 ? { in: categoryIds } : params.categoryId;
     }
     if (params.cities?.length) {
       where.city = { in: params.cities };
@@ -819,6 +898,66 @@ export class ProductsService {
     return this.mapProduct(product, { viewerUserId });
   }
 
+  /** Same subcategory (newest 15) plus 2 random items from another subcategory. */
+  async findRelated(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      select: { id: true, categoryId: true, advertiser: true },
+    });
+    if (!product) throw new NotFoundException('محصول یافت نشد');
+
+    const relatedWhere = {
+      status: 'ACTIVE' as const,
+      advertiser: product.advertiser,
+      categoryId: product.categoryId,
+      id: { not: product.id },
+      isAuction: false,
+    };
+
+    const relatedRows = await this.prisma.product.findMany({
+      where: relatedWhere,
+      include: productInclude,
+      orderBy: { listedAt: 'desc' },
+      take: 15,
+    });
+
+    const otherGroups = await this.prisma.product.groupBy({
+      by: ['categoryId'],
+      where: {
+        status: 'ACTIVE',
+        advertiser: product.advertiser,
+        categoryId: { not: product.categoryId },
+        id: { not: product.id },
+        isAuction: false,
+      },
+    });
+
+    let unrelatedRows: typeof relatedRows = [];
+    if (otherGroups.length > 0) {
+      const pick = otherGroups[Math.floor(Math.random() * otherGroups.length)]!;
+      const pool = await this.prisma.product.findMany({
+        where: {
+          status: 'ACTIVE',
+          advertiser: product.advertiser,
+          categoryId: pick.categoryId,
+          id: { not: product.id },
+          isAuction: false,
+        },
+        include: productInclude,
+        take: 24,
+      });
+      unrelatedRows = shufflePick(pool, 2);
+    }
+
+    const products = await Promise.all(
+      [...relatedRows, ...unrelatedRows].map((p) =>
+        this.mapProduct(p, { viewerUserId: null, coverImageOnly: true }),
+      ),
+    );
+
+    return { products };
+  }
+
   private buildAuctionCreateData(data: CreateProductDto) {
     if (!data.isAuction) return {};
 
@@ -873,6 +1012,12 @@ export class ProductsService {
       throw new ForbiddenException('شما اجازه ویرایش این محصول را ندارید');
     }
 
+    this.assertStockQuantity({
+      advertiser: product.advertiser,
+      stockQuantity: data.stockQuantity,
+      isAuction: product.isAuction,
+    });
+
     if (
       product.advertiser === 'CLIENT' &&
       product.userId &&
@@ -905,6 +1050,19 @@ export class ProductsService {
     if (data.newPrice !== undefined) {
       updateData.newPrice =
         data.newPrice == null || Number(data.newPrice) <= 0 ? null : Number(data.newPrice);
+    }
+
+    if (data.salePrice !== undefined) {
+      const listPrice = data.price != null ? Number(data.price) : product.price;
+      updateData.salePrice =
+        data.salePrice == null || Number(data.salePrice) <= 0
+          ? null
+          : this.normalizeSalePrice(listPrice, Number(data.salePrice));
+    } else if (data.price != null && (product as { salePrice?: number | null }).salePrice != null) {
+      const existingSale = (product as { salePrice?: number | null }).salePrice;
+      if (existingSale != null && existingSale >= Number(data.price)) {
+        updateData.salePrice = null;
+      }
     }
 
     const enablingGuarantee =
@@ -1174,4 +1332,15 @@ export class ProductsService {
 
     return { message: 'گزارش شما ثبت شد و برای بررسی ارسال شد' };
   }
+}
+
+function shufflePick<T>(items: T[], count: number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const current = copy[i]!;
+    copy[i] = copy[j]!;
+    copy[j] = current;
+  }
+  return copy.slice(0, Math.min(count, copy.length));
 }

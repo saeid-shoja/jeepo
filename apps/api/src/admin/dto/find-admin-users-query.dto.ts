@@ -1,7 +1,8 @@
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
-export class FindAdminUsersQueryDto {
+export class FindAdminUsersQueryDto extends PaginationQueryDto {
   /** Search by name, email, or phone. */
   @IsOptional()
   @IsString()

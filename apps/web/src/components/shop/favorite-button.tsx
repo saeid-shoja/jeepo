@@ -50,14 +50,14 @@ export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
       disabled={pending}
       onClick={handleClick}
       className={cn(
-        'flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow-sm backdrop-blur transition-colors hover:bg-background',
+        'flex h-6 w-6 items-center justify-center rounded-full bg-background/90 shadow-sm backdrop-blur transition-colors hover:bg-background',
         pending && 'opacity-70',
         className,
       )}
     >
       <Bookmark
         className={cn(
-          'h-4 w-4 transition-colors',
+          'h-3 w-3 transition-colors',
           isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground hover:text-primary',
         )}
       />

@@ -21,13 +21,18 @@ function filterLibraryChildren(nodes: LibraryNode[]): LibraryNode[] {
     }));
 }
 
+/** Hide vehicle-sale nodes but keep all libraries (used on shop homepage). */
+export function filterShopSaleCategories(libraries: LibraryNode[]): LibraryNode[] {
+  return libraries.map((library) => ({
+    ...library,
+    children: filterLibraryChildren(library.children),
+  }));
+}
+
 export function filterLibrariesForShop(libraries: LibraryNode[]): LibraryNode[] {
-  return libraries
-    .filter((library) => !SHOP_HIDDEN_LIBRARY_SLUGS.has(library.slug))
-    .map((library) => ({
-      ...library,
-      children: filterLibraryChildren(library.children),
-    }));
+  return filterShopSaleCategories(libraries).filter(
+    (library) => !SHOP_HIDDEN_LIBRARY_SLUGS.has(library.slug),
+  );
 }
 
 export function filterPartsForShop<T extends { slug: string }>(parts: T[]): T[] {

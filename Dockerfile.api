@@ -36,4 +36,5 @@ COPY --from=builder --chown=nestjs:nodejs /prod/api ./
 
 USER nestjs
 EXPOSE 4000
-CMD ["sh", "-c", "PORT=${PORT:-4000} node dist/main.js"]
+# Apply pending Prisma migrations before serving (e.g. Product.color).
+CMD ["sh", "-c", "node scripts/ensure-migrations.mjs && PORT=${PORT:-4000} node dist/main.js"]

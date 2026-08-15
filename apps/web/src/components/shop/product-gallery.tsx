@@ -104,8 +104,9 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
   };
 
   return (
-    <div className="space-y-3">
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+    <div className="w-full max-w-full space-y-3">
+      {/* Mobile: square capped by page width and 90% viewport height so large photos stay inside. */}
+      <div className="relative mx-auto aspect-square w-full max-w-full overflow-hidden rounded-lg bg-muted max-md:w-[min(100%,90svh)] max-md:max-h-[90svh]">
         {current ? (
           <>
             <ProductMedia
@@ -113,7 +114,8 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
               src={current}
               alt={title}
               active
-              className="absolute inset-0"
+              className="absolute inset-0 size-full max-h-full max-w-full"
+              mediaClassName="object-contain max-h-full max-w-full lg:object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
             <button
@@ -124,7 +126,7 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
             />
           </>
         ) : (
-          <div className="text-muted-foreground flex aspect-square items-center justify-center">
+          <div className="text-muted-foreground flex size-full items-center justify-center">
             بدون تصویر
           </div>
         )}
@@ -209,7 +211,7 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
                 active
                 priority
                 deferUntilVisible={false}
-                className="relative h-full w-full max-h-[min(85vh,900px)] max-w-5xl"
+                className="relative h-full max-h-[90svh] w-full max-w-full sm:max-h-[min(85vh,900px)] sm:max-w-5xl"
                 mediaClassName="object-contain"
                 sizes="100vw"
               />

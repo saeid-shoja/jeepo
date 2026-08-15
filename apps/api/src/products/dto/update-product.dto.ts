@@ -44,6 +44,13 @@ export class UpdateProductDto {
   @ValidateIf((_, value) => value != null)
   @Type(() => Number)
   @IsNumber()
+  @Min(1, { message: 'قیمت با تخفیف باید بیشتر از صفر باشد' })
+  salePrice?: number | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @Type(() => Number)
+  @IsNumber()
   @Min(1, { message: 'قیمت نو محصول باید بیشتر از صفر باشد' })
   newPrice?: number | null;
 
@@ -143,6 +150,7 @@ export class UpdateProductDto {
   @Min(1)
   buyNowPrice?: number;
 
+  /** Shop may use 0 (out of stock); client listings require ≥ 1 (enforced in service). */
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'موجودی باید عدد صحیح باشد' })

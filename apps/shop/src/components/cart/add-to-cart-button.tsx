@@ -1,5 +1,6 @@
 'use client';
 
+import { resolveProductDiscount } from '@offroad/shared';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ type AddToCartButtonProps = {
     id: string;
     title: string;
     price: number;
+    salePrice?: number | null;
     images?: string[];
     stockQuantity?: number;
   };
@@ -46,10 +48,11 @@ export function AddToCartButton({
     e.stopPropagation();
 
     const qty = Math.min(quantity, stockCap);
+    const { effectivePrice } = resolveProductDiscount(product.price, product.salePrice);
     addItem({
       productId: product.id,
       title: product.title,
-      price: product.price,
+      price: effectivePrice,
       image: product.images?.[0] ?? null,
       quantity: qty,
       maxQuantity: stockCap,

@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { SiteFooter } from '@/components/layout/footer';
 import { Navbar } from '@/components/layout/navbar';
+import { PwaInstallScrollPopup } from '@/components/pwa/pwa-install-scroll-popup';
 import { cn } from '@/lib/utils';
 
 const AUTH_PATHS = new Set(['/login', '/register']);
@@ -22,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
+      <PwaInstallScrollPopup />
       {!isAuthPage && <SiteFooter />}
     </>
   );

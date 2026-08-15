@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const FALLBACK = '/images/product/no-photo.jpg';
+const FALLBACK = '/images/product/no-photo.webp';
 
 type ProductImageProps = {
   src?: string | null;

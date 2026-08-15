@@ -105,7 +105,6 @@ model User {
   emailVerificationCode      String?
   emailVerificationExpiresAt DateTime?
   maxActiveListings          Int?
-  /** Soft cap for ACTIVE listings with situation=NEW; null = platform default (2). */
   maxActiveNewListings       Int?
   referralCode               String?   @unique
   referredById               String?
@@ -207,6 +206,7 @@ model Product {
   title              String
   description        String
   price              Float
+  salePrice          Float?
   newPrice           Float?
   images             String             @default("[]")
   categoryId         String
@@ -283,7 +283,6 @@ model Order {
   paymentTrackId  String?        @unique
   paymentRefNumber String?
   paidAt          DateTime?
-  /** Last time admin (or payment fulfillment) changed status — used for daily reminders. */
   statusChangedAt DateTime       @default(now())
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt

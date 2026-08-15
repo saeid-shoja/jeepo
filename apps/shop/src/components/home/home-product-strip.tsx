@@ -23,7 +23,7 @@ export function HomeProductStrip<T>({
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="overflow-x-auto overscroll-x-contain pb-1">
+        <div className="home-strip-scrollbar overflow-x-auto overscroll-x-contain pb-1">
           <div className="flex w-max gap-3">
             {STRIP_SKELETON_KEYS.map((key) => (
               <Skeleton
@@ -42,10 +42,10 @@ export function HomeProductStrip<T>({
   }
 
   return (
-    <div className="overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] scrollbar-thin">
+    <div className="home-strip-scrollbar overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] scrollbar-thin">
       <div className="flex w-max gap-2">
         {items.map((item) => (
-          <div key={getItemKey(item)} className="md:w-35 w-50 shrink-0 sm:w-40">
+          <div key={getItemKey(item)} className="md:w-50 shrink-0 w-40">
             {renderItem(item)}
           </div>
         ))}

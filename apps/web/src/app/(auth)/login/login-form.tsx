@@ -30,6 +30,9 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl');
+  const registerHref = callbackUrl?.startsWith('/')
+    ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : '/register';
 
   const [emailCodeStep, setEmailCodeStep] = useState<'email' | 'code'>('email');
   const [maskedEmail, setMaskedEmail] = useState('');
@@ -54,6 +57,13 @@ export function LoginForm() {
     router.push(callbackUrl?.startsWith('/') ? callbackUrl : '/dashboard');
   };
 
+  const goToRegisterWithEmail = (email: string) => {
+    const params = new URLSearchParams();
+    params.set('email', email.trim().toLowerCase());
+    if (callbackUrl?.startsWith('/')) params.set('callbackUrl', callbackUrl);
+    router.push(`/register?${params.toString()}`);
+  };
+
   const onPasswordSubmit = async (data: LoginFormValues) => {
     try {
       await login(data.identifier, data.password);
@@ -66,7 +76,7 @@ export function LoginForm() {
         message.includes('تأیید نشده') &&
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.identifier.trim())
       ) {
-        router.push(`/register?email=${encodeURIComponent(data.identifier.trim().toLowerCase())}`);
+        goToRegisterWithEmail(data.identifier);
       }
     }
   };
@@ -83,7 +93,7 @@ export function LoginForm() {
       const message = err instanceof Error ? err.message : 'ارسال کد ناموفق بود';
       toast.error(message);
       if (message.includes('تأیید نشده')) {
-        router.push(`/register?email=${encodeURIComponent(data.email.trim().toLowerCase())}`);
+        goToRegisterWithEmail(data.email);
       }
     }
   };
@@ -259,7 +269,7 @@ export function LoginForm() {
         <div className="mt-4 flex w-full flex-col items-center justify-between gap-2 sm:flex-row">
           <p className="text-muted-foreground text-center text-sm sm:text-start">
             حساب کاربری ندارید؟{' '}
-            <Link href="/register" className="text-primary hover:underline">
+            <Link href={registerHref} className="text-primary hover:underline">
               ثبت نام
             </Link>
           </p>

@@ -126,6 +126,29 @@ export function formatPrice(price: number): string {
   });
 }
 
+export type ProductDiscountInfo = {
+  hasDiscount: boolean;
+  originalPrice: number;
+  effectivePrice: number;
+  discountPercent: number | null;
+};
+
+/** Resolve optional salePrice against list price for display and checkout. */
+export function resolveProductDiscount(
+  price: number,
+  salePrice?: number | null,
+): ProductDiscountInfo {
+  const originalPrice = price;
+  const hasDiscount = salePrice != null && salePrice > 0 && salePrice < price;
+  const effectivePrice = hasDiscount ? salePrice : price;
+  const discountPercent = hasDiscount ? Math.round(((price - salePrice) / price) * 100) : null;
+  return { hasDiscount, originalPrice, effectivePrice, discountPercent };
+}
+
+export function formatDiscountPercent(percent: number): string {
+  return `${Math.round(percent).toLocaleString('fa-IR')}٪`;
+}
+
 /** Strip formatting and parse digits from user input (ASCII, Persian, Arabic-Indic). */
 export function parsePriceInput(value: string): number {
   const digits = toEnglishDigits(value).replace(/[^\d]/g, '');

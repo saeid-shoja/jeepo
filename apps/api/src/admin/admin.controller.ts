@@ -46,7 +46,11 @@ export class AdminController {
   @Get('users')
   @Header('Cache-Control', 'no-store')
   getAllUsers(@Query() query: FindAdminUsersQueryDto) {
-    return this.adminService.getAllUsers({ search: query.search });
+    return this.adminService.getAllUsers({
+      search: query.search,
+      page: query.page ?? 1,
+      limit: query.limit ?? 24,
+    });
   }
 
   @Post('users')

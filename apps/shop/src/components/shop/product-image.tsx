@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const FALLBACK = '/images/product/no-photo.jpg';
+const FALLBACK = '/images/product/no-photo.webp';
 
 type ProductImageProps = {
   src?: string | null;
@@ -84,7 +84,8 @@ export function ProductImage({
             setLoaded(true);
           }}
           className={cn(
-            'object-cover transition-opacity duration-300',
+            'transition-opacity duration-300',
+            !imageClassName?.includes('object-') && 'object-cover',
             loaded ? 'opacity-100' : 'opacity-0',
             imageClassName,
           )}

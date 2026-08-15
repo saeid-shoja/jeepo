@@ -22,6 +22,7 @@ export class ProductsController {
     return this.productsService.findAll({
       advertiser: query.advertiser,
       categoryId: query.categoryId,
+      libraryId: query.libraryId,
       carBrand: query.carBrand,
       search: query.search,
       page: query.page ?? 1,
@@ -37,6 +38,12 @@ export class ProductsController {
       auction: query.auction,
       auctionActive: query.auctionActive,
     });
+  }
+
+  @Public()
+  @Get(':id/related')
+  findRelated(@Param('id') id: string) {
+    return this.productsService.findRelated(id);
   }
 
   @Public()

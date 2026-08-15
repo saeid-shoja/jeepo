@@ -11,9 +11,14 @@ type PurchasableProduct = {
   auctionEndsAt?: Date | null;
 };
 
-export function getProductSalePrice(product: PurchasableProduct & { price: number }): number {
+export function getProductSalePrice(
+  product: PurchasableProduct & { price: number; salePrice?: number | null },
+): number {
   if (product.isAuction && product.buyNowPrice != null && product.buyNowPrice > 0) {
     return product.buyNowPrice;
+  }
+  if (product.salePrice != null && product.salePrice > 0 && product.salePrice < product.price) {
+    return product.salePrice;
   }
   return product.price;
 }

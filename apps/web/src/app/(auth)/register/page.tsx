@@ -27,6 +27,10 @@ function RegisterPageContent() {
   const searchParams = useSearchParams();
   const emailFromQuery = searchParams.get('email');
   const referralFromQuery = searchParams.get('ref')?.trim().toUpperCase() ?? '';
+  const callbackUrl = searchParams.get('callbackUrl');
+  const loginHref = callbackUrl?.startsWith('/')
+    ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : '/login';
 
   const [step, setStep] = useState<'details' | 'verify'>(emailFromQuery ? 'verify' : 'details');
   const [pendingEmail, setPendingEmail] = useState(emailFromQuery ?? '');
@@ -61,6 +65,10 @@ function RegisterPageContent() {
     }
   }, [emailFromQuery, verifyForm]);
 
+  const redirectAfterAuth = () => {
+    router.push(callbackUrl?.startsWith('/') ? callbackUrl : '/dashboard');
+  };
+
   const onRegisterSubmit = async (data: RegisterFormValues) => {
     try {
       const result = await registerUser(
@@ -87,7 +95,7 @@ function RegisterPageContent() {
     try {
       await verifyEmail(data.email, data.code);
       toast.success('ایمیل تأیید شد. خوش آمدید!');
-      router.push('/dashboard');
+      redirectAfterAuth();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'کد تأیید نامعتبر است');
     }
@@ -247,7 +255,7 @@ function RegisterPageContent() {
         <div className="w-full flex justify-between items-center mt-4 lg:text-sm text-xs">
           <p className="text-muted-foreground text-center">
             قبلاً ثبت نام کرده‌اید؟{' '}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href={loginHref} className="text-primary hover:underline">
               ورود
             </Link>
           </p>

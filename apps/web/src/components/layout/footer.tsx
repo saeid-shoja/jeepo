@@ -61,7 +61,7 @@ function FooterColumn({
 
 export function SiteFooter() {
   return (
-    <footer className="border-t bg-card mt-12">
+    <footer className="border-t bg-card mt-5">
       <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">

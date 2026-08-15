@@ -1,12 +1,13 @@
 'use client';
 
 import { formatPrice } from '@offroad/shared';
-import { ArrowRight, CheckCircle, Gavel, Shield, TrendingUp, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Gavel, Loader2, Shield, TrendingUp, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
+import { ADMIN_LIST_PAGE_SIZE, useInfiniteScrollList } from '@/lib/use-infinite-scroll-list';
 
 type UserInfo = {
   id: string;
@@ -21,34 +22,39 @@ export default function UserProductsPage() {
   const userId = params.id;
 
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [guaranteeing, setGuaranteeing] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  const fetchProducts = useCallback(() => {
-    setLoading(true);
-    adminApi
-      .userProducts(userId, { page: String(page), limit: '20' })
-      .then((res) => {
-        setUser(res.user);
-        setProducts(res.products);
-        setTotalPages(res.totalPages);
-      })
-      .catch((err) => toast.error(err instanceof Error ? err.message : 'بارگذاری ناموفق بود'))
-      .finally(() => setLoading(false));
-  }, [userId, page]);
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const res = await adminApi.userProducts(userId, {
+        page: String(page),
+        limit: String(ADMIN_LIST_PAGE_SIZE),
+      });
+      if (page === 1) setUser(res.user);
+      return { items: res.products, totalPages: res.totalPages };
+    },
+    [userId],
+  );
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  const {
+    items: products,
+    initialLoading,
+    loadingMore,
+    hasMore,
+    sentinelRef,
+  } = useInfiniteScrollList<any>({
+    fetchPage,
+    deps: [userId, reloadToken],
+  });
+
+  const refreshList = () => setReloadToken((token) => token + 1);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await adminApi.updateProductStatus(id, newStatus);
       toast.success('وضعیت محصول به‌روزرسانی شد');
-      fetchProducts();
+      refreshList();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی وضعیت');
     }
@@ -75,7 +81,7 @@ export default function UserProductsPage() {
     try {
       await adminApi.setProductsGuarantee({ enabled, productId: product.id });
       toast.success(enabled ? 'تضمین اعمال شد' : 'تضمین برداشته شد');
-      fetchProducts();
+      refreshList();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
     }
@@ -91,7 +97,7 @@ export default function UserProductsPage() {
       toast.success(
         `${result.updated.toLocaleString('fa-IR')} آگهی ${enabled ? 'تضمین شد' : 'از تضمین خارج شد'}`,
       );
-      fetchProducts();
+      refreshList();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'خطا در به‌روزرسانی تضمین');
     } finally {
@@ -144,8 +150,10 @@ export default function UserProductsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-white">
-        {loading ? (
-          <p className="px-4 py-6 text-sm text-gray-500">در حال بارگذاری…</p>
+        {initialLoading && products.length === 0 ? (
+          <div className="flex justify-center px-4 py-6">
+            <Loader2 className="text-primary size-6 animate-spin" />
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b bg-gray-50">
@@ -255,7 +263,7 @@ export default function UserProductsPage() {
                   </td>
                 </tr>
               ))}
-              {products.length === 0 && (
+              {!initialLoading && products.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     آگهی‌ای ثبت نشده است
@@ -267,20 +275,13 @@ export default function UserProductsPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              type="button"
-              key={p}
-              onClick={() => setPage(p)}
-              className={`h-9 w-9 rounded-sm text-sm ${page === p ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}
-            >
-              {p}
-            </button>
-          ))}
+      {loadingMore ? (
+        <div className="flex justify-center py-3">
+          <Loader2 className="text-muted-foreground size-5 animate-spin" />
         </div>
-      )}
+      ) : null}
+
+      {hasMore ? <div ref={sentinelRef} className="h-1" aria-hidden /> : null}
     </div>
   );
 }

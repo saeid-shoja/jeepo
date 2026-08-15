@@ -44,7 +44,9 @@ export const adminApi = {
   dashboard: () => request<any>('/admin/dashboard'),
   users: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return request<any[]>(`/admin/users${qs}`);
+    return request<{ users: any[]; total: number; page: number; totalPages: number }>(
+      `/admin/users${qs}`,
+    );
   },
   createUser: (data: {
     phone: string;

@@ -36,7 +36,7 @@ const defaultFilters: ProductsFilters = {
 };
 
 const PRODUCT_SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'] as const;
-const PRODUCTS_PAGE_SIZE = 20;
+const PRODUCTS_PAGE_SIZE = 24;
 
 export function ProductsPageClient() {
   const router = useRouter();
@@ -48,6 +48,7 @@ export function ProductsPageClient() {
     return 'CLIENT';
   }, [searchParams]);
   const urlSearch = searchParams.get('search') ?? '';
+  const libraryId = searchParams.get('libraryId') ?? '';
 
   const [products, setProducts] = useState<any[]>([]);
   const { libraries, loading: categoriesLoading } = useCategories();
@@ -100,6 +101,7 @@ export function ProductsPageClient() {
         p.advertiser = activeTab;
       }
       if (searchQuery.trim()) p.search = searchQuery.trim();
+      if (libraryId) p.libraryId = libraryId;
       if (filters.categoryId) p.categoryId = filters.categoryId;
       if (filters.carBrand) p.carBrand = filters.carBrand;
       if (selectedCities.length) p.cities = selectedCities.join(',');
@@ -110,7 +112,7 @@ export function ProductsPageClient() {
       if (filters.hasGuarantee) p.hasGuarantee = filters.hasGuarantee;
       return p;
     },
-    [activeTab, searchQuery, filters, selectedCities],
+    [activeTab, searchQuery, filters, selectedCities, libraryId],
   );
 
   const queryKey = useMemo(
@@ -120,8 +122,9 @@ export function ProductsPageClient() {
         searchQuery,
         filters,
         selectedCities,
+        libraryId,
       }),
-    [activeTab, searchQuery, filters, selectedCities],
+    [activeTab, searchQuery, filters, selectedCities, libraryId],
   );
 
   useEffect(() => {

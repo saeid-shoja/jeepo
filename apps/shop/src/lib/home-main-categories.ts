@@ -28,7 +28,7 @@ const HOME_CIRCLE_SPECS: CircleSpec[] = [
     label: 'آگهی های خودرو',
     librarySlug: LIBRARY_PARTS_SLUG,
     childSlug: 'car-sales',
-    imageUrl: '/images/categories/car-sales.jpg',
+    imageUrl: '/images/categories/car-sales.webp',
   },
   {
     key: 'parts',
@@ -40,25 +40,25 @@ const HOME_CIRCLE_SPECS: CircleSpec[] = [
     key: 'motorcycle-sales',
     librarySlug: MOTORCYCLE_ATV_SLUG,
     childSlug: 'travel-offroad-motorcycle-sales',
-    imageUrl: '/images/categories/motorcycle-sales.jpg',
+    imageUrl: '/images/categories/motorcycle-sales.webp',
   },
   {
     key: 'motorcycle-atv',
     label: 'تجهیزات آفرودی موتورسیکلت',
     librarySlug: MOTORCYCLE_ATV_SLUG,
-    imageUrl: '/images/categories/motorcycle-atv.jpeg',
+    imageUrl: '/images/categories/motorcycle-atv.webp',
   },
   {
     key: 'offroad-tours',
     librarySlug: LIBRARY_CAMPING_SLUG,
     childSlug: 'offroad-tours',
-    imageUrl: '/images/categories/offroad-tours.jpeg',
+    imageUrl: '/images/categories/offroad-tours.webp',
   },
   {
     key: 'camping',
     label: 'تجهیزات کمپی',
     librarySlug: LIBRARY_CAMPING_SLUG,
-    imageUrl: '/images/categories/camping.jpg',
+    imageUrl: '/images/categories/camping.webp',
   },
 ];
 

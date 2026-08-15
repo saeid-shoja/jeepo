@@ -14,7 +14,7 @@ export const MOCK_SLIDES: Slide[] = [
   {
     id: '1',
     imageUrl: '/images/hero/s1.webp',
-    title: `${SITE_NAME_FA} | فروشگاه تخصصی لوازم آفرود`,
+    title: `${SITE_NAME_FA} |  فروشگاه تخصصی لوازم آفرود و کمپی`,
     description:
       'خرید و فروش لوازم و تجهیزات آفرود با ضمانت اصالت کالا. وقتی جیپو هست دیگه تجهیزات ماشینت رو مفتی روی ماشین نمیدی',
     link: '/products',
@@ -22,7 +22,7 @@ export const MOCK_SLIDES: Slide[] = [
   },
   {
     id: '2',
-    imageUrl: '/images/hero/s2.jpg',
+    imageUrl: '/images/hero/s2.webp',
     title: 'دسته بندی های مختلف تجهیزات آفرودی دست دوم',
     description:
       'لاستیک، لیفت کیت، تجهیزات بدنه و قطعات اورجینال  با قیمت های متنوع رو تو دسته بندی های مشخص پیدا کن',
@@ -31,7 +31,7 @@ export const MOCK_SLIDES: Slide[] = [
   },
   {
     id: '3',
-    imageUrl: '/images/hero/s3.jpg',
+    imageUrl: '/images/hero/s3.webp',
     title: 'خرید آنلاین لوازم آفرودی',
     description:
       'جدیدترین محصولات فروشگاه جیپو را ببینید؛ قطعات و تجهیزات آفرودی با ارسال به سراسر ایران.',

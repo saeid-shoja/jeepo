@@ -22,7 +22,7 @@ export const MOCK_SLIDES: Slide[] = [
   },
   {
     id: '2',
-    imageUrl: '/images/hero/s2.jpg',
+    imageUrl: '/images/hero/s2.webp',
     title: 'دسته بندی های مختلف تجهیزات آفرودی دست دوم',
     description:
       'لاستیک، لیفت کیت، تجهیزات بدنه و قطعات اورجینال  با قیمت های متنوع رو تو دسته بندی های مشخص پیدا کن',
@@ -31,7 +31,7 @@ export const MOCK_SLIDES: Slide[] = [
   },
   {
     id: '3',
-    imageUrl: '/images/hero/s3.jpg',
+    imageUrl: '/images/hero/s3.webp',
     title: 'تجهیزات آفرودی دست دومت رو با ثبت آگهی بفروش',
     description: `در ${SITE_NAME_FA}، محصول دست‌دوم خود را بفروشید`,
     link: '/products/new',
@@ -40,7 +40,7 @@ export const MOCK_SLIDES: Slide[] = [
   /* مزایده — موقتاً غیرفعال
   {
     id: '4',
-    imageUrl: '/images/hero/s4.jpeg',
+    imageUrl: '/images/hero/s4.webp',
     title: 'آگهی خودتو به صورت مزایده ثبت کن',
     description:
       'میتونی با برگزاری یک مزایده توی یک بازه مشخص به بالاترین قیمت محصول دست‌دوم خودتو بفروشی',

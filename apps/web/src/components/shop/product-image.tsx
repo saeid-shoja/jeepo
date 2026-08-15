@@ -31,7 +31,7 @@ function isInlineDataUrl(src: string) {
 function scheduleWhenIdle(cb: () => void): () => void {
   if (typeof window === 'undefined') {
     cb();
-    return () => { };
+    return () => {};
   }
   const w = window as Window & {
     requestIdleCallback?: (fn: () => void, opts?: { timeout: number }) => number;

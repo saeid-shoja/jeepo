@@ -4,6 +4,7 @@ import { productRequiresColorChoice } from '@offroad/shared';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
+import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductImage } from '@/components/shop/product-image';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
@@ -45,6 +46,7 @@ interface ProductCardProps {
     stockQuantity?: number;
     colors?: string[];
     color?: string | null;
+    listingIntent?: string | null;
   };
 }
 
@@ -78,6 +80,7 @@ export function ProductCard({ product }: ProductCardProps) {
           />
           <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
             <ProductSituationBadge situation={situation} />
+            <ProductListingIntentBadge listingIntent={product.listingIntent} />
           </div>
           {situation === 'OUT_OF_STOCK' && (
             <div className="pointer-events-none absolute inset-0 bg-background/35" aria-hidden />

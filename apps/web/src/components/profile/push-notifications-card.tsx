@@ -98,7 +98,7 @@ export function PushNotificationsCard() {
             اعلان مرورگر فعال است
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
+        <CardContent className="space-y-4 text-sm p-4 md:p-6">
           <p className="text-muted-foreground leading-relaxed">
             پیام‌های چت و اطلاعیه‌های سایت روی تلفن یا مرورگر شما (بعد از نصب PWA) نمایش داده می‌شوند.
           </p>

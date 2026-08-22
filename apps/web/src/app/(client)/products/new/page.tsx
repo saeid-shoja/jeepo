@@ -21,6 +21,7 @@ import { dateTimeLocalToIso, defaultMinDateTimeLocal } from '@/components/form/d
 import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { ListingFormTips } from '@/components/form/listing-form-tips';
+import { ListingIntentField } from '@/components/form/listing-intent-field';
 import {
   ListingSubmitResultDialog,
   type ListingSubmitResultVariant,
@@ -75,6 +76,7 @@ const EMPTY_FORM_VALUES: NewProductFormValues = {
   newPrice: 0,
   salePrice: 0,
   categorySlug: '',
+  listingIntent: 'SELLER',
   mileageKm: null,
   paintCondition: '',
 };
@@ -234,24 +236,25 @@ export default function NewProductPage() {
         hasGuarantee: false,
         applyStrengthened: data.applyStrengthened,
         situation: data.situation,
+        listingIntent: data.listingIntent,
         images: data.images,
         stockQuantity: data.isAuction ? 1 : data.stockQuantity,
         colors: data.isAuction ? undefined : data.colors,
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition
           ? {
-              mileageKm: data.mileageKm,
-              paintCondition: data.paintCondition,
-            }
+            mileageKm: data.mileageKm,
+            paintCondition: data.paintCondition,
+          }
           : {}),
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -335,7 +338,7 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
+    <div className="mx-auto w-full max-w-2xl md:px-4 py-6 md:py-8">
       <h1 className="mb-8 text-2xl font-bold">{isAdmin ? 'ثبت محصول فروشگاه' : 'ثبت آگهی جدید'}</h1>
       {isAdmin ? (
         <p className="text-muted-foreground mb-6 text-sm">
@@ -353,7 +356,7 @@ export default function NewProductPage() {
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 px-3 md:px-6">
             <div className="space-y-2">
               <Label>دسته‌بندی</Label>
               <Controller
@@ -376,6 +379,16 @@ export default function NewProductPage() {
                 }
                 mileageError={errors.mileageKm?.message}
                 paintError={errors.paintCondition?.message}
+              />
+            )}
+
+            {!isAdmin && (
+              <Controller
+                name="listingIntent"
+                control={control}
+                render={({ field }) => (
+                  <ListingIntentField value={field.value} onChange={field.onChange} />
+                )}
               />
             )}
 

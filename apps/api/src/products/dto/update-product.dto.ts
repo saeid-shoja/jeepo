@@ -17,6 +17,7 @@ import {
 } from 'class-validator';
 import { NoContactInText } from '../../common/no-contact-in-text.validator';
 import {
+  ListingIntent,
   ProductSituation,
   ProductStatus,
   VehiclePaintCondition,
@@ -106,6 +107,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsEnum(ProductSituation)
   situation?: ProductSituation;
+
+  @IsOptional()
+  @IsEnum(ListingIntent)
+  listingIntent?: ListingIntent;
 
   @IsOptional()
   @ValidateIf((_, value) => value != null)

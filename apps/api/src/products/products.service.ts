@@ -79,6 +79,7 @@ export const productListSelect = {
   categoryId: true,
   userId: true,
   advertiser: true,
+  listingIntent: true,
   hasGuarantee: true,
   isBoosted: true,
   strengthenedUntil: true,
@@ -261,6 +262,7 @@ export class ProductsService {
           (product.category?.slug != null &&
             isAdminApprovalRequiredCategory(product.category.slug))),
       stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
+      listingIntent: (product as { listingIntent?: string }).listingIntent ?? 'SELLER',
     };
 
     const colorIds = parseProductColorIds((product as { color?: string | null }).color);
@@ -589,6 +591,8 @@ export class ProductsService {
       neighborhood: data.neighborhood?.trim() || null,
       phone: data.isAuction ? undefined : data.phone,
       advertiser: data.advertiser ?? 'CLIENT',
+      listingIntent:
+        (data.advertiser ?? 'CLIENT') === 'SHOP' ? 'SELLER' : (data.listingIntent ?? 'SELLER'),
       situation: data.situation,
       mileageKm: vehicleFields.mileageKm,
       paintCondition: vehicleFields.paintCondition,
@@ -1181,6 +1185,9 @@ export class ProductsService {
     // Guarantee badge is admin-only — clients cannot set or clear it via product update.
     if (userRole !== 'ADMIN') {
       delete updateData.hasGuarantee;
+    }
+    if (product.advertiser === 'SHOP') {
+      delete updateData.listingIntent;
     }
     if (updateData.type != null && updateData.advertiser == null) {
       updateData.advertiser = updateData.type;

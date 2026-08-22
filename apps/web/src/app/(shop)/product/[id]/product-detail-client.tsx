@@ -33,6 +33,7 @@ import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductColorSwatches } from '@/components/shop/product-color-swatches';
 import { ProductGallery } from '@/components/shop/product-gallery';
+import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductShareButton } from '@/components/shop/product-share-button';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
@@ -138,7 +139,12 @@ export function ProductDetailClient() {
             images={images}
             title={product.title}
             resetKey={product.id ?? id}
-            badge={<ProductSituationBadge situation={situation} />}
+            badge={
+              <>
+                <ProductSituationBadge situation={situation} />
+                <ProductListingIntentBadge listingIntent={product.listingIntent} />
+              </>
+            }
           />
         </div>
 
@@ -147,13 +153,13 @@ export function ProductDetailClient() {
             <div className="flex items-start justify-between gap-2">
               <h1 className="text-2xl font-bold">{product.title}</h1>
               <div className="flex shrink-0 items-center gap-1">
-                <FavoriteButton productId={product.id ?? id} />
+                <FavoriteButton productId={product.id ?? id} isDetailPage={true} />
                 <ProductShareButton productId={product.id ?? id} title={product.title} />
                 {isOwner && (
                   <>
                     <Link
                       href={`/products/${product.id}/edit`}
-                      className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 mt-1"
+                      className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 mt-0.5"
                     >
                       <Edit3 className="h-5 w-4" />
                     </Link>
@@ -232,6 +238,7 @@ export function ProductDetailClient() {
 
           <div className="flex flex-wrap gap-2">
             <ProductSituationBadge situation={situation} />
+            <ProductListingIntentBadge listingIntent={product.listingIntent} />
             {product.carBrands?.map((b: { value: string; label: string }) => (
               <span
                 key={b.value}

@@ -11,6 +11,7 @@ import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog'
 import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductColorSwatches } from '@/components/shop/product-color-swatches';
+import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductGallery } from '@/components/shop/product-gallery';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductShareButton } from '@/components/shop/product-share-button';
@@ -111,7 +112,12 @@ export function ProductDetailClient() {
             images={images}
             title={product.title}
             resetKey={product.id ?? id}
-            badge={<ProductSituationBadge situation={situation} />}
+            badge={
+              <>
+                <ProductSituationBadge situation={situation} />
+                <ProductListingIntentBadge listingIntent={product.listingIntent} />
+              </>
+            }
           />
         </div>
 
@@ -184,6 +190,7 @@ export function ProductDetailClient() {
 
           <div className="flex flex-wrap gap-2">
             <ProductSituationBadge situation={situation} />
+            <ProductListingIntentBadge listingIntent={product.listingIntent} />
             {product.carBrands?.map((b: { value: string; label: string }) => (
               <span
                 key={b.value}

@@ -28,6 +28,12 @@ enum ProductSituation {
   USED
 }
 
+/** Client marketplace listing role — seller (default) or buyer request. */
+enum ListingIntent {
+  SELLER
+  BUYER
+}
+
 enum VehiclePaintCondition {
   UNPAINTED
   SCRATCHES
@@ -214,6 +220,7 @@ model Product {
   userId             String?
   user               User?              @relation(fields: [userId], references: [id])
   advertiser         Advertiser        @default(CLIENT)
+  listingIntent      ListingIntent      @default(SELLER)
   hasGuarantee       Boolean            @default(false)
   isBoosted          Boolean            @default(false)
   strengthenedUntil  DateTime?

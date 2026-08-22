@@ -14,6 +14,7 @@ import { CarBrandPicker } from '@/components/form/car-brand-picker';
 import { CitySelect } from '@/components/form/city-select';
 import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
+import { ListingIntentField } from '@/components/form/listing-intent-field';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
 import { ProductColorPicker } from '@/components/form/product-color-picker';
@@ -86,6 +87,7 @@ export default function EditProductPage() {
       colors: [],
       newPrice: 0,
       salePrice: 0,
+      listingIntent: 'SELLER',
       mileageKm: null,
       paintCondition: '',
     },
@@ -149,6 +151,7 @@ export default function EditProductPage() {
             : parseProductColorIds(product.color),
           mileageKm: product.mileageKm ?? null,
           paintCondition: product.paintCondition ?? '',
+          listingIntent: product.listingIntent === 'BUYER' ? 'BUYER' : 'SELLER',
         });
       })
       .catch(() => {
@@ -180,9 +183,10 @@ export default function EditProductPage() {
         ...(isShop
           ? {}
           : {
-              newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
-              situation: data.situation,
-            }),
+            newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
+            situation: data.situation,
+            listingIntent: data.listingIntent,
+          }),
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -196,7 +200,7 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
+    <div className="mx-auto w-full max-w-2xl md:px-4 py-6 md:py-8">
       <h1 className="mb-8 text-2xl font-bold">ویرایش آگهی</h1>
 
       <form
@@ -208,7 +212,7 @@ export default function EditProductPage() {
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 px-3 md:px-6">
             <div className="space-y-2">
               <Label>دسته‌بندی</Label>
               <Controller
@@ -231,6 +235,16 @@ export default function EditProductPage() {
                 }
                 mileageError={errors.mileageKm?.message}
                 paintError={errors.paintCondition?.message}
+              />
+            )}
+
+            {!isShop && (
+              <Controller
+                name="listingIntent"
+                control={control}
+                render={({ field }) => (
+                  <ListingIntentField value={field.value} onChange={field.onChange} />
+                )}
               />
             )}
 

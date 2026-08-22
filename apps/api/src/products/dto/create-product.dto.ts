@@ -16,7 +16,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { NoContactInText } from '../../common/no-contact-in-text.validator';
-import { Advertiser, ProductSituation, VehiclePaintCondition } from '../../prisma/generated/client';
+import { Advertiser, ListingIntent, ProductSituation, VehiclePaintCondition } from '../../prisma/generated/client';
 
 export class CreateProductDto {
   @IsString()
@@ -102,6 +102,11 @@ export class CreateProductDto {
   @IsOptional()
   @IsEnum(ProductSituation)
   situation?: ProductSituation;
+
+  /** Buyer request vs seller listing (client marketplace only; default SELLER). */
+  @IsOptional()
+  @IsEnum(ListingIntent)
+  listingIntent?: ListingIntent;
 
   /** Odometer mileage in km — required for vehicle/motorcycle sale categories. */
   @IsOptional()

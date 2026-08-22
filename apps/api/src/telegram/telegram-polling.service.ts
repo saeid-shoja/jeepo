@@ -41,9 +41,7 @@ export class TelegramPollingService implements OnModuleInit, OnModuleDestroy {
       await this.telegram.deleteWebhook();
     }
 
-    this.logger.log(
-      'Telegram polling active — open the bot from the site Connect button.',
-    );
+    this.logger.log('Telegram polling active — open the bot from the site Connect button.');
 
     while (!this.stopped) {
       try {

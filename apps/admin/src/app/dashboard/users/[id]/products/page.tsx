@@ -74,8 +74,8 @@ export default function UserProductsPage() {
     const enabled = !product.hasGuarantee;
     const ok = window.confirm(
       enabled
-        ? `بج تضمین فروشگاه برای «${product.title}» اعمال شود؟`
-        : `بج تضمین فروشگاه از «${product.title}» برداشته شود؟`,
+        ? `بج دارای تضمین جیپو برای «${product.title}» اعمال شود؟`
+        : `بج تضمین جیپو از «${product.title}» برداشته شود؟`,
     );
     if (!ok) return;
     try {
@@ -89,7 +89,7 @@ export default function UserProductsPage() {
 
   const handleUserGuarantee = async (enabled: boolean) => {
     const label = enabled ? 'اعمال' : 'برداشتن';
-    const ok = window.confirm(`${label} بج تضمین فروشگاه برای همه آگهی‌های کاربری این شخص؟`);
+    const ok = window.confirm(`${label} بج تضمین جیپو برای همه آگهی‌های کاربری این شخص؟`);
     if (!ok) return;
     setGuaranteeing(true);
     try {
@@ -194,15 +194,14 @@ export default function UserProductsPage() {
                     <select
                       value={p.status}
                       onChange={(e) => handleStatusChange(p.id, e.target.value)}
-                      className={`rounded-sm border px-2 py-1 text-xs ${
-                        p.status === 'ACTIVE'
-                          ? 'border-green-300 text-green-700'
-                          : p.status === 'SOLD'
-                            ? 'border-blue-300 text-blue-700'
-                            : p.status === 'REJECTED'
-                              ? 'border-red-300 text-red-700'
-                              : 'border-gray-300 text-gray-600'
-                      }`}
+                      className={`rounded-sm border px-2 py-1 text-xs ${p.status === 'ACTIVE'
+                        ? 'border-green-300 text-green-700'
+                        : p.status === 'SOLD'
+                          ? 'border-blue-300 text-blue-700'
+                          : p.status === 'REJECTED'
+                            ? 'border-red-300 text-red-700'
+                            : 'border-gray-300 text-gray-600'
+                        }`}
                     >
                       <option value="ACTIVE">فعال</option>
                       <option value="PENDING">در انتظار</option>
@@ -216,12 +215,11 @@ export default function UserProductsPage() {
                         <button
                           type="button"
                           onClick={() => handleGuaranteeToggle(p)}
-                          className={`rounded px-2 py-1 text-xs ${
-                            p.hasGuarantee
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین فروشگاه'}
+                          className={`rounded px-2 py-1 text-xs ${p.hasGuarantee
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین جیپو'}
                         >
                           <Shield className="inline size-3.5" />
                         </button>

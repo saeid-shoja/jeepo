@@ -3,6 +3,7 @@
 import {
   formatPrice,
   getOrderStatusLabel,
+  getProductColorLabel,
   ORDER_STATUS_TRANSITIONS,
   type OrderStatusCode,
 } from '@offroad/shared';
@@ -35,6 +36,7 @@ type OrderRow = {
     id: string;
     quantity: number;
     price: number;
+    color?: string | null;
     product?: {
       id: string;
       title: string;
@@ -358,6 +360,9 @@ export default function AdminOrdersPage() {
                                       <div className="min-w-0 flex-1">
                                         <p className="font-medium">
                                           {item.product?.title ?? 'محصول'}
+                                          {item.color
+                                            ? ` · ${getProductColorLabel(item.color)}`
+                                            : ''}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                           {item.product?.category?.name ?? '—'} ·{' '}

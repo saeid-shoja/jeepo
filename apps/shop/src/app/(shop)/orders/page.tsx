@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, getOrderStatusLabel } from '@offroad/shared';
+import { formatPrice, getOrderStatusLabel, getProductColorLabel } from '@offroad/shared';
 import { Package } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -88,6 +88,7 @@ export default function OrdersPage() {
                         className="line-clamp-1 hover:text-primary"
                       >
                         {item.product?.title ?? 'محصول'}
+                        {item.color ? ` · ${getProductColorLabel(item.color)}` : ''}
                       </Link>
                       <span className="shrink-0 text-muted-foreground">
                         {item.quantity} × {formatPrice(item.price)}

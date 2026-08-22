@@ -11,7 +11,7 @@ function BadgeInfo() {
       <div className={OPTION_CARD_STYLE}>
         <Shield className={OPTIONS_CARD_ICON} />
         <div>
-          <h3 className={OPTIONS_CARD_TITLE}>با تضمین فروشگاه</h3>
+          <h3 className={OPTIONS_CARD_TITLE}>با تضمین جیپو</h3>
           <p className={OPTIONS_CARD_DESC}>
             محصولات دارای نشان تضمین، اصالت کالا را از فروشگاه ما دارند
           </p>

@@ -37,7 +37,7 @@ export class AdminService {
     private telegramChannel: TelegramChannelService,
     private productsService: ProductsService,
     @Inject('WEB_URL') private readonly webUrl: string,
-  ) { }
+  ) {}
 
   async getDashboard() {
     const [products, clientProducts, orders, users] = await Promise.all([
@@ -80,12 +80,12 @@ export class AdminService {
 
     const where = search
       ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-          { phone: { contains: search } },
-        ],
-      }
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+            { phone: { contains: search } },
+          ],
+        }
       : undefined;
 
     const [users, total] = await Promise.all([
@@ -119,15 +119,15 @@ export class AdminService {
       userIds.length === 0
         ? []
         : await this.prisma.product.groupBy({
-          by: ['userId'],
-          where: {
-            userId: { in: userIds },
-            advertiser: 'CLIENT',
-            status: 'ACTIVE',
-            situation: 'NEW',
-          },
-          _count: { _all: true },
-        });
+            by: ['userId'],
+            where: {
+              userId: { in: userIds },
+              advertiser: 'CLIENT',
+              status: 'ACTIVE',
+              situation: 'NEW',
+            },
+            _count: { _all: true },
+          });
     const newCountByUser = new Map(newCounts.map((row) => [row.userId!, row._count._all] as const));
 
     const mapped = users.map((user) => ({
@@ -481,7 +481,7 @@ export class AdminService {
       const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${id}`;
       await this.mailService
         .sendListingApproved(product.user.email, product.user.name, product.title, productUrl)
-        .catch(() => { });
+        .catch(() => {});
     }
 
     if (status === 'ACTIVE' && product?.status === 'PENDING') {

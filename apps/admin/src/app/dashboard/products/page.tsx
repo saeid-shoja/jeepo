@@ -95,8 +95,8 @@ export default function AdminProductsPage() {
     const enabled = !product.hasGuarantee;
     const ok = window.confirm(
       enabled
-        ? `بج تضمین فروشگاه برای «${product.title}» اعمال شود؟`
-        : `بج تضمین فروشگاه از «${product.title}» برداشته شود؟`,
+        ? `بج دارای تضمین جیپو برای «${product.title}» اعمال شود؟`
+        : `بج دارای تضمین جیپو از «${product.title}» برداشته شود؟`,
     );
     if (!ok) return;
     try {
@@ -241,11 +241,10 @@ export default function AdminProductsPage() {
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex items-center gap-2 rounded-t-sm border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              tab === id
-                ? 'border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground border-transparent'
-            }`}
+            className={`flex items-center gap-2 rounded-t-sm border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${tab === id
+              ? 'border-primary text-primary'
+              : 'text-muted-foreground hover:text-foreground border-transparent'
+              }`}
           >
             <Icon className="size-4 shrink-0" aria-hidden />
             {label}
@@ -325,15 +324,14 @@ export default function AdminProductsPage() {
                     <select
                       value={p.status}
                       onChange={(e) => handleStatusChange(p.id, e.target.value)}
-                      className={`rounded-sm border px-2 py-1 text-xs ${
-                        p.status === 'ACTIVE'
-                          ? 'border-green-300 text-green-700'
-                          : p.status === 'SOLD'
-                            ? 'border-blue-300 text-blue-700'
-                            : p.status === 'REJECTED'
-                              ? 'border-red-300 text-red-700'
-                              : 'border-gray-300 text-gray-600'
-                      }`}
+                      className={`rounded-sm border px-2 py-1 text-xs ${p.status === 'ACTIVE'
+                        ? 'border-green-300 text-green-700'
+                        : p.status === 'SOLD'
+                          ? 'border-blue-300 text-blue-700'
+                          : p.status === 'REJECTED'
+                            ? 'border-red-300 text-red-700'
+                            : 'border-gray-300 text-gray-600'
+                        }`}
                     >
                       <option value="ACTIVE">فعال</option>
                       <option value="PENDING">در انتظار</option>
@@ -347,12 +345,11 @@ export default function AdminProductsPage() {
                         <button
                           type="button"
                           onClick={() => handleGuaranteeToggle(p)}
-                          className={`rounded px-2 py-1 text-xs ${
-                            p.hasGuarantee
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین فروشگاه'}
+                          className={`rounded px-2 py-1 text-xs ${p.hasGuarantee
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال  تضمین جیپو'}
                         >
                           <Shield className="inline size-3.5" />
                         </button>

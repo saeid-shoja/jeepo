@@ -114,6 +114,8 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
               src={current}
               alt={title}
               active
+              priority={safeIndex === 0}
+              deferUntilVisible={false}
               className="absolute inset-0 size-full max-h-full max-w-full"
               mediaClassName="object-contain max-h-full max-w-full lg:object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
@@ -165,6 +167,8 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
                 src={img}
                 alt=""
                 active={false}
+                priority={false}
+                deferUntilVisible
                 className="absolute inset-0"
                 mediaClassName="object-cover"
                 sizes="64px"

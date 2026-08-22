@@ -183,10 +183,10 @@ export default function EditProductPage() {
         ...(isShop
           ? {}
           : {
-              newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
-              situation: data.situation,
-              listingIntent: data.listingIntent,
-            }),
+            newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
+            situation: data.situation,
+            listingIntent: data.listingIntent,
+          }),
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -341,7 +341,7 @@ export default function EditProductPage() {
         />
 
         <Card>
-          <CardContent className="space-y-3 pt-6">
+          <CardContent className="space-y-3 pt-6 p-4 md:p-6">
             {!isShop && (
               <Controller
                 name="situation"
@@ -360,12 +360,12 @@ export default function EditProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
-              <div className="space-y-2">
-                <Label htmlFor="neighborhood">محله آدرس</Label>
+              <div className="space-y-2.5 md:mt-1">
+                <Label htmlFor="neighborhood">محله</Label>
                 <Input
                   id="neighborhood"
                   type="text"
-                  maxLength={15}
+                  maxLength={20}
                   placeholder="مثلاً ونک"
                   {...register('neighborhood')}
                 />

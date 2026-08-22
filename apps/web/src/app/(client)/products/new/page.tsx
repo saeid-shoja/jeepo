@@ -243,18 +243,18 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition
           ? {
-              mileageKm: data.mileageKm,
-              paintCondition: data.paintCondition,
-            }
+            mileageKm: data.mileageKm,
+            paintCondition: data.paintCondition,
+          }
           : {}),
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -500,7 +500,7 @@ export default function NewProductPage() {
         />
 
         <Card>
-          <CardContent className="space-y-2 pt-6">
+          <CardContent className="space-y-2 pt-6 p-4 md:p-6">
             <Controller
               name="situation"
               control={control}
@@ -520,7 +520,7 @@ export default function NewProductPage() {
               </p>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-center">
               <Controller
                 name="city"
                 control={control}
@@ -528,12 +528,12 @@ export default function NewProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
-              <div className="space-y-2">
+              <div className="space-y-2.5 md:mt-1">
                 <Label htmlFor="neighborhood">محله</Label>
                 <Input
                   id="neighborhood"
                   type="text"
-                  maxLength={15}
+                  maxLength={20}
                   placeholder="مثلاً ونک"
                   {...register('neighborhood')}
                 />
@@ -550,7 +550,6 @@ export default function NewProductPage() {
                 <FieldError message={errors.phone?.message} />
               </div>
             </div>
-
             <Controller
               name="images"
               control={control}

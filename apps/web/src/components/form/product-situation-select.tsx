@@ -24,7 +24,7 @@ export function ProductSituationSelect({
   return (
     <div className={cn('space-y-2', className)}>
       <Label>وضعیت کالا</Label>
-      <div className="flex gap-2">
+      <div className="flex gap-3 md:gap-x-4">
         {OPTIONS.map((opt) => {
           const selected = value === opt.value;
           return (

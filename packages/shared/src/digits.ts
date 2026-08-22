@@ -16,11 +16,3 @@ export function normalizeLoginIdentifier(value: string): string {
   }
   return toEnglishDigits(trimmed).trim();
 }
-
-/** Normalize Telegram id: usernames unchanged, numeric ids converted to ASCII digits. */
-export function normalizeTelegramIdInput(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return trimmed;
-  if (/^@?[a-zA-Z]/.test(trimmed)) return trimmed;
-  return toEnglishDigits(trimmed);
-}

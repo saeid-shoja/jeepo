@@ -29,7 +29,7 @@ export function GuaranteeInfoDialog({ open, onOpenChange }: GuaranteeInfoDialogP
             {copy.title}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            توضیحات تضمین فروشگاه برای خریدار
+            توضیحات تضمین جیپو برای خریدار
           </DialogDescription>
         </DialogHeader>
 

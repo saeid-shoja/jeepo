@@ -21,10 +21,10 @@ import { type LibraryNode, useCategories } from '@/stores/categories-store';
 
 /** Shared row size for parent + submenu panels */
 export const LIBRARY_MENU_WIDTH = 'w-66';
-const MENU_ROW = 'flex h-10 w-64 items-center justify-between gap-2 px-3 text-sm outline-none';
+const MENU_ROW = 'flex h-10 w-60 items-center justify-between gap-2 px-2 text-sm outline-none max-w-full';
 const SUBMENU_PANEL = cn(
   LIBRARY_MENU_WIDTH,
-  'min-w-62 max-h-[50vh] overflow-y-auto overscroll-contain p-1 shadow-lg',
+  'min-w-64 max-h-[50vh] home-strip-scrollbar overflow-y-auto overscroll-contain p-1 shadow-lg',
 );
 
 /** Chevron on the left, label on the right (RTL) */
@@ -124,15 +124,15 @@ function LibrarySubmenuDesktop({ library }: { library: LibraryNode }) {
       <MenubarSubContent className={SUBMENU_PANEL}>
         {isFlat
           ? library.children.map((item) => (
-              <MenubarItem key={item.id} asChild className="p-0 focus:bg-transparent">
-                <MenuLinkRow className="flex justify-end pr-3" href={getLibraryNodeHref(item)}>
-                  {item.name}
-                </MenuLinkRow>
-              </MenubarItem>
-            ))
+            <MenubarItem key={item.id} asChild className="p-0 focus:bg-transparent">
+              <MenuLinkRow className="flex justify-end pr-3" href={getLibraryNodeHref(item)}>
+                {item.name}
+              </MenuLinkRow>
+            </MenubarItem>
+          ))
           : library.children.map((group) => (
-              <PartGroupSubmenuDesktop key={group.id} group={group} />
-            ))}
+            <PartGroupSubmenuDesktop key={group.id} group={group} />
+          ))}
       </MenubarSubContent>
     </MenubarSub>
   );
@@ -272,18 +272,18 @@ function MobileLibrarySection({
       >
         {isFlat
           ? library.children.map((item) => (
-              <Link
-                key={item.id}
-                href={getLibraryNodeHref(item)}
-                onClick={onNavigate}
-                className={cn(MENU_ROW, 'hover:bg-accent w-full rounded-sm')}
-              >
-                {item.name}
-              </Link>
-            ))
+            <Link
+              key={item.id}
+              href={getLibraryNodeHref(item)}
+              onClick={onNavigate}
+              className={cn(MENU_ROW, 'hover:bg-accent w-full rounded-sm')}
+            >
+              {item.name}
+            </Link>
+          ))
           : library.children.map((group) => (
-              <MobileGroupSection key={group.id} group={group} onNavigate={onNavigate} />
-            ))}
+            <MobileGroupSection key={group.id} group={group} onNavigate={onNavigate} />
+          ))}
       </CollapsibleContent>
     </Collapsible>
   );

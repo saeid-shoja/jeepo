@@ -2,8 +2,9 @@ import {
   containsLinkOrPhone,
   isVehicleSaleCategory,
   NO_CONTACT_IN_TEXT_MESSAGE,
-  PRODUCT_COLOR_MAX_LENGTH,
+  PRODUCT_COLOR_IDS,
   PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
+  type ProductColorId,
   toEnglishDigits,
   VEHICLE_PAINT_CONDITIONS,
 } from '@offroad/shared';
@@ -120,12 +121,7 @@ const sharedProductFieldsBase = {
   carBrands: z.array(z.string()),
   hasGuarantee: z.boolean(),
   applyStrengthened: z.boolean(),
-  /** Optional product color. */
-  color: z
-    .string()
-    .max(PRODUCT_COLOR_MAX_LENGTH, `رنگ حداکثر ${PRODUCT_COLOR_MAX_LENGTH} کاراکتر باشد`)
-    .optional()
-    .or(z.literal('')),
+  colors: z.array(z.enum(PRODUCT_COLOR_IDS as unknown as [ProductColorId, ...ProductColorId[]])),
   /** Approximate retail / new price; required when situation is USED (non-auction). */
   newPrice: z.number(),
   /** Optional discounted selling price; must be lower than price when set. */

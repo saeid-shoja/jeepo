@@ -49,31 +49,29 @@ export class TelegramBotService {
     }
 
     const now = new Date();
-    const existingCode = this.telegram.normalizeLinkCode(user.telegramLinkToken);
-    const hasValidCode =
-      Boolean(existingCode) &&
+    const existingToken = this.telegram.normalizeLinkCode(user.telegramLinkToken);
+    const hasValidToken =
+      Boolean(existingToken) &&
+      existingToken!.length === 32 &&
       Boolean(user.telegramLinkExpiresAt) &&
-      user.telegramLinkExpiresAt! > now &&
-      // Prefer short codes; remint legacy hex tokens so UI can show a copyable code
-      existingCode!.length === 6;
+      user.telegramLinkExpiresAt! > now;
 
-    let linkCode = existingCode!;
+    let linkToken = existingToken!;
     let expiresAt = user.telegramLinkExpiresAt!;
 
-    if (!hasValidCode) {
-      linkCode = await this.mintUniqueLinkCode();
+    if (!hasValidToken) {
+      linkToken = await this.mintUniqueLinkCode();
       expiresAt = new Date(now.getTime() + LINK_TTL_MS);
       await this.prisma.user.update({
         where: { id: userId },
-        data: { telegramLinkToken: linkCode, telegramLinkExpiresAt: expiresAt },
+        data: { telegramLinkToken: linkToken, telegramLinkExpiresAt: expiresAt },
       });
     }
 
     return {
       configured: true,
       linked: false,
-      linkCode,
-      botUrl: this.telegram.buildBotUrl(),
+      botUrl: this.telegram.buildDeepLink(linkToken),
       botUsername: this.telegram.getBotUsername(),
       expiresAt,
     };
@@ -91,8 +89,7 @@ export class TelegramBotService {
       });
       if (!clash) return code;
     }
-    // Extremely unlikely; fall back to timestamp suffix within alphabet length
-    return `${this.telegram.generateLinkToken().slice(0, 4)}${String(Date.now()).slice(-2)}`;
+    return this.telegram.generateLinkToken();
   }
 
   async getSubscriberCount(): Promise<number> {
@@ -126,6 +123,14 @@ export class TelegramBotService {
       select: { telegramChatId: true },
     });
     return users.map((u) => u.telegramChatId!).filter(Boolean);
+  }
+
+  /** Private bot DM if the user has linked Telegram. */
+  async sendPrivateMessage(userId: string, html: string): Promise<boolean> {
+    if (!this.telegram.isConfigured()) return false;
+    const [chatId] = await this.getChatIdsForUsers([userId]);
+    if (!chatId) return false;
+    return this.telegram.sendMessage(chatId, html);
   }
 
   async handleWebhook(update: TelegramUpdate, secret?: string) {
@@ -180,12 +185,8 @@ export class TelegramBotService {
         await this.telegram.sendMessage(
           chatId,
           [
-            `سلام! برای اتصال به ${SITE_NAME_FA}:`,
-            '',
-            '۱. در پنل کاربری سایت، کد ۶ حرفی اتصال را کپی کنید',
-            '۲. همان کد را همین‌جا بفرستید',
-            '',
-            'مثال: <code>A7K2M9</code>',
+            `سلام! برای اتصال حساب ${SITE_NAME_FA} به این ربات،`,
+            'از پنل کاربری سایت روی دکمه «اتصال به تلگرام» بزنید.',
           ].join('\n'),
         );
       }
@@ -225,16 +226,8 @@ export class TelegramBotService {
       await this.telegram.sendMessage(
         chatId,
         expired
-          ? [
-              '⏱ این کد منقضی شده است.',
-              '',
-              'به پنل کاربری سایت برگردید تا کد تازه ببینید، سپس همان کد را اینجا بفرستید.',
-            ].join('\n')
-          : [
-              '❌ کد اتصال نامعتبر است.',
-              '',
-              'کد ۶ حرفی را از پنل کاربری سایت کپی کنید و دقیقاً همین‌جا بفرستید (بدون فاصله یا متن اضافه).',
-            ].join('\n'),
+          ? '⏱ لینک اتصال منقضی شده است. به پنل کاربری برگردید و دوباره «اتصال به تلگرام» را بزنید.'
+          : '❌ این لینک اتصال معتبر نیست. از پنل کاربری روی دکمه «اتصال به تلگرام» بزنید.',
       );
       return;
     }

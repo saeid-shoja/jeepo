@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import * as bcrypt from 'bcryptjs';
 import { ensureUserReferralCode } from '../common/referrals';
 import { PrismaService } from '../prisma/prisma.service';
-import { ProductsService } from '../products/products.service';
+import { ProductsService, productListSelect } from '../products/products.service';
 import type { ChangePasswordDto, UpdateProfileDto } from './dto';
 
 @Injectable()
@@ -23,7 +23,6 @@ export class UsersService {
             name: true,
             role: true,
             city: true,
-            telegramId: true,
             telegramChatId: true,
             telegramLinkedAt: true,
             boostCredits: true,
@@ -51,25 +50,21 @@ export class UsersService {
   async getUserProducts(userId: string) {
     const products = await this.prisma.product.findMany({
       where: { userId },
-      include: { category: true, carBrands: true },
+      select: productListSelect,
       orderBy: [{ listedAt: 'desc' }, { createdAt: 'desc' }],
     });
     return Promise.all(
-      products.map((product) => this.productsService.mapProduct(product, { coverImageOnly: true })),
+      products.map((product) =>
+        this.productsService.mapProduct(product, { coverImageOnly: true, listPayload: true }),
+      ),
     );
   }
 
   async updateProfile(userId: string, data: UpdateProfileDto) {
-    const { telegramId, ...rest } = data;
-    const updateData = {
-      ...rest,
-      ...(telegramId !== undefined ? { telegramId } : {}),
-    };
-
     return this.prisma.user.update({
       where: { id: userId },
-      data: updateData,
-      select: { id: true, phone: true, name: true, role: true, city: true, telegramId: true },
+      data,
+      select: { id: true, phone: true, name: true, role: true, city: true },
     });
   }
 

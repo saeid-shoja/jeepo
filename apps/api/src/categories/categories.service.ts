@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { isAdminApprovalRequiredCategory } from '@offroad/shared';
+import { TtlCache } from '../common/ttl-cache';
 import { CategoryGroup, LibraryKind } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
@@ -26,9 +27,24 @@ type CategoryRow = {
   sortOrder: number;
 };
 
+const CAR_BRAND_LABEL_CACHE_TTL_MS = 60_000;
+const CATEGORIES_TREE_CACHE_TTL_MS = 30_000;
+
 @Injectable()
 export class CategoriesService {
+  private carBrandLabelCache: Map<string, string> | null = null;
+  private carBrandLabelCacheAt = 0;
+  private readonly treeCache = new TtlCache<Awaited<ReturnType<CategoriesService['loadTree']>>>(
+    CATEGORIES_TREE_CACHE_TTL_MS,
+  );
+
   constructor(private prisma: PrismaService) {}
+
+  invalidateCaches() {
+    this.treeCache.clear();
+    this.carBrandLabelCache = null;
+    this.carBrandLabelCacheAt = 0;
+  }
 
   private buildPartTree(categories: CategoryRow[]): LibraryNode[] {
     const byParent = new Map<string | null, CategoryRow[]>();
@@ -99,11 +115,18 @@ export class CategoriesService {
   }
 
   async getCarBrandLabelMap(): Promise<Map<string, string>> {
+    const now = Date.now();
+    if (this.carBrandLabelCache && now - this.carBrandLabelCacheAt < CAR_BRAND_LABEL_CACHE_TTL_MS) {
+      return this.carBrandLabelCache;
+    }
     const brands = await this.prisma.category.findMany({
       where: { group: CategoryGroup.CAR_BRAND, brandCode: { not: null } },
       select: { brandCode: true, name: true },
     });
-    return new Map(brands.map((b) => [b.brandCode!, b.name]));
+    const map = new Map(brands.map((b) => [b.brandCode!, b.name]));
+    this.carBrandLabelCache = map;
+    this.carBrandLabelCacheAt = now;
+    return map;
   }
 
   async parseCarBrandCodes(codes?: string[]): Promise<string[]> {
@@ -122,6 +145,14 @@ export class CategoriesService {
   }
 
   async findAll() {
+    const cached = this.treeCache.get('all');
+    if (cached) return cached;
+    const result = await this.loadTree();
+    this.treeCache.set('all', result);
+    return result;
+  }
+
+  private async loadTree() {
     const [libraries, parts, carBrandCategories, carBrands] = await Promise.all([
       this.prisma.library.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.category.findMany({
@@ -167,7 +198,7 @@ export class CategoriesService {
       };
     });
 
-    return {
+    const result = {
       libraries: libraryNodes,
       parts,
       carBrands,
@@ -182,6 +213,7 @@ export class CategoriesService {
       }),
       libraryRecords: libraries,
     };
+    return result;
   }
 
   async resolveCategoryFilterIds(categoryId: string): Promise<string[]> {
@@ -256,7 +288,7 @@ export class CategoriesService {
       data.brandCode = code;
     }
 
-    return this.prisma.category.create({
+    const created = await this.prisma.category.create({
       data: {
         name: data.name,
         slug: data.slug,
@@ -269,6 +301,8 @@ export class CategoriesService {
       },
       include: { library: true, parent: true },
     });
+    this.invalidateCaches();
+    return created;
   }
 
   async update(id: string, data: UpdateCategoryDto) {
@@ -285,7 +319,7 @@ export class CategoriesService {
     const category = await this.prisma.category.findUnique({ where: { id } });
     if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
 
-    return this.prisma.category.update({
+    const updated = await this.prisma.category.update({
       where: { id },
       data: {
         ...data,
@@ -294,6 +328,8 @@ export class CategoriesService {
       },
       include: { library: true, parent: true },
     });
+    this.invalidateCaches();
+    return updated;
   }
 
   async remove(id: string) {
@@ -316,7 +352,9 @@ export class CategoriesService {
         throw new BadRequestException('این برند در محصولات استفاده شده و قابل حذف نیست');
       }
     }
-    return this.prisma.category.delete({ where: { id } });
+    const deleted = await this.prisma.category.delete({ where: { id } });
+    this.invalidateCaches();
+    return deleted;
   }
 
   async createLibrary(data: CreateLibraryDto) {
@@ -324,7 +362,7 @@ export class CategoriesService {
     if (existing) {
       throw new BadRequestException('این اسلاگ کتابخانه قبلاً ثبت شده است');
     }
-    return this.prisma.library.create({
+    const created = await this.prisma.library.create({
       data: {
         name: data.name,
         slug: data.slug,
@@ -333,19 +371,23 @@ export class CategoriesService {
         isSystem: false,
       },
     });
+    this.invalidateCaches();
+    return created;
   }
 
   async updateLibrary(id: string, data: UpdateLibraryDto) {
     const library = await this.prisma.library.findUnique({ where: { id } });
     if (!library) throw new NotFoundException('کتابخانه یافت نشد');
 
-    return this.prisma.library.update({
+    const updated = await this.prisma.library.update({
       where: { id },
       data: {
         ...data,
         ...(library.isSystem ? { isSystem: false } : {}),
       },
     });
+    this.invalidateCaches();
+    return updated;
   }
 
   async removeLibrary(id: string) {
@@ -357,6 +399,8 @@ export class CategoriesService {
     if (library._count.categories > 0) {
       throw new BadRequestException('ابتدا دسته‌های این کتابخانه را حذف کنید');
     }
-    return this.prisma.library.delete({ where: { id } });
+    const deleted = await this.prisma.library.delete({ where: { id } });
+    this.invalidateCaches();
+    return deleted;
   }
 }

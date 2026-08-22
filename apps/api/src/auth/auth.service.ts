@@ -73,7 +73,6 @@ export class AuthService {
     name: string;
     role: string;
     city: string | null;
-    telegramId?: string | null;
   }) {
     const token = this.jwtService.sign({ sub: user.id, role: user.role });
     return {
@@ -85,7 +84,6 @@ export class AuthService {
         name: user.name,
         role: user.role,
         city: user.city,
-        telegramId: user.telegramId ?? null,
       },
     };
   }
@@ -132,7 +130,6 @@ export class AuthService {
     const email = data.email;
     const name = data.name;
     const city = data.city?.trim() || '';
-    const telegramId = data.telegramId ?? null;
     const referralCode = data.referralCode ?? null;
 
     if (referralCode) {
@@ -166,7 +163,6 @@ export class AuthService {
           name,
           password: hashedPassword,
           city,
-          telegramId,
           referralCode,
           verificationCode: hashedCode,
           verificationExpiresAt: expiresAt,
@@ -224,7 +220,6 @@ export class AuthService {
           name: pending.name,
           password: pending.password,
           city: pending.city || null,
-          telegramId: pending.telegramId,
           referralCode,
           emailVerified: true,
           emailVerifiedAt: new Date(),
@@ -419,7 +414,6 @@ export class AuthService {
         name: true,
         role: true,
         city: true,
-        telegramId: true,
         emailVerified: true,
         createdAt: true,
       },

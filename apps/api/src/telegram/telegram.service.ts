@@ -33,33 +33,23 @@ export class TelegramService {
     return this.botUsername.replace(/^@/, '');
   }
 
-  /** Open chat with bot (no deep-link payload — more reliable on mobile). */
-  buildBotUrl(): string {
-    return `https://t.me/${this.getBotUsername()}`;
-  }
-
+  /** Deep-link that auto-sends /start TOKEN when the user opens the bot. */
   buildDeepLink(token: string): string {
     return `https://t.me/${this.getBotUsername()}?start=${encodeURIComponent(token)}`;
   }
 
-  /** Short human-friendly link code (avoids fragile Telegram deep-link payloads). */
+  /** URL-safe token for Telegram start payload (max 64 chars). */
   generateLinkToken(): string {
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const bytes = randomBytes(6);
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += alphabet[bytes[i]! % alphabet.length];
-    }
-    return code;
+    return randomBytes(16).toString('hex');
   }
 
   normalizeLinkCode(raw: string | null | undefined): string | null {
     if (!raw) return null;
-    const code = raw.trim().toUpperCase().replace(/[\s-]/g, '');
-    if (/^[A-Z0-9]{6}$/.test(code)) return code;
-    // Legacy hex deep-link tokens (32 chars)
     const hex = raw.trim().toLowerCase();
     if (/^[a-f0-9]{32}$/.test(hex)) return hex;
+    const code = raw.trim().toUpperCase().replace(/[\s-]/g, '');
+    // Legacy 6-char codes from the old copy-paste flow
+    if (/^[A-Z0-9]{6}$/.test(code)) return code;
     return null;
   }
 

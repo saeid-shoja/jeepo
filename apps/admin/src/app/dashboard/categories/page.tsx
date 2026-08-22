@@ -96,7 +96,7 @@ export default function AdminCategoriesPage() {
   const handleCategoryGuarantee = async (cat: CategoryRow, enabled: boolean) => {
     const label = enabled ? 'اعمال' : 'برداشتن';
     const ok = window.confirm(
-      `${label} بج تضمین فروشگاه برای همه آگهی‌های کاربری دسته «${cat.name}» (و زیردسته‌ها)؟`,
+      `${label} بج دارای تضمین جیپو برای همه آگهی‌های کاربری دسته «${cat.name}» (و زیردسته‌ها)؟`,
     );
     if (!ok) return;
     try {
@@ -683,7 +683,7 @@ export default function AdminCategoriesPage() {
                               type="button"
                               onClick={() => handleCategoryGuarantee(cat, true)}
                               className="rounded p-1 text-green-700 hover:bg-green-50"
-                              title="اعمال تضمین فروشگاه روی آگهی‌های این دسته"
+                              title="اعمال دارای تضمین جیپو روی آگهی‌های این دسته"
                             >
                               <Shield className="h-4 w-4" />
                             </button>

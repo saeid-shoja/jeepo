@@ -1,10 +1,11 @@
-import { PRODUCT_COLOR_MAX_LENGTH, PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
+import { PRODUCT_COLOR_IDS, PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -153,7 +154,14 @@ export class CreateProductDto {
   @Min(0, { message: 'موجودی نمی‌تواند منفی باشد' })
   stockQuantity?: number;
 
-  /** Optional product color (e.g. مشکی). */
+  /** Selected listing colors (canonical ids). */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsIn(PRODUCT_COLOR_IDS, { each: true, message: 'رنگ انتخاب‌شده نامعتبر است' })
+  colors?: string[];
+
+  /** @deprecated use colors — kept so older clients still submit a single label. */
   @IsOptional()
   @Transform(({ value }) => {
     if (typeof value !== 'string') return value;
@@ -161,6 +169,5 @@ export class CreateProductDto {
     return trimmed.length ? trimmed : undefined;
   })
   @IsString()
-  @MaxLength(PRODUCT_COLOR_MAX_LENGTH, { message: 'رنگ حداکثر ۴۰ کاراکتر باشد' })
   color?: string;
 }

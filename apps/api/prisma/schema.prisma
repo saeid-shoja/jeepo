@@ -95,7 +95,6 @@ model User {
   password  String
   role      UserRole  @default(CLIENT)
   city      String?
-  telegramId                 String?
   telegramChatId             String?   @unique
   telegramLinkedAt           DateTime?
   telegramLinkToken          String?
@@ -151,7 +150,6 @@ model PendingRegistration {
   name                  String
   password              String
   city                  String
-  telegramId            String?
   referralCode          String?
   verificationCode      String
   verificationExpiresAt DateTime
@@ -209,6 +207,8 @@ model Product {
   salePrice          Float?
   newPrice           Float?
   images             String             @default("[]")
+  /// First gallery item so list queries skip the full `images` JSON.
+  coverImage         String?
   categoryId         String
   category           Category           @relation(fields: [categoryId], references: [id])
   userId             String?
@@ -321,6 +321,8 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int     @default(1)
   price     Float
+  /** Selected product color id when the buyer picked a variant. */
+  color     String?
 }
 
 model Favorite {

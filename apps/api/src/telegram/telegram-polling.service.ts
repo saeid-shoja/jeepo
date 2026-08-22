@@ -42,7 +42,7 @@ export class TelegramPollingService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.logger.log(
-      'Telegram polling active — send the link code to the bot; you should see logs here.',
+      'Telegram polling active — open the bot from the site Connect button.',
     );
 
     while (!this.stopped) {

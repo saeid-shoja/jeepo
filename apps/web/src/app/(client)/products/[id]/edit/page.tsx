@@ -1,7 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isVehicleSaleCategory, type VehiclePaintCondition } from '@offroad/shared';
+import {
+  isVehicleSaleCategory,
+  parseProductColorIds,
+  type VehiclePaintCondition,
+} from '@offroad/shared';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -12,6 +16,7 @@ import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
+import { ProductColorPicker } from '@/components/form/product-color-picker';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
 import { ProductSituationSelect } from '@/components/form/product-situation-select';
 import { VehicleSaleFields } from '@/components/form/vehicle-sale-fields';
@@ -78,7 +83,7 @@ export default function EditProductPage() {
       images: [],
       hasGuarantee: false,
       stockQuantity: 1,
-      color: '',
+      colors: [],
       newPrice: 0,
       salePrice: 0,
       mileageKm: null,
@@ -139,7 +144,9 @@ export default function EditProductPage() {
           situation: product.situation === 'USED' ? 'USED' : 'NEW',
           images: product.images || [],
           stockQuantity: product.stockQuantity ?? 1,
-          color: product.color ?? '',
+          colors: Array.isArray(product.colors)
+            ? product.colors
+            : parseProductColorIds(product.color),
           mileageKm: product.mileageKm ?? null,
           paintCondition: product.paintCondition ?? '',
         });
@@ -165,7 +172,7 @@ export default function EditProductPage() {
         phone: data.phone || undefined,
         images: data.images,
         stockQuantity: data.stockQuantity,
-        color: data.color?.trim() || null,
+        colors: data.colors,
         mileageKm: showVehicleFields ? data.mileageKm : null,
         paintCondition: showVehicleFields && data.paintCondition ? data.paintCondition : null,
         /* Shop catalog listings (registered by admins) keep their stored situation/
@@ -297,14 +304,18 @@ export default function EditProductPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="color">رنگ (اختیاری)</Label>
-              <Input
-                id="color"
-                placeholder="مثلاً مشکی، سفید، قرمز…"
-                maxLength={40}
-                {...register('color')}
+              <Label>رنگ (اختیاری)</Label>
+              <Controller
+                name="colors"
+                control={control}
+                render={({ field }) => (
+                  <ProductColorPicker value={field.value ?? []} onChange={field.onChange} />
+                )}
               />
-              <FieldError message={errors.color?.message} />
+              <p className="text-muted-foreground text-xs">
+                می‌توانید چند رنگ را انتخاب کنید. رنگ «چند رنگ» برای کالاهای ترکیبی است.
+              </p>
+              <FieldError message={errors.colors?.message} />
             </div>
           </CardContent>
         </Card>

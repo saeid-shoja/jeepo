@@ -137,7 +137,7 @@
 }
 
 .home-strip-scrollbar::-webkit-scrollbar {
-  height: 2px !important;
+  height: 1.5px !important;
 }
 
 .home-strip-scrollbar::-webkit-scrollbar-track {

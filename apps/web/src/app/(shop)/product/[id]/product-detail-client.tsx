@@ -4,6 +4,8 @@ import {
   formatPrice,
   formatProductLocationWithProvince,
   getVehiclePaintConditionLabel,
+  isProductColorSelectable,
+  parseProductColorIds,
   timeAgo,
 } from '@offroad/shared';
 import {
@@ -29,6 +31,7 @@ import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog'
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
 import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
+import { ProductColorSwatches } from '@/components/shop/product-color-swatches';
 import { ProductGallery } from '@/components/shop/product-gallery';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductShareButton } from '@/components/shop/product-share-button';
@@ -52,6 +55,7 @@ export function ProductDetailClient() {
   const [deleting, setDeleting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
@@ -68,7 +72,10 @@ export function ProductDetailClient() {
   }, [id, authLoading]);
 
   useEffect(() => {
-    if (product?.id) setQuantity(1);
+    if (product?.id) {
+      setQuantity(1);
+      setSelectedColor(null);
+    }
   }, [product?.id]);
 
   if (loading) {
@@ -104,6 +111,10 @@ export function ProductDetailClient() {
   const showStock = !product.isAuction;
   const canChat = canStartProductChat(product, user?.id);
   const showSafetyWarning = isClientProduct(product);
+  const colorIds: string[] = Array.isArray(product.colors)
+    ? product.colors
+    : parseProductColorIds(product.color);
+  const colorSelectable = isProductColorSelectable(product) && canBuy && colorIds.length > 0;
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -179,12 +190,25 @@ export function ProductDetailClient() {
                   </span>
                 </p>
               )}
-              {(product.mileageKm != null || product.paintCondition || product.color) && (
-                <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                  {product.color && (
-                    <span>
-                      رنگ: <span className="text-foreground font-medium">{product.color}</span>
-                    </span>
+              {(product.mileageKm != null || product.paintCondition || colorIds.length > 0) && (
+                <div className="text-muted-foreground flex flex-col gap-2 text-sm">
+                  {colorIds.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-foreground font-medium">رنگ</span>
+                      <ProductColorSwatches
+                        colorIds={colorIds}
+                        selectable={colorSelectable}
+                        selectedId={colorSelectable ? selectedColor : null}
+                        onSelect={setSelectedColor}
+                        showLabels
+                      />
+                      {colorSelectable ? (
+                        <p className="text-muted-foreground text-xs">
+                          یک رنگ را انتخاب کنید و به سبد اضافه کنید. برای رنگ دیگر، دوباره انتخاب و
+                          افزودن بزنید.
+                        </p>
+                      ) : null}
+                    </div>
                   )}
                   {product.mileageKm != null && (
                     <span className="inline-flex items-center gap-1">
@@ -220,11 +244,11 @@ export function ProductDetailClient() {
               <button
                 type="button"
                 className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
-                aria-label="اطلاعات تضمین فروشگاه"
+                aria-label="اطلاعات تضمین جیپو"
                 onClick={() => setGuaranteeOpen(true)}
               >
                 <Shield className="h-4 w-4" />
-                با تضمین فروشگاه
+                با تضمین جیپو
               </button>
             )}
             {/* مزایده — موقتاً غیرفعال
@@ -331,6 +355,8 @@ export function ProductDetailClient() {
                 product={product}
                 quantity={quantity}
                 maxQuantity={stockQuantity}
+                color={selectedColor}
+                requireColor={colorSelectable}
                 className="w-full"
               />
               <Button variant="outline" className="w-full" asChild>

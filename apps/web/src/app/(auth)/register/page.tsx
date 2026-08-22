@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { DigitsInput, TelegramIdInput } from '@/components/form/digits-input';
+import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { RequiredLabel } from '@/components/form/required-label';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,6 @@ function RegisterPageContent() {
       email: emailFromQuery ?? '',
       phone: '',
       password: '',
-      telegramId: '',
       referralCode: referralFromQuery,
     },
   });
@@ -77,7 +76,6 @@ function RegisterPageContent() {
         data.password,
         data.email,
         undefined,
-        data.telegramId,
         data.referralCode,
       );
       setPendingEmail(result.email);
@@ -218,20 +216,6 @@ function RegisterPageContent() {
               {...detailsForm.register('password')}
             />
             <FieldError message={detailsForm.formState.errors.password?.message} />
-          </div>
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="telegramId" required={false}>
-              آیدی تلگرام{' '}
-              <span className="text-muted-foreground text-xs">(جهت دریافت اعلان های چت و خبر)</span>
-            </RequiredLabel>
-            <TelegramIdInput
-              id="telegramId"
-              type="text"
-              placeholder="@username"
-              autoComplete="off"
-              {...detailsForm.register('telegramId')}
-            />
-            <FieldError message={detailsForm.formState.errors.telegramId?.message} />
           </div>
           <div className="space-y-2">
             <RequiredLabel htmlFor="referralCode" required={false}>

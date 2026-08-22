@@ -2,7 +2,14 @@
 
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import { CART_STORAGE_KEY, type CartItem, cartItemCount, cartSubtotal } from '@/lib/cart-types';
+import {
+  CART_STORAGE_KEY,
+  type CartItem,
+  cartItemCount,
+  cartSubtotal,
+  otherColorQuantity,
+  sameCartLine,
+} from '@/lib/cart-types';
 
 type AddToCartInput = {
   productId: string;
@@ -11,6 +18,7 @@ type AddToCartInput = {
   image?: string | null;
   quantity?: number;
   maxQuantity?: number;
+  color?: string | null;
 };
 
 /** Supports legacy `{ items: [] }` localStorage shape */
@@ -36,8 +44,8 @@ const cartStorage: StateStorage = {
 type CartState = {
   items: CartItem[];
   addItem: (input: AddToCartInput) => void;
-  removeItem: (productId: string) => void;
-  setQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, color?: string | null) => void;
+  setQuantity: (productId: string, quantity: number, color?: string | null) => void;
   clearCart: () => void;
 };
 
@@ -49,21 +57,28 @@ export const useCartStore = create<CartState>()(
       addItem: (input) => {
         const maxQty = input.maxQuantity;
         const qty = Math.max(1, input.quantity ?? 1);
+        const color = input.color ?? null;
         set((state) => {
-          const existing = state.items.find((i) => i.productId === input.productId);
+          const remaining =
+            maxQty != null
+              ? Math.max(0, maxQty - otherColorQuantity(state.items, input.productId, color))
+              : undefined;
+          const existing = state.items.find((i) => sameCartLine(i, input.productId, color));
           if (existing) {
-            const cap = maxQty ?? existing.maxQuantity;
+            const cap = remaining ?? existing.maxQuantity;
             const nextQty = existing.quantity + qty;
             const capped = cap != null ? Math.min(nextQty, cap) : nextQty;
+            if (capped < 1) return state;
             return {
               items: state.items.map((i) =>
-                i.productId === input.productId
-                  ? { ...i, quantity: capped, maxQuantity: cap ?? i.maxQuantity }
+                sameCartLine(i, input.productId, color)
+                  ? { ...i, quantity: capped, maxQuantity: maxQty ?? i.maxQuantity }
                   : i,
               ),
             };
           }
-          const capped = maxQty != null ? Math.min(qty, maxQty) : qty;
+          const capped = remaining != null ? Math.min(qty, remaining) : qty;
+          if (capped < 1) return state;
           return {
             items: [
               ...state.items,
@@ -74,29 +89,33 @@ export const useCartStore = create<CartState>()(
                 image: input.image ?? null,
                 quantity: capped,
                 maxQuantity: maxQty,
+                color,
               },
             ],
           };
         });
       },
 
-      removeItem: (productId) =>
+      removeItem: (productId, color) =>
         set((state) => ({
-          items: state.items.filter((i) => i.productId !== productId),
+          items: state.items.filter((i) => !sameCartLine(i, productId, color)),
         })),
 
-      setQuantity: (productId, quantity) => {
+      setQuantity: (productId, quantity, color) => {
         if (quantity < 1) {
           set((state) => ({
-            items: state.items.filter((i) => i.productId !== productId),
+            items: state.items.filter((i) => !sameCartLine(i, productId, color)),
           }));
           return;
         }
         set((state) => ({
           items: state.items.map((i) => {
-            if (i.productId !== productId) return i;
-            const cap = i.maxQuantity;
-            const capped = cap != null ? Math.min(quantity, cap) : quantity;
+            if (!sameCartLine(i, productId, color)) return i;
+            const remaining =
+              i.maxQuantity != null
+                ? Math.max(0, i.maxQuantity - otherColorQuantity(state.items, productId, color))
+                : undefined;
+            const capped = remaining != null ? Math.min(quantity, remaining) : quantity;
             return { ...i, quantity: capped };
           }),
         }));

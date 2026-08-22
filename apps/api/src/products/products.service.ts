@@ -9,19 +9,23 @@ import {
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
   FREE_CLIENT_NEW_LISTING_LIMIT,
+  formatProductColorLabels,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
   isVehicleSaleCategory,
   listingPaymentDueAt,
   PAYMENT_PURPOSES,
   type PaymentPurpose,
+  parseProductColorIds,
   resolveUserListingLimit,
   resolveUserNewListingLimit,
+  serializeProductColorIds,
   strengthenedEndsAt,
 } from '@offroad/shared';
 import { CategoriesService } from '../categories/categories.service';
 import { getAuctionCurrentPrice, isAuctionActive } from '../common/auction';
 import { isPurchasableProduct } from '../common/purchasable';
+import { TtlCache } from '../common/ttl-cache';
 import { MailService } from '../mail/mail.service';
 import type {
   Advertiser,
@@ -33,10 +37,66 @@ import { TelegramChannelService } from '../telegram/telegram-channel.service';
 import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
 import { computeActiveUntil, computeDeletionAt } from './product-lifecycle.constants';
 
-const productInclude = {
-  category: true,
-  user: { select: { name: true, city: true } },
-  carBrands: true,
+const PRODUCT_LIST_CACHE_TTL_MS = 15_000;
+const LIBRARY_CATEGORY_IDS_CACHE_TTL_MS = 60_000;
+
+/** Prefer first cover without retaining the full gallery in memory after map. */
+function parseCoverImagesOnly(imagesJson: string): string[] {
+  if (!imagesJson || imagesJson === '[]') return [];
+  try {
+    const parsed = JSON.parse(imagesJson) as unknown;
+    if (!Array.isArray(parsed) || parsed.length === 0) return [];
+    const first = parsed[0];
+    return typeof first === 'string' && first ? [first] : [];
+  } catch {
+    return [];
+  }
+}
+
+function firstCoverFromImages(images?: string[] | null): string | null {
+  const first = images?.[0];
+  return typeof first === 'string' && first.length > 0 ? first : null;
+}
+
+function storedProductColors(colors?: string[], color?: string | null): string | null {
+  if (colors !== undefined) return serializeProductColorIds(colors);
+  if (color == null || color === '') return null;
+  return serializeProductColorIds(parseProductColorIds(color));
+}
+
+function resolveListImages(product: { coverImage?: string | null; images?: string }): string[] {
+  if (product.coverImage) return [product.coverImage];
+  return parseCoverImagesOnly(product.images || '[]');
+}
+
+/** Card / strip queries: skip description, phone, and the full gallery JSON. */
+export const productListSelect = {
+  id: true,
+  title: true,
+  price: true,
+  salePrice: true,
+  coverImage: true,
+  categoryId: true,
+  userId: true,
+  advertiser: true,
+  hasGuarantee: true,
+  isBoosted: true,
+  strengthenedUntil: true,
+  status: true,
+  situation: true,
+  city: true,
+  neighborhood: true,
+  isAuction: true,
+  auctionStartPrice: true,
+  auctionCurrentPrice: true,
+  buyNowPrice: true,
+  auctionEndsAt: true,
+  activeUntil: true,
+  deprecatedAt: true,
+  stockQuantity: true,
+  listedAt: true,
+  createdAt: true,
+  carBrands: { select: { brandCode: true } },
   _count: { select: { auctionBids: true } },
 };
 
@@ -57,6 +117,20 @@ export class ProductsService {
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
+  private readonly listCache = new TtlCache<{
+    products: Record<string, unknown>[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>(PRODUCT_LIST_CACHE_TTL_MS);
+  private readonly libraryCategoryIdsCache = new TtlCache<string[]>(
+    LIBRARY_CATEGORY_IDS_CACHE_TTL_MS,
+  );
+
+  invalidateListCache() {
+    this.listCache.clear();
+  }
+
   private postedSince(postedWithin: string): Date | null {
     const now = Date.now();
     const hours: Record<string, number> = {
@@ -71,7 +145,8 @@ export class ProductsService {
 
   async mapProduct<
     T extends {
-      images: string;
+      images?: string;
+      coverImage?: string | null;
       carBrands?: { brandCode: string }[];
       advertiser: Advertiser;
       hasGuarantee: boolean;
@@ -90,16 +165,29 @@ export class ProductsService {
       strengthenedUntil?: Date | null;
       price: number;
       salePrice?: number | null;
+      color?: string | null;
       _count?: { auctionBids: number };
       category?: { slug: string } | null;
     },
-  >(product: T, options?: { viewerUserId?: string | null; coverImageOnly?: boolean }) {
+  >(
+    product: T,
+    options?: {
+      viewerUserId?: string | null;
+      coverImageOnly?: boolean;
+      /** Omit heavy fields not needed by cards / strips. */
+      listPayload?: boolean;
+      /** Reuse one brand map per request instead of hitting DB per product. */
+      brandLabels?: Map<string, string>;
+    },
+  ) {
     const strengthenedActive =
       product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
+    const needsBrands = (product.carBrands?.length ?? 0) > 0;
     const brandLabels =
-      (product.carBrands?.length ?? 0)
+      options?.brandLabels ??
+      (needsBrands
         ? await this.categoriesService.getCarBrandLabelMap()
-        : new Map<string, string>();
+        : new Map<string, string>());
     const brands = product.carBrands?.map((row) => row.brandCode) ?? [];
     const isAuction = Boolean(product.isAuction);
     const startPrice = product.auctionStartPrice ?? product.price;
@@ -115,8 +203,9 @@ export class ProductsService {
       isAuctionActive(product.auctionEndsAt) &&
       product.status === 'ACTIVE';
 
-    const parsedImages: string[] = JSON.parse(product.images || '[]');
-    const images = options?.coverImageOnly ? parsedImages.slice(0, 1) : parsedImages;
+    const images = options?.coverImageOnly
+      ? resolveListImages(product)
+      : (JSON.parse(product.images || '[]') as string[]);
 
     const mapped: Record<string, unknown> = {
       ...product,
@@ -174,6 +263,10 @@ export class ProductsService {
       stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
     };
 
+    const colorIds = parseProductColorIds((product as { color?: string | null }).color);
+    mapped.colors = colorIds;
+    mapped.color = colorIds.length ? formatProductColorLabels(colorIds) : null;
+
     if (isAuction) {
       mapped.price = currentPrice;
     }
@@ -183,10 +276,31 @@ export class ProductsService {
     }
 
     delete mapped._count;
+    delete mapped.coverImage;
+
+    if (options?.listPayload) {
+      // Cards do not need long text / contact / auction internals.
+      delete mapped.description;
+      delete mapped.phone;
+      delete mapped.email;
+      delete mapped.address;
+      delete mapped.realPriceMin;
+      delete mapped.realPriceMax;
+      delete mapped.listingPaymentDueAt;
+      delete mapped.awaitingListingPayment;
+      delete mapped.awaitingAdminApproval;
+    }
+
     return mapped;
   }
 
-  private async expireStrengthenedProducts(): Promise<void> {
+  private lastStrengthenedExpireAt = 0;
+
+  /** Clear expired boosts at most once per interval — not on every list request. */
+  private async maybeExpireStrengthenedProducts(): Promise<void> {
+    const now = Date.now();
+    if (now - this.lastStrengthenedExpireAt < 5 * 60 * 1000) return;
+    this.lastStrengthenedExpireAt = now;
     await this.prisma.product.updateMany({
       where: { strengthenedUntil: { lt: new Date() } },
       data: { strengthenedUntil: null },
@@ -466,6 +580,7 @@ export class ProductsService {
       salePrice,
       newPrice,
       images: JSON.stringify(data.images || []),
+      coverImage: firstCoverFromImages(data.images),
       categoryId: data.categoryId,
       hasGuarantee: data.isAuction ? false : data.hasGuarantee || false,
       isBoosted: data.isBoosted || false,
@@ -482,7 +597,7 @@ export class ProductsService {
       listingFeePaid: options.listingFeePaid,
       listingPaymentDueAt: options.listingPaymentDueAt,
       stockQuantity: data.isAuction ? 1 : (data.stockQuantity ?? 1),
-      color: data.color?.trim() || null,
+      color: storedProductColors(data.colors, data.color),
       activeUntil: isClient && options.status === 'ACTIVE' ? computeActiveUntil(now) : null,
       listedAt: data.isBoosted || options.status === 'ACTIVE' ? now : undefined,
       ...auctionData,
@@ -507,6 +622,7 @@ export class ProductsService {
 
       this.telegramChannel.announceProductActive(product.id);
 
+      this.invalidateListCache();
       return {
         product: await this.mapProduct(product),
         requiresListingFee: false,
@@ -566,6 +682,7 @@ export class ProductsService {
     });
 
     const mapped = await this.mapProduct(product);
+    this.invalidateListCache();
 
     if (createOptions.status === 'ACTIVE') {
       this.telegramChannel.announceProductActive(product.id);
@@ -697,6 +814,7 @@ export class ProductsService {
       void this.notifyAdminGuaranteeListing(productId);
     }
 
+    this.invalidateListCache();
     return { requiresAdminApproval: needsAdminApproval, alreadyPaid: false };
   }
 
@@ -710,6 +828,7 @@ export class ProductsService {
     });
 
     this.telegramChannel.announceStrengthened(productId);
+    this.invalidateListCache();
   }
 
   async fulfillBoostPayment(productId: string) {
@@ -727,6 +846,7 @@ export class ProductsService {
     });
 
     this.telegramChannel.announceBoost(productId);
+    this.invalidateListCache();
   }
 
   /** Include root category and all nested descendants (any depth). */
@@ -746,6 +866,9 @@ export class ProductsService {
 
   /** Categories in a library, including descendants that may not have libraryId set. */
   private async collectLibraryCategoryIds(libraryId: string): Promise<string[]> {
+    const cached = this.libraryCategoryIdsCache.get(libraryId);
+    if (cached) return cached;
+
     const inLibrary = await this.prisma.category.findMany({
       where: { libraryId },
       select: { id: true },
@@ -764,7 +887,9 @@ export class ProductsService {
         frontier.push(child.id);
       }
     }
-    return [...ids];
+    const result = [...ids];
+    this.libraryCategoryIdsCache.set(libraryId, result);
+    return result;
   }
 
   async findAll(params: {
@@ -786,6 +911,10 @@ export class ProductsService {
     auction?: boolean;
     auctionActive?: boolean;
   }) {
+    const cacheKey = JSON.stringify(params);
+    const cached = this.listCache.get(cacheKey);
+    if (cached) return cached;
+
     const page = params.page || 1;
     const limit = params.limit || 30;
     const skip = (page - 1) * limit;
@@ -861,32 +990,43 @@ export class ProductsService {
       where.auctionEndsAt = { gt: new Date() };
     }
 
-    await this.expireStrengthenedProducts();
+    // Throttled cleanup so list latency is not paid on every request.
+    void this.maybeExpireStrengthenedProducts();
 
     const orderBy: any = [
       { strengthenedUntil: { sort: 'desc', nulls: 'last' } },
       { listedAt: 'desc' },
     ];
 
-    const [products, total] = await Promise.all([
+    const [products, total, brandLabels] = await Promise.all([
       this.prisma.product.findMany({
         where,
-        include: productInclude,
+        select: productListSelect,
         skip,
         take: limit,
         orderBy,
       }),
       this.prisma.product.count({ where }),
+      this.categoriesService.getCarBrandLabelMap(),
     ]);
 
-    return {
+    const result = {
       products: await Promise.all(
-        products.map((p) => this.mapProduct(p, { viewerUserId: null, coverImageOnly: true })),
+        products.map((p) =>
+          this.mapProduct(p, {
+            viewerUserId: null,
+            coverImageOnly: true,
+            listPayload: true,
+            brandLabels,
+          }),
+        ),
       ),
       total,
       page,
       totalPages: Math.ceil(total / limit),
     };
+    this.listCache.set(cacheKey, result);
+    return result;
   }
 
   async findOne(id: string, viewerUserId?: string | null) {
@@ -916,7 +1056,7 @@ export class ProductsService {
 
     const relatedRows = await this.prisma.product.findMany({
       where: relatedWhere,
-      include: productInclude,
+      select: productListSelect,
       orderBy: { listedAt: 'desc' },
       take: 15,
     });
@@ -943,15 +1083,21 @@ export class ProductsService {
           id: { not: product.id },
           isAuction: false,
         },
-        include: productInclude,
+        select: productListSelect,
         take: 24,
       });
       unrelatedRows = shufflePick(pool, 2);
     }
 
+    const brandLabels = await this.categoriesService.getCarBrandLabelMap();
     const products = await Promise.all(
       [...relatedRows, ...unrelatedRows].map((p) =>
-        this.mapProduct(p, { viewerUserId: null, coverImageOnly: true }),
+        this.mapProduct(p, {
+          viewerUserId: null,
+          coverImageOnly: true,
+          listPayload: true,
+          brandLabels,
+        }),
       ),
     );
 
@@ -1001,6 +1147,7 @@ export class ProductsService {
       include: productIncludeDetail,
     });
     this.telegramChannel.announceProductActive(product.id);
+    this.invalidateListCache();
     return this.mapProduct(product);
   }
 
@@ -1030,6 +1177,7 @@ export class ProductsService {
 
     const updateData: any = { ...data };
     delete updateData.carBrands;
+    delete updateData.colors;
     // Guarantee badge is admin-only — clients cannot set or clear it via product update.
     if (userRole !== 'ADMIN') {
       delete updateData.hasGuarantee;
@@ -1038,7 +1186,15 @@ export class ProductsService {
       updateData.advertiser = updateData.type;
       delete updateData.type;
     }
-    if (data.images) updateData.images = JSON.stringify(data.images);
+    if (data.images) {
+      updateData.images = JSON.stringify(data.images);
+      updateData.coverImage = firstCoverFromImages(data.images);
+    }
+    if (data.colors !== undefined) {
+      updateData.color = storedProductColors(data.colors);
+    } else if (data.color !== undefined) {
+      updateData.color = storedProductColors(undefined, data.color);
+    }
     if (data.auctionEndsAt) updateData.auctionEndsAt = new Date(data.auctionEndsAt);
     if (data.auctionStartPrice != null && product.isAuction) {
       updateData.auctionStartPrice = data.auctionStartPrice;
@@ -1122,6 +1278,7 @@ export class ProductsService {
       include: productIncludeDetail,
     });
 
+    this.invalidateListCache();
     return this.mapProduct(updated);
   }
 
@@ -1166,6 +1323,7 @@ export class ProductsService {
     });
 
     this.telegramChannel.announceBoost(id);
+    this.invalidateListCache();
 
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundException('محصول یافت نشد');
@@ -1187,7 +1345,9 @@ export class ProductsService {
       );
     }
 
-    return this.prisma.product.delete({ where: { id } });
+    const deleted = await this.prisma.product.delete({ where: { id } });
+    this.invalidateListCache();
+    return deleted;
   }
 
   async reactivate(id: string, userId: string) {
@@ -1228,6 +1388,7 @@ export class ProductsService {
         include: productIncludeDetail,
       });
 
+      this.invalidateListCache();
       return {
         product: await this.mapProduct(pending),
         requiresListingFee: true,
@@ -1263,6 +1424,7 @@ export class ProductsService {
       void this.notifyAdminGuaranteeListing(id);
     }
 
+    this.invalidateListCache();
     return {
       product: await this.mapProduct(updated),
       requiresListingFee: false,
@@ -1280,7 +1442,7 @@ export class ProductsService {
       include: {
         category: { select: { name: true } },
         user: {
-          select: { id: true, name: true, phone: true, email: true, city: true, telegramId: true },
+          select: { id: true, name: true, phone: true, email: true, city: true },
         },
       },
     });
@@ -1319,7 +1481,6 @@ export class ProductsService {
             phone: product.user.phone,
             email: product.user.email,
             city: product.user.city,
-            telegramId: product.user.telegramId,
           }
         : null,
       reporter: {

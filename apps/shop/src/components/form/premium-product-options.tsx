@@ -55,7 +55,7 @@ export function PremiumProductOptions({
         <CardTitle className="text-base">آپشن های ویژه</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* تضمین فروشگاه — موقتاً غیرفعال
+        {/* تضمین جیپو — موقتاً غیرفعال
         <Dialog>
           <div className="flex gap-3">
             <Checkbox
@@ -71,7 +71,7 @@ export function PremiumProductOptions({
                 className={`flex cursor-pointer items-center gap-1 font-medium ${!hasValidPrice ? 'text-muted-foreground' : ''}`}
               >
                 <Shield className="size-4 text-green-600" />
-                با تضمین فروشگاه
+                با تضمین جیپو
               </Label>
               {!hasValidPrice ? (
                 <p className="text-xs text-amber-600">ابتدا قیمت محصول را وارد کنید.</p>
@@ -107,7 +107,7 @@ export function PremiumProductOptions({
               <DialogDescription asChild>
                 <div className="text-foreground space-y-3 text-start text-sm">
                   <p>
-                    با فعال‌سازی تضمین فروشگاه، محصول شما با نشان ویژه دارای تضمین فروشگاه نمایش داده
+                    با فعال‌سازی تضمین جیپو، محصول شما با نشان ویژه دارای تضمین جیپو نمایش داده
                     می‌شود و خریداران می‌توانند آن را مستقیماً با ضمانت فروشگاه از طریق سایت خریداری
                     کنند. در این حالت مبلغ خرید به حساب فروشگاه واریز شده و پس از ارسال محصول توسط
                     فروشنده و تایید خریدار مبلغ با کسر کارمزد فروشگاه و مالیات به حساب فروشنده واریز
@@ -138,7 +138,7 @@ export function PremiumProductOptions({
                     آگهی.
                   </p>
                   <p>
-                    <strong>انتشار:</strong> آگهی با تضمین فروشگاه ابتدا در وضعیت انتظار تأیید باقی
+                    <strong>انتشار:</strong> آگهی با تضمین جیپو ابتدا در وضعیت انتظار تأیید باقی
                     می‌ماند و پس از بررسی ادمین منتشر می‌شود.
                   </p>
                 </div>

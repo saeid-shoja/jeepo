@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  normalizeLoginIdentifier,
-  normalizeTelegramIdInput,
-  toEnglishDigits,
-} from '@offroad/shared';
+import { normalizeLoginIdentifier, toEnglishDigits } from '@offroad/shared';
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -52,19 +48,3 @@ export const LoginIdentifierInput = React.forwardRef<HTMLInputElement, DigitsInp
   ),
 );
 LoginIdentifierInput.displayName = 'LoginIdentifierInput';
-
-export const TelegramIdInput = React.forwardRef<HTMLInputElement, DigitsInputProps>(
-  ({ onChange, className, dir = 'ltr', ...props }, ref) => (
-    <Input
-      ref={ref}
-      dir={dir}
-      className={cn('text-end formTextSize', className)}
-      {...props}
-      onChange={(e) => {
-        patchChangeValue(e, normalizeTelegramIdInput);
-        onChange?.(e);
-      }}
-    />
-  ),
-);
-TelegramIdInput.displayName = 'TelegramIdInput';

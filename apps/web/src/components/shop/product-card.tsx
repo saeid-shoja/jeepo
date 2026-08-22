@@ -1,6 +1,6 @@
 'use client';
 
-import { formatProductLocation, timeAgo } from '@offroad/shared';
+import { formatProductLocation, productRequiresColorChoice, timeAgo } from '@offroad/shared';
 import { Clock, MapPin, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
@@ -9,6 +9,7 @@ import { ProductMedia } from '@/components/shop/product-media';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { saveListScroll } from '@/lib/list-scroll-restore';
 import { isShopProduct } from '@/lib/product-advertiser';
@@ -46,6 +47,8 @@ interface ProductCardProps {
     isStrengthenedActive?: boolean;
     strengthenedUntil?: string | null;
     stockQuantity?: number;
+    colors?: string[];
+    color?: string | null;
   };
 }
 
@@ -64,6 +67,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const postedAt = timeAgo(new Date(product.listedAt ?? product.createdAt));
   const canBuy = canViewerPurchase(product, user?.id);
   const showLocation = !isShopProduct(product);
+  const needsColorPick = productRequiresColorChoice(product);
 
   return (
     <Card
@@ -132,7 +136,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {canBuy && (
         <div className="border-t p-1.5 pt-0.5">
-          <AddToCartButton product={product} className="w-full" size="sm" />
+          {needsColorPick ? (
+            <Button asChild size="sm" className="mt-1 w-full text-[13px] hover:scale-105">
+              <Link href={`/product/${product.id}`}>انتخاب رنگ</Link>
+            </Button>
+          ) : (
+            <AddToCartButton product={product} className="w-full" size="sm" />
+          )}
         </div>
       )}
     </Card>

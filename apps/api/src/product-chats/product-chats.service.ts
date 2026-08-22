@@ -1,11 +1,15 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { SITE_NAME_FA } from '@offroad/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
+import { escapeTelegramHtml } from '../telegram/telegram.service';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
 import type { SendChatMessageDto } from './dto';
 
 const conversationInclude = {
@@ -28,6 +32,8 @@ export class ProductChatsService {
   constructor(
     private prisma: PrismaService,
     private pushService: PushService,
+    private telegramBot: TelegramBotService,
+    @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
   private parseImages(images: string): string[] {
@@ -291,15 +297,46 @@ export class ProductChatsService {
 
     const recipientId =
       conversation.buyerId === userId ? conversation.sellerId : conversation.buyerId;
-    const pushBody = body.length > 120 ? `${body.slice(0, 117)}…` : body;
-    void this.pushService.sendToUser(recipientId, {
-      title: `${message.sender.name} — ${conversation.product.title}`,
-      body: pushBody,
-      url: `/chats?id=${conversationId}`,
-      tag: `chat-${conversationId}`,
+    this.notifyRecipient({
+      recipientId,
+      conversationId,
+      senderName: message.sender.name,
+      productTitle: conversation.product.title,
+      body,
     });
 
     return this.mapMessage(message, userId);
+  }
+
+  private notifyRecipient(input: {
+    recipientId: string;
+    conversationId: string;
+    senderName: string;
+    productTitle: string;
+    body: string;
+  }) {
+    const chatPath = `/chats?id=${input.conversationId}`;
+    const pushBody = input.body.length > 120 ? `${input.body.slice(0, 117)}…` : input.body;
+    void this.pushService.sendToUser(input.recipientId, {
+      title: `${input.senderName} — ${input.productTitle}`,
+      body: pushBody,
+      url: chatPath,
+      tag: `chat-${input.conversationId}`,
+    });
+
+    const preview = input.body.length > 400 ? `${input.body.slice(0, 397)}…` : input.body;
+    const url = `${this.webUrl.replace(/\/$/, '')}${chatPath}`;
+    const html = [
+      `💬 <b>پیام جدید در پنل ${SITE_NAME_FA}</b>`,
+      '',
+      `از: ${escapeTelegramHtml(input.senderName)}`,
+      `آگهی: ${escapeTelegramHtml(input.productTitle)}`,
+      '',
+      escapeTelegramHtml(preview),
+      '',
+      `<a href="${escapeTelegramHtml(url)}">مشاهده گفتگو</a>`,
+    ].join('\n');
+    void this.telegramBot.sendPrivateMessage(input.recipientId, html);
   }
 
   async markAsRead(conversationId: string, userId: string) {

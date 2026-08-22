@@ -19,7 +19,9 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   let res: Response;
   try {
     res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') throw err;
+    if (err instanceof Error && err.name === 'AbortError') throw err;
     throw new Error('اتصال با سرور برقرار نشد.');
   }
 
@@ -83,7 +85,6 @@ export const api = {
       name: string;
       password: string;
       city?: string;
-      telegramId?: string;
       referralCode?: string;
     }) =>
       request<{
@@ -129,14 +130,16 @@ export const api = {
   },
 
   products: {
-    list: (params?: Record<string, string>) => {
+    list: (params?: Record<string, string>, init?: { signal?: AbortSignal }) => {
       const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
       return request<{ products: any[]; total: number; page: number; totalPages: number }>(
         `/products${qs}`,
+        { signal: init?.signal },
       );
     },
     get: (id: string) => request<any>(`/products/${id}`),
-    related: (id: string) => request<{ products: any[] }>(`/products/${id}/related`),
+    related: (id: string, init?: { signal?: AbortSignal }) =>
+      request<{ products: any[] }>(`/products/${id}/related`, { signal: init?.signal }),
     listingQuota: () =>
       request<{
         activeCount: number;
@@ -217,7 +220,7 @@ export const api = {
 
   orders: {
     my: () => request<any[]>('/orders/my'),
-    preview: (data: { items: { productId: string; quantity: number }[] }) =>
+    preview: (data: { items: { productId: string; quantity: number; color?: string }[] }) =>
       request<{
         items: Array<{
           productId: string;
@@ -226,13 +229,15 @@ export const api = {
           quantity: number;
           unitPrice: number;
           lineTotal: number;
+          color?: string | null;
+          colorLabel?: string | null;
         }>;
         subtotal: number;
         total: number;
         itemCount: number;
       }>('/orders/preview', { method: 'POST', body: JSON.stringify(data) }),
     create: (data: {
-      items: { productId: string; quantity: number }[];
+      items: { productId: string; quantity: number; color?: string }[];
       address: string;
       phone?: string;
       note?: string;
@@ -349,7 +354,6 @@ export const api = {
       request<{
         configured: boolean;
         linked: boolean;
-        linkCode?: string;
         botUrl?: string;
         botUsername?: string;
         linkedAt?: string;

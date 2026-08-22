@@ -26,7 +26,7 @@ export function HomeCategoryCircles() {
   return (
     <section className="container pt-1 md:pt-2 pb-3 md:pb-4">
       <div className="flex justify-center">
-        <div className="home-strip-scrollbar max-w-full overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] scrollbar-thin">
+        <div className="home-strip-scrollbar max-w-full px-4 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none]">
           <div className="mx-auto flex w-max gap-4 px-1 sm:gap-5">
             {loading
               ? CIRCLE_SKELETON_KEYS.map((key) => (

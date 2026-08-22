@@ -1,11 +1,9 @@
 'use client';
 
-import { normalizeTelegramIdInput } from '@offroad/shared';
 import { Loader2, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
-import { TelegramIdInput } from '@/components/form/digits-input';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,8 +19,8 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
 
 type ProfileEditDialogProps = {
-  profile: { name?: string; city?: string | null; telegramId?: string | null } | null;
-  onUpdated: (profile: { name: string; city?: string | null; telegramId?: string | null }) => void;
+  profile: { name?: string; city?: string | null } | null;
+  onUpdated: (profile: { name: string; city?: string | null }) => void;
 };
 
 export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps) {
@@ -30,7 +28,6 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
-  const [telegramId, setTelegramId] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,12 +37,11 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
     if (open) {
       setName(profile?.name ?? '');
       setCity(profile?.city ?? '');
-      setTelegramId(profile?.telegramId ? `@${profile.telegramId.replace(/^@/, '')}` : '');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     }
-  }, [open, profile?.name, profile?.city, profile?.telegramId]);
+  }, [open, profile?.name, profile?.city]);
 
   const handleSave = async () => {
     const trimmedName = name.trim();
@@ -53,18 +49,6 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       toast.error('نام باید حداقل ۲ کاراکتر باشد');
       return;
     }
-
-    const trimmedTelegram = normalizeTelegramIdInput(telegramId);
-    if (
-      trimmedTelegram &&
-      !/^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(trimmedTelegram) &&
-      !/^\d{5,15}$/.test(trimmedTelegram)
-    ) {
-      toast.error('آیدی تلگرام معتبر نیست (مثال: @username)');
-      return;
-    }
-
-    const normalizedTelegram = trimmedTelegram ? trimmedTelegram.replace(/^@/, '') : null;
 
     const wantsPasswordChange =
       currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0;
@@ -96,12 +80,10 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       const updated = await api.users.updateProfile({
         name: trimmedName,
         city: city.trim() || null,
-        telegramId: normalizedTelegram,
       });
       patchUser({
         name: updated.name,
         city: updated.city ?? undefined,
-        telegramId: updated.telegramId ?? null,
       });
       onUpdated(updated);
       toast.success(
@@ -145,22 +127,6 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
               />
             </div>
             <CitySelect value={city} onChange={setCity} label="شهر (اختیاری)" required={false} />
-            <div className="space-y-2">
-              <Label htmlFor="profile-telegram">
-                آیدی تلگرام{' '}
-                <span className="text-muted-foreground text-xs font-normal">
-                  (جهت دریافت اعلان‌های چت و خبر)
-                </span>
-              </Label>
-              <TelegramIdInput
-                id="profile-telegram"
-                type="text"
-                value={telegramId}
-                onChange={(e) => setTelegramId(e.target.value)}
-                placeholder="@username"
-                autoComplete="off"
-              />
-            </div>
             <div className="space-y-2 border-t pt-4">
               <p className="text-sm font-medium">تغییر رمز عبور</p>
               <p className="text-muted-foreground text-xs">

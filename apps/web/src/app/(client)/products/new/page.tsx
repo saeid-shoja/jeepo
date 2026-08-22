@@ -28,6 +28,7 @@ import {
 // import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
+import { ProductColorPicker } from '@/components/form/product-color-picker';
 import { ProductImageUpload } from '@/components/form/product-image-upload';
 import { ProductSituationSelect } from '@/components/form/product-situation-select';
 import { VehicleSaleFields } from '@/components/form/vehicle-sale-fields';
@@ -70,7 +71,7 @@ const EMPTY_FORM_VALUES: NewProductFormValues = {
   realPriceMax: 0,
   buyNowPrice: 0,
   stockQuantity: 1,
-  color: '',
+  colors: [],
   newPrice: 0,
   salePrice: 0,
   categorySlug: '',
@@ -235,7 +236,7 @@ export default function NewProductPage() {
         situation: data.situation,
         images: data.images,
         stockQuantity: data.isAuction ? 1 : data.stockQuantity,
-        color: data.isAuction ? undefined : data.color?.trim() || undefined,
+        colors: data.isAuction ? undefined : data.colors,
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition
           ? {
@@ -462,14 +463,18 @@ export default function NewProductPage() {
 
             {!isAuction && (
               <div className="space-y-2">
-                <Label htmlFor="color">رنگ (اختیاری)</Label>
-                <Input
-                  id="color"
-                  placeholder="مثلاً مشکی، سفید، قرمز…"
-                  maxLength={40}
-                  {...register('color')}
+                <Label>رنگ (اختیاری)</Label>
+                <Controller
+                  name="colors"
+                  control={control}
+                  render={({ field }) => (
+                    <ProductColorPicker value={field.value ?? []} onChange={field.onChange} />
+                  )}
                 />
-                <FieldError message={errors.color?.message} />
+                <p className="text-muted-foreground text-xs">
+                  می‌توانید چند رنگ را انتخاب کنید. رنگ «چند رنگ» برای کالاهای ترکیبی است.
+                </p>
+                <FieldError message={errors.colors?.message} />
               </div>
             )}
           </CardContent>

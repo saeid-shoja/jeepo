@@ -8,6 +8,7 @@ export * from './listing-tips';
 export * from './no-contact-in-text';
 export * from './orders';
 export * from './payments';
+export * from './product-colors';
 export * from './products';
 export * from './referrals';
 export * from './schema-types';

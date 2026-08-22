@@ -207,7 +207,7 @@ export function buildProductsListMetadata(options: {
   if (tab === 'SHOP') {
     return buildMetadata({
       title: 'فروشگاه و آگهی های لوازم آفرودی دست دوم',
-      description: `خرید آنلاین لوازم آفرودی دست دوم با قیمت پایین و تضمین فروشگاه — ${SITE_DESCRIPTION}`,
+      description: `خرید آنلاین لوازم آفرودی دست دوم با قیمت پایین و تضمین جیپو — ${SITE_DESCRIPTION}`,
       path: '/products?advertiserType=SHOP',
       keywords: [
         'فروشگاه لوازم آفرودی',

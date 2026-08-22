@@ -30,6 +30,8 @@ type OrderPreviewItem = {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  color?: string | null;
+  colorLabel?: string | null;
 };
 
 type OrderPreview = {
@@ -67,6 +69,9 @@ function CheckoutLineItem({ item }: { item: OrderPreviewItem }) {
         >
           {item.title}
         </Link>
+        {item.colorLabel ? (
+          <p className="text-muted-foreground text-xs">رنگ: {item.colorLabel}</p>
+        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-muted-foreground text-sm">{item.quantity} عدد</span>
@@ -180,7 +185,11 @@ export default function CheckoutPage() {
 
     api.orders
       .preview({
-        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        items: items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          color: i.color ?? undefined,
+        })),
       })
       .then((res) => {
         if (cancelled) return;
@@ -210,7 +219,11 @@ export default function CheckoutPage() {
 
     try {
       const { id, paymentUrl } = await api.orders.create({
-        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        items: items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          color: i.color ?? undefined,
+        })),
         address: formatDeliveryAddress(data.city, data.address),
         phone: data.phone,
         note: data.note || undefined,

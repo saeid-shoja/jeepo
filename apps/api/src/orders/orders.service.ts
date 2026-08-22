@@ -9,8 +9,12 @@ import {
   canTransitionOrderStatus,
   getOrderStatusEmailCopy,
   getOrderStatusLabel,
+  getProductColorLabel,
+  isProductColorId,
   ORDER_NEEDS_ATTENTION_STATUSES,
   type OrderStatusCode,
+  parseProductColorIds,
+  productRequiresColorChoice,
   SITE_EMAIL,
   SITE_NAME_FA,
 } from '@offroad/shared';
@@ -27,6 +31,7 @@ type ResolvedLine = {
   price: number;
   title: string;
   image: string | null;
+  color: string | null;
 };
 
 const orderInclude = {
@@ -45,7 +50,7 @@ const orderInclude = {
 
 const ORDER_ADMIN_EMAIL = SITE_EMAIL;
 
-/** Remove sold client listings (تضمین فروشگاه) and auctions from public lists. */
+/** Remove sold client listings (تضمین جیپو) and auctions from public lists. */
 function shouldDeactivateSoldListing(product: {
   advertiser: string;
   hasGuarantee: boolean;
@@ -71,7 +76,19 @@ export class OrdersService {
       throw new BadRequestException('سبد خرید خالی است');
     }
 
-    const productIds = [...new Set(items.map((i) => i.productId))];
+    const merged = new Map<string, OrderItemDto>();
+    for (const item of items) {
+      const key = `${item.productId}::${item.color ?? ''}`;
+      const prev = merged.get(key);
+      if (prev) {
+        prev.quantity += item.quantity;
+      } else {
+        merged.set(key, { ...item });
+      }
+    }
+    const normalized = [...merged.values()];
+
+    const productIds = [...new Set(normalized.map((i) => i.productId))];
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
     });
@@ -81,9 +98,14 @@ export class OrdersService {
     }
 
     const byId = new Map(products.map((p) => [p.id, p]));
+    const qtyByProduct = new Map<string, number>();
+    for (const item of normalized) {
+      qtyByProduct.set(item.productId, (qtyByProduct.get(item.productId) ?? 0) + item.quantity);
+    }
+
     const lines: ResolvedLine[] = [];
 
-    for (const item of items) {
+    for (const item of normalized) {
       const product = byId.get(item.productId);
       if (!product) {
         throw new BadRequestException('محصول یافت نشد');
@@ -100,13 +122,27 @@ export class OrdersService {
       }
 
       const available = product.stockQuantity ?? 1;
-      if (item.quantity > available) {
+      const totalRequested = qtyByProduct.get(product.id) ?? item.quantity;
+      if (totalRequested > available) {
         throw new BadRequestException(
           `موجودی «${product.title}» کافی نیست (حداکثر ${available} عدد)`,
         );
       }
       if (item.quantity < 1) {
         throw new BadRequestException('تعداد باید حداقل ۱ باشد');
+      }
+
+      const availableColors = parseProductColorIds(product.color);
+      let color: string | null = item.color ?? null;
+      if (productRequiresColorChoice(product) && !color) {
+        throw new BadRequestException(`رنگ «${product.title}» را انتخاب کنید`);
+      }
+      if (color) {
+        if (!isProductColorId(color) || !availableColors.includes(color)) {
+          throw new BadRequestException(`رنگ انتخاب‌شده برای «${product.title}» موجود نیست`);
+        }
+      } else {
+        color = null;
       }
 
       const images: string[] = JSON.parse(product.images || '[]');
@@ -116,6 +152,7 @@ export class OrdersService {
         price: getProductSalePrice(product),
         title: product.title,
         image: images[0] ?? null,
+        color,
       });
     }
 
@@ -134,6 +171,8 @@ export class OrdersService {
         quantity: line.quantity,
         unitPrice: line.price,
         lineTotal: line.price * line.quantity,
+        color: line.color,
+        colorLabel: line.color ? getProductColorLabel(line.color) : null,
       })),
       subtotal,
       total: subtotal,
@@ -356,6 +395,7 @@ export class OrdersService {
             productId: line.productId,
             quantity: line.quantity,
             price: line.price,
+            color: line.color,
           })),
         },
       },
@@ -384,21 +424,27 @@ export class OrdersService {
     }
 
     const lines = await this.resolveItems(
-      order.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+      order.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        color: item.color ?? undefined,
+      })),
       userId,
     );
     const total = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
-    const lineByProductId = new Map(lines.map((line) => [line.productId, line]));
+    const lineByKey = new Map(
+      lines.map((line) => [`${line.productId}::${line.color ?? ''}`, line]),
+    );
 
     await this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
-        const line = lineByProductId.get(item.productId);
+        const line = lineByKey.get(`${item.productId}::${item.color ?? ''}`);
         if (!line) {
           throw new BadRequestException('برخی اقلام سفارش دیگر قابل خرید نیستند');
         }
         await tx.orderItem.update({
           where: { id: item.id },
-          data: { price: line.price, quantity: line.quantity },
+          data: { price: line.price, quantity: line.quantity, color: line.color },
         });
       }
 

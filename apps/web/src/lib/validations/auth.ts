@@ -2,7 +2,6 @@ import { z } from 'zod';
 import {
   iranMobileField,
   loginIdentifierField,
-  telegramIdField,
   verificationCodeField,
 } from '@/lib/validations/digits';
 
@@ -20,7 +19,6 @@ export const registerSchema = z.object({
   email: emailSchema,
   phone: iranMobileField(),
   password: passwordSchema,
-  telegramId: telegramIdField(),
   referralCode: z.string().trim().optional(),
 });
 

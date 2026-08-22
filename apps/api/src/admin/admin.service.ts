@@ -488,6 +488,7 @@ export class AdminService {
       this.telegramChannel.announceProductActive(id);
     }
 
+    this.productsService.invalidateListCache();
     return updated;
   }
 
@@ -560,7 +561,7 @@ export class AdminService {
       });
       if (!product) throw new NotFoundException('محصول یافت نشد');
       if (product.advertiser !== 'CLIENT' || product.isAuction) {
-        throw new BadRequestException('تضمین فروشگاه فقط برای آگهی‌های کاربری غیرمزایده است');
+        throw new BadRequestException('تضمین جیپو فقط برای آگهی‌های کاربری غیرمزایده است');
       }
       where.id = dto.productId;
     } else if (dto.userId) {
@@ -584,6 +585,7 @@ export class AdminService {
       data: { hasGuarantee: dto.enabled },
     });
 
+    this.productsService.invalidateListCache();
     return { updated: result.count };
   }
 

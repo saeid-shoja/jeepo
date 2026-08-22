@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, ExternalLink, Send } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import { api } from '@/lib/api';
 type TelegramLinkState = {
   configured: boolean;
   linked: boolean;
-  linkCode?: string;
   botUrl?: string;
   botUsername?: string;
   linkedAt?: string;
@@ -21,6 +20,7 @@ type TelegramLinkState = {
 export function TelegramNotificationsCard() {
   const [state, setState] = useState<TelegramLinkState | null>(null);
   const [loading, setLoading] = useState(true);
+  const announcedLink = useRef(false);
 
   const load = useCallback(async (opts?: { quiet?: boolean }) => {
     if (!opts?.quiet) setLoading(true);
@@ -40,15 +40,26 @@ export function TelegramNotificationsCard() {
     void load();
   }, [load]);
 
-  const copyLinkCode = useCallback(async () => {
-    if (!state?.linkCode) return;
-    try {
-      await navigator.clipboard.writeText(state.linkCode);
-      toast.success('کد اتصال کپی شد');
-    } catch {
-      toast.error('کپی کد ناموفق بود');
-    }
-  }, [state?.linkCode]);
+  useEffect(() => {
+    if (!state?.configured || state.linked) return;
+
+    const tick = () => {
+      if (document.visibilityState !== 'visible') return;
+      void load({ quiet: true }).then((data) => {
+        if (data?.linked && !announcedLink.current) {
+          announcedLink.current = true;
+          toast.success('تلگرام با موفقیت متصل شد');
+        }
+      });
+    };
+
+    const interval = window.setInterval(tick, 2500);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [state?.configured, state?.linked, load]);
 
   if (loading) {
     return (
@@ -80,7 +91,7 @@ export function TelegramNotificationsCard() {
             ) : null}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
+        <CardContent className="text-sm">
           <p className="text-muted-foreground leading-relaxed">
             اطلاعیه‌ها و پیام‌های مدیریت را در تلگرام و در تب «پیام‌ها» همین صفحه دریافت می‌کنید.
           </p>
@@ -97,57 +108,19 @@ export function TelegramNotificationsCard() {
           دریافت اطلاعیه در تلگرام
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="flex flex-col gap-4 text-sm">
         <p className="text-muted-foreground leading-relaxed">
-          ۱. کد زیر را کپی کنید.
-          <br />
-          ۲. ربات را باز کنید و همان کد را در چت بفرستید.
-          <br />
-          ۳. بعد از پیام موفقیت، «بررسی اتصال» را بزنید.
-          <br />
-          {state.linkCode ? (
-            <div className="flex items-center gap-2 min-w-0">
-              <p className="text-muted-foreground text-xs shrink-0"> ۴. برای کپی روی کد بزنید:</p>
-              <button
-                type="button"
-                onClick={() => void copyLinkCode()}
-                className="font-mono text-base font-bold tracking-[0.2em]"
-                dir="ltr"
-              >
-                {state.linkCode}
-              </button>
-            </div>
-          ) : null}
+          با زدن دکمه زیر ربات جیپو باز می‌شود و حساب شما خودکار وصل می‌شود. بعد از تأیید در تلگرام،
+          به همین صفحه برگردید.
         </p>
-        <div className="grid grid-cols-2 gap-3">
-          {state.botUrl ? (
-            <Button type="button" size="sm" className="gap-1" asChild>
-              <a href={state.botUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="size-3" />
-                باز کردن ربات
-              </a>
-            </Button>
-          ) : (
-            <div />
-          )}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="gap-1"
-            onClick={() => {
-              void load({ quiet: true }).then((data) => {
-                if (data?.linked) {
-                  toast.success('تلگرام با موفقیت متصل شد');
-                } else {
-                  toast.message('هنوز متصل نشده — کد را در ربات بفرستید و دوباره بررسی کنید');
-                }
-              });
-            }}
-          >
-            بررسی اتصال
+        {state.botUrl ? (
+          <Button type="button" className="gap-1" asChild>
+            <a href={state.botUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-3.5" />
+              اتصال به تلگرام
+            </a>
           </Button>
-        </div>
+        ) : null}
       </CardContent>
     </Card>
   );

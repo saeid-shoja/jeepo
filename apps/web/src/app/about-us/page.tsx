@@ -16,7 +16,7 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { buildAboutPageJsonLd, buildMetadata } from '@/lib/seo';
 
 /** بلوک‌ها و امکانات مربوط به مزایده / تقویت — موقتاً مخفی */
-const HIDDEN_ABOUT_BLOCK_TITLES = new Set(['مزایده و تضمین فروشگاه']);
+const HIDDEN_ABOUT_BLOCK_TITLES = new Set(['مزایده و تضمین جیپو']);
 const HIDDEN_ABOUT_FEATURES = new Set([
   'مزایده آنلاین برای فروش به بالاترین قیمت',
   'نشان‌های «تقویت شده» و «پله شده» برای دیده‌شدن بیشتر آگهی',

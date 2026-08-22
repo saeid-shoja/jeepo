@@ -1,6 +1,6 @@
 'use client';
 
-import { resolveProductDiscount } from '@offroad/shared';
+import { productRequiresColorChoice, resolveProductDiscount } from '@offroad/shared';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,16 @@ type AddToCartButtonProps = {
     salePrice?: number | null;
     images?: string[];
     stockQuantity?: number;
+    colors?: string[];
+    color?: string | null;
+    advertiser?: string;
+    type?: string;
+    hasGuarantee?: boolean;
   };
   quantity?: number;
   maxQuantity?: number;
+  color?: string | null;
+  requireColor?: boolean;
   className?: string;
   size?: 'default' | 'sm' | 'lg' | 'icon';
   variant?: 'default' | 'outline' | 'secondary' | 'destructive';
@@ -30,6 +37,8 @@ export function AddToCartButton({
   product,
   quantity = 1,
   maxQuantity,
+  color,
+  requireColor = false,
   className,
   size = 'default',
   variant = 'default',
@@ -48,6 +57,10 @@ export function AddToCartButton({
     e.stopPropagation();
 
     const qty = Math.min(quantity, stockCap);
+    if ((requireColor || productRequiresColorChoice(product)) && !color) {
+      toast.error('لطفاً یک رنگ انتخاب کنید');
+      return;
+    }
     const { effectivePrice } = resolveProductDiscount(product.price, product.salePrice);
     addItem({
       productId: product.id,
@@ -56,6 +69,7 @@ export function AddToCartButton({
       image: product.images?.[0] ?? null,
       quantity: qty,
       maxQuantity: stockCap,
+      color: color ?? null,
     });
     toast.success('به سبد خرید اضافه شد');
   };

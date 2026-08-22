@@ -428,9 +428,9 @@ export class MailService {
     };
   }): Promise<void> {
     const html = buildEmailLayout({
-      title: 'آگهی با تضمین فروشگاه — در انتظار تأیید',
+      title: 'آگهی با تضمین جیپو — در انتظار تأیید',
       bodyHtml: `
-        <p style="margin:0 0 16px;">یک آگهی با گزینه «تضمین فروشگاه» ثبت شده و تا تأیید ادمین در فروشگاه نمایش داده نمی‌شود.</p>
+        <p style="margin:0 0 16px;">یک آگهی با گزینه «تضمین جیپو» ثبت شده و تا تأیید ادمین در فروشگاه نمایش داده نمی‌شود.</p>
         <h3 style="margin:16px 0 10px;font-size:16px;color:#1e3a5f;">اطلاعات آگهی</h3>
         ${emailInfoBox(`
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -460,7 +460,7 @@ export class MailService {
 
     await this.send(
       SITE_EMAIL,
-      `تضمین فروشگاه — تأیید آگهی: ${payload.product.title.slice(0, 40)}`,
+      `تضمین جیپو — تأیید آگهی: ${payload.product.title.slice(0, 40)}`,
       html,
     );
   }
@@ -483,7 +483,6 @@ export class MailService {
       phone: string;
       email: string | null;
       city: string | null;
-      telegramId: string | null;
     } | null;
     reporter: {
       id: string;
@@ -521,12 +520,7 @@ export class MailService {
                 phone: payload.advertiser.phone,
                 email: payload.advertiser.email,
                 city: payload.advertiser.city,
-              }) +
-              (
-                payload.advertiser.telegramId
-                  ? `<p style="font-size:14px;">تلگرام: @${escapeHtml(payload.advertiser.telegramId)}</p>`
-                  : ''
-              )
+              })
             : ''
         }
         ${formatParty('گزارش‌دهنده', {

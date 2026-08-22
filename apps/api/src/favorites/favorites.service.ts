@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ProductsService } from '../products/products.service';
+import { ProductsService, productListSelect } from '../products/products.service';
 
 @Injectable()
 export class FavoritesService {
@@ -23,11 +23,7 @@ export class FavoritesService {
       where: { userId },
       include: {
         product: {
-          include: {
-            category: true,
-            carBrands: true,
-            _count: { select: { auctionBids: true } },
-          },
+          select: productListSelect,
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -40,6 +36,7 @@ export class FavoritesService {
         this.productsService.mapProduct(row.product, {
           viewerUserId: userId,
           coverImageOnly: true,
+          listPayload: true,
         }),
       ),
     );

@@ -1,15 +1,16 @@
 'use client';
 
 import { SITE_NAME_FA } from '@offroad/shared';
-import { Loader2, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollToTopButton } from '@/components/layout/scroll-to-top-button';
 import { ProductCard } from '@/components/shop/product-card';
 import {
   ProductsFilterSidebar,
   type ProductsFilters,
 } from '@/components/shop/products-filter-sidebar';
+import { ProductsLoadMore } from '@/components/shop/products-load-more';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -21,6 +22,7 @@ import {
   setListPagesLoaded,
 } from '@/lib/list-scroll-restore';
 import { PRICE_FILTER_MAX } from '@/lib/product-utils';
+import { useInfiniteList } from '@/lib/use-infinite-list';
 import { useRestoreListScroll } from '@/lib/use-restore-list-scroll';
 import { useCategories } from '@/stores/categories-store';
 import { useLocationFilter } from '@/stores/location-store';
@@ -50,25 +52,14 @@ export function ProductsPageClient() {
   const urlSearch = searchParams.get('search') ?? '';
   const libraryId = searchParams.get('libraryId') ?? '';
 
-  const [products, setProducts] = useState<any[]>([]);
   const { libraries, loading: categoriesLoading } = useCategories();
   const { selectedCities, hasFilter } = useLocationFilter();
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [filters, setFilters] = useState<ProductsFilters>(defaultFilters);
   const [activeTab, setActiveTab] = useState<'CLIENT' | 'SHOP' | 'AUCTION'>(
     advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION',
   );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const loadingMoreRef = useRef(false);
-  const requestIdRef = useRef(0);
-  const pageRef = useRef(1);
-  const hasMoreRef = useRef(true);
 
   useEffect(() => {
     setSearchQuery(urlSearch);
@@ -77,17 +68,6 @@ export function ProductsPageClient() {
   useEffect(() => {
     setActiveTab(advertiserType as 'CLIENT' | 'SHOP' | 'AUCTION');
   }, [advertiserType]);
-
-  useEffect(() => {
-    pageRef.current = page;
-    setListPagesLoaded(page);
-  }, [page]);
-
-  useEffect(() => {
-    hasMoreRef.current = hasMore;
-  }, [hasMore]);
-
-  useRestoreListScroll(!initialLoading && products.length > 0);
 
   const buildParams = useCallback(
     (pageNum: number) => {
@@ -127,72 +107,31 @@ export function ProductsPageClient() {
     [activeTab, searchQuery, filters, selectedCities, libraryId],
   );
 
-  useEffect(() => {
-    if (categoriesLoading) return;
+  const fetchPage = useCallback(
+    async (page: number, signal: AbortSignal) => {
+      const res = await api.products.list(buildParams(page), { signal });
+      return { items: res.products as any[], totalPages: res.totalPages };
+    },
+    [buildParams],
+  );
 
-    const requestId = ++requestIdRef.current;
-    let cancelled = false;
+  const {
+    items: products,
+    initialLoading,
+    loadingMore,
+    hasMore,
+    loadError,
+    loadMore,
+  } = useInfiniteList({
+    queryKey,
+    enabled: !categoriesLoading,
+    fetchPage,
+    getItemId: (item) => item.id,
+    initialPagesToLoad: getRestorePagesLoaded(),
+    onPageChange: setListPagesLoaded,
+  });
 
-    const loadInitial = async () => {
-      setInitialLoading(true);
-      setLoadingMore(false);
-      loadingMoreRef.current = false;
-      setProducts([]);
-      setPage(1);
-      pageRef.current = 1;
-      setHasMore(true);
-      hasMoreRef.current = true;
-      setListPagesLoaded(1);
-
-      const pagesToLoad = getRestorePagesLoaded();
-
-      try {
-        let all: any[] = [];
-        let totalPages = 1;
-        let lastPage = 1;
-
-        for (let p = 1; p <= pagesToLoad; p++) {
-          const res = await api.products.list(buildParams(p));
-          if (cancelled || requestIdRef.current !== requestId) return;
-          all = all.concat(res.products);
-          totalPages = res.totalPages;
-          lastPage = p;
-          setProducts(all);
-          setPage(lastPage);
-          pageRef.current = lastPage;
-          setListPagesLoaded(lastPage);
-          const more = lastPage < totalPages;
-          setHasMore(more);
-          hasMoreRef.current = more;
-          if (p === 1) {
-            setInitialLoading(false);
-            if (pagesToLoad > 1) {
-              setLoadingMore(true);
-              loadingMoreRef.current = true;
-            }
-          }
-          if (p >= totalPages) break;
-        }
-      } catch {
-        if (cancelled || requestIdRef.current !== requestId) return;
-        setProducts([]);
-        setHasMore(false);
-        hasMoreRef.current = false;
-      } finally {
-        if (!cancelled && requestIdRef.current === requestId) {
-          setInitialLoading(false);
-          setLoadingMore(false);
-          loadingMoreRef.current = false;
-        }
-      }
-    };
-
-    void loadInitial();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [categoriesLoading, queryKey, buildParams]);
+  useRestoreListScroll(!initialLoading && products.length > 0);
 
   useEffect(() => {
     if (hasPendingListScrollForCurrentPath()) return;
@@ -200,58 +139,6 @@ export function ProductsPageClient() {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
   }, [queryKey]);
-
-  const loadMore = useCallback(async () => {
-    if (loadingMoreRef.current || !hasMoreRef.current || initialLoading) return;
-
-    loadingMoreRef.current = true;
-    setLoadingMore(true);
-    const nextPage = pageRef.current + 1;
-    const requestId = requestIdRef.current;
-
-    try {
-      const res = await api.products.list(buildParams(nextPage));
-      if (requestIdRef.current !== requestId) return;
-
-      setProducts((prev) => {
-        const seen = new Set(prev.map((item) => item.id));
-        const fresh = res.products.filter((item: { id: string }) => !seen.has(item.id));
-        return prev.concat(fresh);
-      });
-      setPage(nextPage);
-      pageRef.current = nextPage;
-      setListPagesLoaded(nextPage);
-      const more = nextPage < res.totalPages;
-      setHasMore(more);
-      hasMoreRef.current = more;
-    } catch {
-      if (requestIdRef.current !== requestId) return;
-      setHasMore(false);
-      hasMoreRef.current = false;
-    } finally {
-      if (requestIdRef.current === requestId) {
-        loadingMoreRef.current = false;
-        setLoadingMore(false);
-      }
-    }
-  }, [buildParams, initialLoading]);
-
-  useEffect(() => {
-    const node = sentinelRef.current;
-    if (!node || !hasMore || initialLoading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadMore();
-        }
-      },
-      { root: null, rootMargin: '480px 0px', threshold: 0 },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasMore, initialLoading, loadMore, products.length]);
 
   const handleApplyFilters = () => {
     setMobileFiltersOpen(false);
@@ -359,18 +246,13 @@ export function ProductsPageClient() {
                 ))}
               </div>
 
-              <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
-
-              {loadingMore ? (
-                <div
-                  className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <Loader2 className="size-4 animate-spin" />
-                  در حال بارگذاری...
-                </div>
-              ) : null}
+              <ProductsLoadMore
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                loadError={loadError}
+                onLoadMore={loadMore}
+                enabled={!initialLoading}
+              />
             </>
           ) : (
             <div className="text-muted-foreground py-16 text-center">

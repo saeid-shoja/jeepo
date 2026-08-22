@@ -1,8 +1,4 @@
-import {
-  normalizeLoginIdentifier,
-  normalizeTelegramIdInput,
-  toEnglishDigits,
-} from '@offroad/shared';
+import { normalizeLoginIdentifier, toEnglishDigits } from '@offroad/shared';
 import { z } from 'zod';
 
 export const IRAN_MOBILE_REGEX = /^09\d{9}$/;
@@ -33,16 +29,6 @@ export const verificationCodeField = () =>
     .string()
     .min(1, 'کد تأیید را وارد کنید')
     .refine((v) => /^\d{6}$/.test(toEnglishDigits(v)), 'کد تأیید باید ۶ رقم باشد');
-
-export const telegramIdField = () =>
-  z.string().refine((value) => {
-    const normalized = normalizeTelegramIdInput(value.trim());
-    return (
-      !normalized ||
-      /^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(normalized) ||
-      /^\d{5,15}$/.test(normalized)
-    );
-  }, 'آیدی تلگرام معتبر نیست (مثال: @username)');
 
 /** Parse integer form values (ASCII, Persian, Arabic-Indic). */
 export function parseIntegerInput(value: unknown): number {

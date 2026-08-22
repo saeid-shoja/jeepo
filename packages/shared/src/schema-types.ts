@@ -38,6 +38,8 @@ export interface IProduct {
   user?: IUser;
   type: ProductType;
   hasGuarantee: boolean;
+  color?: string | null;
+  colors?: string[];
   isBoosted: boolean;
   status: ProductStatus;
   city?: string;

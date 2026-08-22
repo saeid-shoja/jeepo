@@ -18,7 +18,7 @@ export default function CartPage() {
         <ShoppingBag className="text-muted-foreground mx-auto size-14 opacity-40" />
         <h1 className="mt-4 text-xl font-bold">سبد خرید شما خالی است</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          محصولات فروشگاه یا دارای تضمین فروشگاه را به سبد اضافه کنید.
+          محصولات فروشگاه یا دارای تضمین جیپو را به سبد اضافه کنید.
         </p>
         <Button asChild className="mt-6">
           <Link href="/">مشاهده فروشگاه</Link>

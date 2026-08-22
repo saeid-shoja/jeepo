@@ -10,7 +10,6 @@ export type User = {
   name: string;
   role: string;
   city?: string;
-  telegramId?: string | null;
   emailVerified?: boolean;
 };
 
@@ -28,13 +27,12 @@ type AuthState = {
     password: string,
     email: string,
     city?: string,
-    telegramId?: string,
     referralCode?: string,
   ) => Promise<{ email: string; maskedEmail: string; message: string }>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<string>;
   logout: () => void;
-  patchUser: (data: Partial<Pick<User, 'name' | 'city' | 'telegramId'>>) => void;
+  patchUser: (data: Partial<Pick<User, 'name' | 'city'>>) => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -74,8 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: res.user });
   },
 
-  register: async (phone, name, password, email, city, telegramId, referralCode) => {
-    const normalizedTelegram = telegramId?.trim().replace(/^@/, '') || undefined;
+  register: async (phone, name, password, email, city, referralCode) => {
     const normalizedReferral = referralCode?.trim().toUpperCase() || undefined;
     const res = await api.auth.register({
       phone: phone.trim(),
@@ -83,7 +80,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       password,
       email: email.trim().toLowerCase(),
       city: city?.trim() ?? '',
-      telegramId: normalizedTelegram,
       referralCode: normalizedReferral,
     });
     return {

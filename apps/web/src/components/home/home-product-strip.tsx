@@ -48,7 +48,7 @@ export function HomeProductStrip<T>({
   }
 
   return (
-    <div className="home-strip-scrollbar overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] scrollbar-thin">
+    <div className="home-strip-scrollbar overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none]">
       <div className="flex w-max gap-3">
         {items.map((item) => (
           <div key={getItemKey(item)} className="w-50 shrink-0 md:w-45">

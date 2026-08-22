@@ -74,8 +74,8 @@ export default function UserProductsPage() {
     const enabled = !product.hasGuarantee;
     const ok = window.confirm(
       enabled
-        ? `بج تضمین فروشگاه برای «${product.title}» اعمال شود؟`
-        : `بج تضمین فروشگاه از «${product.title}» برداشته شود؟`,
+        ? `بج دارای تضمین جیپو برای «${product.title}» اعمال شود؟`
+        : `بج تضمین جیپو از «${product.title}» برداشته شود؟`,
     );
     if (!ok) return;
     try {
@@ -89,7 +89,7 @@ export default function UserProductsPage() {
 
   const handleUserGuarantee = async (enabled: boolean) => {
     const label = enabled ? 'اعمال' : 'برداشتن';
-    const ok = window.confirm(`${label} بج تضمین فروشگاه برای همه آگهی‌های کاربری این شخص؟`);
+    const ok = window.confirm(`${label} بج تضمین جیپو برای همه آگهی‌های کاربری این شخص؟`);
     if (!ok) return;
     setGuaranteeing(true);
     try {
@@ -221,7 +221,7 @@ export default function UserProductsPage() {
                               ? 'bg-green-100 text-green-800 hover:bg-green-200'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
-                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین فروشگاه'}
+                          title={p.hasGuarantee ? 'برداشتن تضمین' : 'اعمال تضمین جیپو'}
                         >
                           <Shield className="inline size-3.5" />
                         </button>

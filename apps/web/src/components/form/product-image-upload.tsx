@@ -129,7 +129,10 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
     <div className={cn('space-y-2 mt-4', className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="shrink-0 space-y-2">
-          <Label htmlFor="product-images" className='w-full flex justify-between items-center gap-2'>
+          <Label
+            htmlFor="product-images"
+            className="w-full flex justify-between items-center gap-2"
+          >
             <p>انتخاب تصاویر و ویدیو</p>
             <div className="text-muted-foreground flex w-26 h-12 md:h-26 items-center justify-center rounded-sm border border-dashed">
               <ImagePlus className="size-6 opacity-50" />

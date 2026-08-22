@@ -183,10 +183,10 @@ export default function EditProductPage() {
         ...(isShop
           ? {}
           : {
-            newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
-            situation: data.situation,
-            listingIntent: data.listingIntent,
-          }),
+              newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
+              situation: data.situation,
+              listingIntent: data.listingIntent,
+            }),
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');

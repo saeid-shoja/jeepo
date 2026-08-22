@@ -42,7 +42,7 @@ export function CarBrandPicker({ options, value, onChange }: CarBrandPickerProps
           همه خودروها
         </Button>
       </CardHeader>
-      <CardContent className='p-4 md:p-6'>
+      <CardContent className="p-4 md:p-6">
         <div className="flex flex-wrap gap-2">
           {options.map((option) => {
             const selected = value.includes(option.value);

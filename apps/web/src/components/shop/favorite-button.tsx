@@ -14,7 +14,11 @@ type FavoriteButtonProps = {
   isDetailPage?: boolean;
 };
 
-export function FavoriteButton({ productId, className, isDetailPage = false }: FavoriteButtonProps) {
+export function FavoriteButton({
+  productId,
+  className,
+  isDetailPage = false,
+}: FavoriteButtonProps) {
   const router = useRouter();
   const { user } = useAuth();
   const isFavorite = useFavoritesStore((s) => Boolean(s.ids[productId]));

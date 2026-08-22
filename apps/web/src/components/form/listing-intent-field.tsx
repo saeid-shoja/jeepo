@@ -1,6 +1,10 @@
 'use client';
 
-import { BUYER_LISTING_PRICE_HINT, LISTING_INTENT_LABELS, type ListingIntent } from '@offroad/shared';
+import {
+  BUYER_LISTING_PRICE_HINT,
+  LISTING_INTENT_LABELS,
+  type ListingIntent,
+} from '@offroad/shared';
 import { ShoppingBag } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -36,7 +40,9 @@ export function ListingIntentField({ value, onChange }: ListingIntentFieldProps)
             {LISTING_INTENT_LABELS.BUYER}
           </Label>
           {isBuyer ? (
-            <p className="text-muted-foreground text-xs leading-relaxed">{BUYER_LISTING_PRICE_HINT}</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {BUYER_LISTING_PRICE_HINT}
+            </p>
           ) : null}
         </div>
       </div>

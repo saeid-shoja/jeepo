@@ -16,7 +16,12 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { NoContactInText } from '../../common/no-contact-in-text.validator';
-import { Advertiser, ListingIntent, ProductSituation, VehiclePaintCondition } from '../../prisma/generated/client';
+import {
+  Advertiser,
+  ListingIntent,
+  ProductSituation,
+  VehiclePaintCondition,
+} from '../../prisma/generated/client';
 
 export class CreateProductDto {
   @IsString()

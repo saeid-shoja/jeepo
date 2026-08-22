@@ -11,8 +11,8 @@ import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog'
 import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductColorSwatches } from '@/components/shop/product-color-swatches';
-import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductGallery } from '@/components/shop/product-gallery';
+import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductShareButton } from '@/components/shop/product-share-button';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';

@@ -261,6 +261,15 @@ export default function EditProductPage() {
             </div>
 
             <div className="space-y-2">
+              {!isShop && (
+                <Controller
+                  name="situation"
+                  control={control}
+                  render={({ field }) => (
+                    <ProductSituationSelect value={field.value} onChange={field.onChange} />
+                  )}
+                />
+              )}
               <Label htmlFor="price">قیمت (تومان)</Label>
               <Controller
                 name="price"
@@ -342,16 +351,6 @@ export default function EditProductPage() {
 
         <Card>
           <CardContent className="space-y-3 pt-6 p-4 md:p-6">
-            {!isShop && (
-              <Controller
-                name="situation"
-                control={control}
-                render={({ field }) => (
-                  <ProductSituationSelect value={field.value} onChange={field.onChange} />
-                )}
-              />
-            )}
-
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Controller
                 name="city"

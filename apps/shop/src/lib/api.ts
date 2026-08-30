@@ -327,6 +327,7 @@ export const api = {
   users: {
     profile: () => request<any>('/users/profile'),
     products: () => request<any[]>('/users/products'),
+    seller: (id: string) => request<any>(`/users/sellers/${id}`),
     updateProfile: (data: any) =>
       request<any>('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
     changePassword: (data: { currentPassword: string; newPassword: string }) =>

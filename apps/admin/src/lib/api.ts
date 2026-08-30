@@ -62,23 +62,12 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateUser: (
-    id: string,
-    data: {
-      phone?: string;
-      email?: string;
-      name?: string;
-      password?: string;
-      city?: string | null;
-      role?: string;
-      maxActiveListings?: number | null;
-      maxActiveNewListings?: number | null;
-    },
-  ) =>
+  updateUser: (id: string, data: Record<string, unknown>) =>
     request<any>(`/admin/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+  getUser: (id: string) => request<any>(`/admin/users/${id}`),
   deleteUser: (id: string) => request<any>(`/admin/users/${id}`, { method: 'DELETE' }),
   userProducts: (userId: string, params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params).toString()}` : '';

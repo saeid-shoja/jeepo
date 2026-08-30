@@ -1,9 +1,38 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  findProvinceNameByCity,
+  resolveUserListingLimit,
+  shouldShowPublicListingCount,
+  USER_ACCOUNT_KIND_LABELS,
+} from '@offroad/shared';
 import * as bcrypt from 'bcryptjs';
 import { ensureUserReferralCode } from '../common/referrals';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService, productListSelect } from '../products/products.service';
 import type { ChangePasswordDto, UpdateProfileDto } from './dto';
+
+const PROFILE_SELECT = {
+  id: true,
+  phone: true,
+  name: true,
+  role: true,
+  city: true,
+  nationalId: true,
+  nationalIdCardImage: true,
+  consentSelfieImage: true,
+  shopLicenseImage: true,
+  address: true,
+  postalCode: true,
+  violationReportCount: true,
+  accountKind: true,
+  verifiedSeller: true,
+  rating: true,
+  telegramChatId: true,
+  telegramLinkedAt: true,
+  boostCredits: true,
+  maxActiveListings: true,
+  createdAt: true,
+} as const;
 
 @Injectable()
 export class UsersService {
@@ -17,17 +46,7 @@ export class UsersService {
       await Promise.all([
         this.prisma.user.findUnique({
           where: { id: userId },
-          select: {
-            id: true,
-            phone: true,
-            name: true,
-            role: true,
-            city: true,
-            telegramChatId: true,
-            telegramLinkedAt: true,
-            boostCredits: true,
-            createdAt: true,
-          },
+          select: PROFILE_SELECT,
         }),
         this.prisma.product.count({ where: { userId, status: 'ACTIVE' } }),
         this.prisma.product.count({ where: { userId } }),
@@ -38,12 +57,62 @@ export class UsersService {
     const { telegramChatId, ...profile } = user;
     return {
       ...profile,
+      accountKindLabel: USER_ACCOUNT_KIND_LABELS[user.accountKind],
       referralCode,
       referralCount,
       telegramLinked: Boolean(telegramChatId),
       activeListingsCount,
       totalListingsCount,
       unlimitedListings: user.role === 'ADMIN',
+    };
+  }
+
+  /** Public seller card — no secrets (national ID images, etc.). */
+  async getPublicSeller(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        city: true,
+        address: true,
+        accountKind: true,
+        verifiedSeller: true,
+        rating: true,
+        violationReportCount: true,
+        maxActiveListings: true,
+        createdAt: true,
+        role: true,
+      },
+    });
+    if (!user || user.role === 'ADMIN') {
+      throw new NotFoundException('فروشنده یافت نشد');
+    }
+
+    const activeListingsCount = await this.prisma.product.count({
+      where: { userId, status: 'ACTIVE', advertiser: 'CLIENT' },
+    });
+
+    const listingCeiling = resolveUserListingLimit(user.maxActiveListings);
+    const showListingCount = shouldShowPublicListingCount(listingCeiling);
+
+    return {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      city: user.city,
+      province: findProvinceNameByCity(user.city) ?? null,
+      address: user.address,
+      accountKind: user.accountKind,
+      accountKindLabel: USER_ACCOUNT_KIND_LABELS[user.accountKind],
+      verifiedSeller: user.verifiedSeller,
+      rating: user.rating,
+      violationReportCount: user.violationReportCount,
+      createdAt: user.createdAt,
+      activeListingsCount: showListingCount ? activeListingsCount : null,
+      listingCeiling,
+      showListingCount,
     };
   }
 
@@ -61,11 +130,47 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, data: UpdateProfileDto) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data,
-      select: { id: true, phone: true, name: true, role: true, city: true },
-    });
+    const updateData: Record<string, unknown> = {};
+    const keys = [
+      'name',
+      'city',
+      'nationalId',
+      'nationalIdCardImage',
+      'consentSelfieImage',
+      'shopLicenseImage',
+      'address',
+      'postalCode',
+      'accountKind',
+    ] as const;
+    for (const key of keys) {
+      if (data[key] !== undefined) updateData[key] = data[key];
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          phone: true,
+          name: true,
+          role: true,
+          city: true,
+          nationalId: true,
+          nationalIdCardImage: true,
+          consentSelfieImage: true,
+          shopLicenseImage: true,
+          address: true,
+          postalCode: true,
+          accountKind: true,
+          verifiedSeller: true,
+          rating: true,
+          violationReportCount: true,
+        },
+      });
+    } catch {
+      throw new BadRequestException('به‌روزرسانی پروفایل ناموفق بود');
+    }
   }
 
   async changePassword(userId: string, data: ChangePasswordDto) {

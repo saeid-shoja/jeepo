@@ -63,6 +63,11 @@ export class AdminController {
     return this.adminService.updateUser(id, body);
   }
 
+  @Get('users/:id')
+  getUserDetail(@Param('id') id: string) {
+    return this.adminService.getUserDetail(id);
+  }
+
   @Delete('users/:id')
   deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);

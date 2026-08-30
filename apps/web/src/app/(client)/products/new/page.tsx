@@ -414,6 +414,24 @@ export default function NewProductPage() {
             </div>
 
             <div className="space-y-2">
+              <Controller
+                name="situation"
+                control={control}
+                render={({ field }) => (
+                  <ProductSituationSelect value={field.value} onChange={field.onChange} />
+                )}
+              />
+              {situation === 'NEW' && newQuota && !isAdmin && (
+                <p
+                  className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
+                >
+                  آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
+                  {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
+                  {newQuota.atNewLimit
+                    ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
+                    : ''}
+                </p>
+              )}
               <Label htmlFor="price">{isAuction ? 'قیمت پایه (اختیاری)' : 'قیمت (تومان)'}</Label>
               <Controller
                 name="price"
@@ -501,25 +519,6 @@ export default function NewProductPage() {
 
         <Card>
           <CardContent className="space-y-2 pt-6 p-4 md:p-6">
-            <Controller
-              name="situation"
-              control={control}
-              render={({ field }) => (
-                <ProductSituationSelect value={field.value} onChange={field.onChange} />
-              )}
-            />
-            {situation === 'NEW' && newQuota && !isAdmin && (
-              <p
-                className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
-              >
-                آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
-                {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
-                {newQuota.atNewLimit
-                  ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
-                  : ''}
-              </p>
-            )}
-
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-center">
               <Controller
                 name="city"

@@ -362,7 +362,7 @@ export default function AdminUsersPage() {
                 <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">
                     <Link
-                      href={`/dashboard/users/${u.id}/products`}
+                      href={`/dashboard/users/${u.id}`}
                       className="text-primary hover:underline"
                     >
                       {u.name}

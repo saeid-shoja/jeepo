@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ProductMedia } from '@/components/shop/product-media';
 import { Button } from '@/components/ui/button';
 import { isProductVideoUrl } from '@/lib/product-image';
@@ -18,11 +19,16 @@ type ProductGalleryProps = {
 export function ProductGallery({ images, title, badge, resetKey }: ProductGalleryProps) {
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const count = images.length;
   const safeIndex = count > 0 ? Math.min(index, count - 1) : 0;
   const current = count > 0 ? images[safeIndex] : null;
   const canNavigate = count > 1;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setIndex(0);
@@ -102,6 +108,52 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
       </>
     );
   };
+
+  const lightbox =
+    lightboxOpen && current && mounted
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex flex-col bg-black/95"
+            role="dialog"
+            aria-modal="true"
+            aria-label="گالری تمام‌صفحه"
+          >
+            <div className="relative z-20 flex items-center justify-between gap-3 px-3 py-3 sm:px-4">
+              <p className="text-sm text-white/80">
+                {(safeIndex + 1).toLocaleString('fa-IR')} از {count.toLocaleString('fa-IR')}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-10 rounded-full text-white hover:bg-white/15 hover:text-white"
+                onClick={() => setLightboxOpen(false)}
+                aria-label="بستن"
+              >
+                <X className="size-5" />
+              </Button>
+            </div>
+
+            <div className="relative z-10 min-h-0 flex-1">
+              <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-8">
+                <ProductMedia
+                  key={`lightbox-${current}`}
+                  src={current}
+                  alt={title}
+                  active
+                  priority
+                  deferUntilVisible={false}
+                  className="relative h-full max-h-[90svh] w-full max-w-full sm:max-h-[min(85vh,900px)] sm:max-w-5xl"
+                  mediaClassName="object-contain"
+                  sizes="100vw"
+                />
+              </div>
+              {renderNav('lg')}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <div className="w-full max-w-full space-y-3">
@@ -183,47 +235,7 @@ export function ProductGallery({ images, title, badge, resetKey }: ProductGaller
         </div>
       ) : null}
 
-      {lightboxOpen && current ? (
-        <div
-          className="fixed inset-0 z-[110] flex flex-col bg-black/95"
-          role="dialog"
-          aria-modal="true"
-          aria-label="گالری تمام‌صفحه"
-        >
-          <div className="relative z-20 flex items-center justify-between gap-3 px-3 py-3 sm:px-4">
-            <p className="text-sm text-white/80">
-              {(safeIndex + 1).toLocaleString('fa-IR')} از {count.toLocaleString('fa-IR')}
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-10 rounded-full text-white hover:bg-white/15 hover:text-white"
-              onClick={() => setLightboxOpen(false)}
-              aria-label="بستن"
-            >
-              <X className="size-5" />
-            </Button>
-          </div>
-
-          <div className="relative z-10 min-h-0 flex-1">
-            <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-8">
-              <ProductMedia
-                key={`lightbox-${current}`}
-                src={current}
-                alt={title}
-                active
-                priority
-                deferUntilVisible={false}
-                className="relative h-full max-h-[90svh] w-full max-w-full sm:max-h-[min(85vh,900px)] sm:max-w-5xl"
-                mediaClassName="object-contain"
-                sizes="100vw"
-              />
-            </div>
-            {renderNav('lg')}
-          </div>
-        </div>
-      ) : null}
+      {lightbox}
     </div>
   );
 }

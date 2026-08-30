@@ -103,7 +103,16 @@ export const productListSelect = {
 
 const productIncludeDetail = {
   category: true,
-  user: { select: { id: true, name: true } },
+  user: {
+    select: {
+      id: true,
+      name: true,
+      rating: true,
+      verifiedSeller: true,
+      accountKind: true,
+      city: true,
+    },
+  },
   carBrands: true,
   _count: { select: { auctionBids: true } },
 };

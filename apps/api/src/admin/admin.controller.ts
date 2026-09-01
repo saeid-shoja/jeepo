@@ -11,7 +11,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/custom.decorator';
+import { AdminPermission, Roles } from '../auth/custom.decorator';
 import { CreateMessageDto } from '../messages/dto';
 import { MessagesService } from '../messages/messages.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
@@ -27,6 +27,10 @@ import {
   UpdateProductStatusDto,
 } from './dto';
 
+type AdminRequest = {
+  user: { userId: string; role: string; isSuperAdmin?: boolean; adminPermissions?: string[] };
+};
+
 @ApiTags('Admin')
 @ApiBearerAuth(SWAGGER_BEARER_KEY)
 @Roles('ADMIN')
@@ -38,11 +42,18 @@ export class AdminController {
     private telegramBotService: TelegramBotService,
   ) {}
 
+  @Get('me')
+  getMe(@Request() req: AdminRequest) {
+    return this.adminService.getAdminProfile(req.user.userId);
+  }
+
+  @AdminPermission('dashboard')
   @Get('dashboard')
   getDashboard() {
     return this.adminService.getDashboard();
   }
 
+  @AdminPermission('users')
   @Get('users')
   @Header('Cache-Control', 'no-store')
   getAllUsers(@Query() query: FindAdminUsersQueryDto) {
@@ -53,26 +64,35 @@ export class AdminController {
     });
   }
 
+  @AdminPermission('users')
   @Post('users')
-  createUser(@Body() body: CreateAdminUserDto) {
-    return this.adminService.createUser(body);
+  createUser(@Request() req: AdminRequest, @Body() body: CreateAdminUserDto) {
+    return this.adminService.createUser(req.user.userId, body);
   }
 
+  @AdminPermission('users')
   @Patch('users/:id')
-  updateUser(@Param('id') id: string, @Body() body: UpdateAdminUserDto) {
-    return this.adminService.updateUser(id, body);
+  updateUser(
+    @Request() req: AdminRequest,
+    @Param('id') id: string,
+    @Body() body: UpdateAdminUserDto,
+  ) {
+    return this.adminService.updateUser(req.user.userId, id, body);
   }
 
+  @AdminPermission('users')
   @Get('users/:id')
   getUserDetail(@Param('id') id: string) {
     return this.adminService.getUserDetail(id);
   }
 
+  @AdminPermission('users')
   @Delete('users/:id')
-  deleteUser(@Param('id') id: string) {
-    return this.adminService.deleteUser(id);
+  deleteUser(@Request() req: AdminRequest, @Param('id') id: string) {
+    return this.adminService.deleteUser(req.user.userId, id);
   }
 
+  @AdminPermission('users')
   @Get('users/:id/products')
   getUserProducts(
     @Param('id') id: string,
@@ -85,6 +105,7 @@ export class AdminController {
     });
   }
 
+  @AdminPermission('products')
   @Get('products')
   @Header('Cache-Control', 'no-store')
   getAllProducts(@Query() query: FindAdminProductsQueryDto) {
@@ -98,31 +119,37 @@ export class AdminController {
     });
   }
 
+  @AdminPermission('products')
   @Post('products/guarantee')
   setProductsGuarantee(@Body() body: SetProductsGuaranteeDto) {
     return this.adminService.setProductsGuarantee(body);
   }
 
+  @AdminPermission('products')
   @Patch('products/:id/status')
   updateProductStatus(@Param('id') id: string, @Body() body: UpdateProductStatusDto) {
     return this.adminService.updateProductStatus(id, body.status);
   }
 
+  @AdminPermission('products')
   @Post('products/announce-best-price')
   announceBestPrice(@Body() body: AnnounceBestPriceDto) {
     return this.adminService.announceBestPrice(body.productIds);
   }
 
+  @AdminPermission('messages')
   @Post('messages')
-  sendMessage(@Body() body: CreateMessageDto, @Request() req: { user: { userId: string } }) {
+  sendMessage(@Body() body: CreateMessageDto, @Request() req: AdminRequest) {
     return this.messagesService.sendMessage(req.user.userId, body);
   }
 
+  @AdminPermission('messages')
   @Get('messages')
   listMessages() {
     return this.messagesService.listBatches();
   }
 
+  @AdminPermission('messages')
   @Get('telegram/stats')
   getTelegramStats() {
     return this.telegramBotService.getStats();

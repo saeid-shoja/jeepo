@@ -1,7 +1,11 @@
+import { ALL_ADMIN_PERMISSION_KEYS } from '@offroad/shared';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
+  IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -55,4 +59,16 @@ export class CreateAdminUserDto {
     message: `حداکثر ${ADMIN_LISTING_CAP_MAX.toLocaleString('fa-IR')} آگهی نو فعال قابل تنظیم است`,
   })
   maxActiveNewListings?: number;
+
+  /** Super admin only — when creating an ADMIN user. */
+  @IsOptional()
+  @IsBoolean()
+  isSuperAdmin?: boolean;
+
+  /** Super admin only — sidebar sections for new ADMIN user. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsIn(ALL_ADMIN_PERMISSION_KEYS, { each: true })
+  adminPermissions?: string[];
 }

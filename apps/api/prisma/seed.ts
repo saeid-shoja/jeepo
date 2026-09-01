@@ -1,7 +1,13 @@
+import {
+  estimateReadingMinutesFromHtml,
+  paragraphsToBlogHtml,
+  paragraphsToTiptapDoc,
+} from '@offroad/shared';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { syncDefaultCategories } from '../src/categories/sync-default-categories';
 import { PrismaClient } from '../src/prisma/generated/client';
+import { BLOG_SEED_POSTS } from './blog-seed-posts';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -28,10 +34,16 @@ async function main() {
         name: 'مدیر فروشگاه',
         password: hashed,
         role: 'ADMIN',
+        isSuperAdmin: true,
         city: 'تهران',
         emailVerified: true,
         emailVerifiedAt: new Date(),
       },
+    });
+  } else if (!adminExists.isSuperAdmin) {
+    await prisma.user.update({
+      where: { phone: '09333092013' },
+      data: { isSuperAdmin: true },
     });
   }
 
@@ -58,6 +70,28 @@ async function main() {
       });
       console.log('Sample products created');
     }
+  }
+
+  const blogCount = await prisma.blogPost.count();
+  if (blogCount === 0) {
+    for (const post of BLOG_SEED_POSTS) {
+      const bodyHtml = paragraphsToBlogHtml([...post.body]);
+      await prisma.blogPost.create({
+        data: {
+          slug: post.slug,
+          title: post.title,
+          excerpt: post.excerpt,
+          bodyHtml,
+          bodyJson: paragraphsToTiptapDoc([...post.body]),
+          coverImage: post.coverImage,
+          tags: [...post.tags],
+          status: 'PUBLISHED',
+          readingMinutes: estimateReadingMinutesFromHtml(bodyHtml),
+          publishedAt: new Date(post.publishedAt),
+        },
+      });
+    }
+    console.log('Blog posts seeded');
   }
 
   console.log('Seed completed!');

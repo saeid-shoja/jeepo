@@ -159,3 +159,68 @@
     transform: translateX(-300%);
   }
 }
+
+.blog-prose {
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  line-height: 2;
+}
+
+.blog-prose > * + * {
+  margin-top: 1rem;
+}
+
+.blog-prose h2 {
+  margin-top: 2rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.blog-prose h3 {
+  margin-top: 1.5rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.blog-prose p {
+  margin-bottom: 0.25rem;
+}
+
+.blog-prose ul,
+.blog-prose ol {
+  padding-right: 1.5rem;
+}
+
+.blog-prose ul {
+  list-style-type: disc;
+}
+
+.blog-prose ol {
+  list-style-type: decimal;
+}
+
+.blog-prose li + li {
+  margin-top: 0.35rem;
+}
+
+.blog-prose blockquote {
+  border-right: 4px solid var(--border);
+  padding-right: 1rem;
+  color: var(--muted-foreground);
+}
+
+.blog-prose a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.blog-prose strong {
+  font-weight: 700;
+}
+
+.blog-prose hr {
+  margin-block: 1.5rem;
+  border-color: var(--border);
+}

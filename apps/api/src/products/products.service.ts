@@ -6,10 +6,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  canOfferGuaranteeForListingPrice,
   EXTRA_LISTING_FEE,
   FREE_CLIENT_LISTING_LIMIT,
   FREE_CLIENT_NEW_LISTING_LIMIT,
   formatProductColorLabels,
+  GUARANTEE_MAX_LISTING_PRICE_TOMAN,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
   isVehicleSaleCategory,
@@ -298,8 +300,6 @@ export class ProductsService {
       delete mapped.realPriceMin;
       delete mapped.realPriceMax;
       delete mapped.listingPaymentDueAt;
-      delete mapped.awaitingListingPayment;
-      delete mapped.awaitingAdminApproval;
     }
 
     return mapped;
@@ -461,6 +461,18 @@ export class ProductsService {
   }): Promise<boolean> {
     if (!opts.isAuction && opts.hasGuarantee) return true;
     return this.categoriesService.categoryRequiresAdminApproval(opts.categoryId);
+  }
+
+  private async assertGuaranteePriceAllowed(categoryId: string, price: number): Promise<void> {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { slug: true },
+    });
+    if (!category || !canOfferGuaranteeForListingPrice(price, category.slug)) {
+      throw new BadRequestException(
+        `تضمین جیپو برای آگهی‌های بالاتر از ${(GUARANTEE_MAX_LISTING_PRICE_TOMAN / 1_000_000).toLocaleString('fa-IR')} میلیون تومان فقط در دسته «چهارچرخ و موتورسیکلت» امکان‌پذیر است.`,
+      );
+    }
   }
 
   private async notifyAdminGuaranteeListing(productId: string): Promise<void> {
@@ -649,15 +661,23 @@ export class ProductsService {
       };
     }
 
-    // Guarantee badge is admin-only; ignore client-provided hasGuarantee.
-    const clientData = { ...data, hasGuarantee: false };
+    // Guarantee listings require a complete seller profile and admin approval before going live.
+    const wantsGuarantee = Boolean(data.hasGuarantee) && !data.isAuction;
+    if (wantsGuarantee) {
+      if (data.listingIntent === 'BUYER') {
+        throw new BadRequestException('آگهی خریدار نمی‌تواند با تضمین جیپو ثبت شود.');
+      }
+      const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
+      await this.assertGuaranteePriceAllowed(data.categoryId, listingPrice);
+    }
+    const clientData = { ...data, hasGuarantee: wantsGuarantee };
 
     await this.assertNewListingQuota(userId, clientData.situation);
     const { requiresListingFee, freeLimit, activeCount, activeNewCount, newLimit } =
       await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.listingNeedsAdminApproval({
       categoryId: clientData.categoryId,
-      hasGuarantee: false,
+      hasGuarantee: clientData.hasGuarantee,
       isAuction: clientData.isAuction,
     });
 
@@ -699,6 +719,12 @@ export class ProductsService {
 
     if (createOptions.status === 'ACTIVE') {
       this.telegramChannel.announceProductActive(product.id);
+    } else if (
+      clientData.hasGuarantee &&
+      createOptions.status === 'PENDING' &&
+      createOptions.listingFeePaid
+    ) {
+      void this.notifyAdminGuaranteeListing(product.id);
     }
 
     return {

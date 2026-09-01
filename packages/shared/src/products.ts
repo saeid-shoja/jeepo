@@ -1,4 +1,4 @@
-import { MOTORCYCLE_ATV_SUBCATEGORIES } from './category-defaults';
+import { isMotorcycleAtvCategory, MOTORCYCLE_ATV_SUBCATEGORIES } from './category-defaults';
 import { toEnglishDigits } from './digits';
 import { findProvinceNameByCity } from './iran-locations';
 
@@ -92,6 +92,18 @@ export function listingPaymentDueAt(from = new Date()): Date {
 export function getGuaranteeFee(productPrice: number): number {
   if (!Number.isFinite(productPrice) || productPrice <= 0) return 0;
   return Math.round(productPrice * GUARANTEE_FEE_RATE);
+}
+
+/** Max listing price (Toman) for guarantee — except motorcycle/ATV categories. */
+export const GUARANTEE_MAX_LISTING_PRICE_TOMAN = 200_000_000;
+
+export function canOfferGuaranteeForListingPrice(
+  price: number,
+  categorySlug: string | null | undefined,
+): boolean {
+  if (!Number.isFinite(price) || price <= 0) return false;
+  if (price <= GUARANTEE_MAX_LISTING_PRICE_TOMAN) return true;
+  return isMotorcycleAtvCategory(categorySlug);
 }
 
 /** Max length for product neighborhood (محله). */

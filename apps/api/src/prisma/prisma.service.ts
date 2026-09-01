@@ -103,6 +103,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.pushSubscription;
   }
 
+  get blogPost(): PrismaClient['blogPost'] {
+    return this.client.blogPost;
+  }
+
   $transaction<T>(
     fn: (
       tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>,

@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-export type ListingSubmitResultVariant = 'published' | 'pending_review';
+export type ListingSubmitResultVariant = 'published' | 'pending_review' | 'pending_guarantee';
 
 type ListingSubmitResultDialogProps = {
   open: boolean;
@@ -33,6 +33,12 @@ const COPY: Record<
     title: 'آگهی ثبت شد',
     description:
       'آگهی شما در انتظار تأیید تیم جیپو است و تا قبل از تأیید در فروشگاه نمایش داده نمی‌شود. پس از بررسی محتوا و قیمت، آگهی منتشر می‌شود یا در صورت عدم تأیید رد خواهد شد. نتیجه از طریق ایمیل و پنل کاربری اطلاع‌رسانی می‌شود.',
+    Icon: Clock,
+  },
+  pending_guarantee: {
+    title: 'آگهی تضمین‌شده ثبت شد',
+    description:
+      'آگهی شما در پنل کاربری در وضعیت «در انتظار تأیید» قرار گرفت و تا قبل از بررسی تیم جیپو در سایت نمایش داده نمی‌شود. در صورت نیاز، از طریق ایمیل درخواست تکمیل پروفایل ارسال می‌شود. پس از تأیید، آگهی با نشان تضمین جیپو منتشر می‌شود.',
     Icon: Clock,
   },
 };

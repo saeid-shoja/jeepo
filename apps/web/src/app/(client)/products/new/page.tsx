@@ -2,7 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  canOfferGuaranteeForListingPrice,
   FREE_CLIENT_NEW_LISTING_LIMIT,
+  getGuaranteeProfileMissingFields,
   isVehicleSaleCategory,
   PAYMENT_PURPOSES,
   type VehiclePaintCondition,
@@ -26,7 +28,7 @@ import {
   ListingSubmitResultDialog,
   type ListingSubmitResultVariant,
 } from '@/components/form/listing-submit-result-dialog';
-// import { PremiumProductOptions } from '@/components/form/premium-product-options';
+import { PremiumProductOptions } from '@/components/form/premium-product-options';
 import { PriceInput } from '@/components/form/price-input';
 import { ProductCategoryPicker } from '@/components/form/product-category-picker';
 import { ProductColorPicker } from '@/components/form/product-color-picker';
@@ -111,6 +113,7 @@ export default function NewProductPage() {
     newLimit: number;
     atNewLimit: boolean;
   } | null>(null);
+  const [sellerProfile, setSellerProfile] = useState<Record<string, unknown> | null>(null);
 
   const {
     register,
@@ -131,8 +134,10 @@ export default function NewProductPage() {
   });
 
   const isAuction = watch('isAuction');
-  // const price = watch('price');
-  // const _applyStrengthened = watch('applyStrengthened');
+  const price = watch('price');
+  const hasGuarantee = watch('hasGuarantee');
+  const listingIntent = watch('listingIntent');
+  const applyStrengthened = watch('applyStrengthened');
   const carBrands = watch('carBrands');
   const situation = watch('situation');
   const categoryId = watch('categoryId');
@@ -146,6 +151,16 @@ export default function NewProductPage() {
   );
 
   const isAdmin = user?.role === 'ADMIN';
+  const guaranteeProfileMissing = sellerProfile
+    ? getGuaranteeProfileMissingFields(
+        sellerProfile as Parameters<typeof getGuaranteeProfileMissingFields>[0],
+      )
+    : [];
+  const canOfferGuarantee =
+    !isAdmin &&
+    !isAuction &&
+    listingIntent !== 'BUYER' &&
+    canOfferGuaranteeForListingPrice(price, categorySlug);
 
   useEffect(() => {
     if (!categoryId || parts.length === 0) return;
@@ -185,6 +200,29 @@ export default function NewProductPage() {
         }),
       );
   }, [user, isAdmin]);
+
+  useEffect(() => {
+    if (!user || isAdmin) {
+      setSellerProfile(null);
+      return;
+    }
+    api.users
+      .profile()
+      .then(setSellerProfile)
+      .catch(() => setSellerProfile(null));
+  }, [user, isAdmin]);
+
+  useEffect(() => {
+    if (listingIntent === 'BUYER' && hasGuarantee) {
+      setValue('hasGuarantee', false);
+    }
+  }, [listingIntent, hasGuarantee, setValue]);
+
+  useEffect(() => {
+    if (hasGuarantee && !canOfferGuaranteeForListingPrice(price, categorySlug)) {
+      setValue('hasGuarantee', false);
+    }
+  }, [price, categorySlug, hasGuarantee, setValue]);
 
   const showSubmitResult = (variant: ListingSubmitResultVariant) => {
     setSubmitResultVariant(variant);
@@ -233,7 +271,7 @@ export default function NewProductPage() {
         city: data.city || undefined,
         neighborhood: data.neighborhood?.trim() || undefined,
         phone: data.isAuction ? undefined : data.phone || undefined,
-        hasGuarantee: false,
+        hasGuarantee: canOfferGuarantee ? data.hasGuarantee : false,
         applyStrengthened: data.applyStrengthened,
         situation: data.situation,
         listingIntent: data.listingIntent,
@@ -281,7 +319,9 @@ export default function NewProductPage() {
       }
 
       if (result.requiresAdminApproval) {
-        showSubmitResult('pending_review');
+        showSubmitResult(
+          data.hasGuarantee && canOfferGuarantee ? 'pending_guarantee' : 'pending_review',
+        );
         return;
       }
 
@@ -527,7 +567,7 @@ export default function NewProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
-              <div className="space-y-2.5 md:mt-1">
+              <div className="space-y-2 md:mb-1.5">
                 <Label htmlFor="neighborhood">محله</Label>
                 <Input
                   id="neighborhood"
@@ -603,14 +643,21 @@ export default function NewProductPage() {
           )}
         /> */}
 
-        {/* {!isAuction && (
+        {!isAuction && (
           <PremiumProductOptions
             productPrice={price}
-            applyStrengthened={false}
+            hasGuarantee={hasGuarantee}
+            onGuaranteeChange={(value) => setValue('hasGuarantee', value, { shouldValidate: true })}
+            guaranteeDisabled={!canOfferGuarantee}
+            guaranteeProfileMissing={guaranteeProfileMissing}
+            applyStrengthened={applyStrengthened}
             showStrengthened={false}
-            onStrengthenedChange={() => {}}
+            onStrengthenedChange={(value) =>
+              setValue('applyStrengthened', value, { shouldValidate: true })
+            }
+            showGuarantee={canOfferGuarantee}
           />
-        )} */}
+        )}
         <Button type="submit" className="w-full" size="lg" disabled={isSubmittingListing}>
           {isSubmittingListing ? (
             <>

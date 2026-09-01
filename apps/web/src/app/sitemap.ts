@@ -1,7 +1,11 @@
 import { CATEGORIES } from '@offroad/shared';
 import type { MetadataRoute } from 'next';
 import { getSiteUrl } from '@/lib/seo';
-import { fetchCategoriesForSitemap, fetchProductsForSitemap } from '@/lib/server-api';
+import {
+  fetchBlogPosts,
+  fetchCategoriesForSitemap,
+  fetchProductsForSitemap,
+} from '@/lib/server-api';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
@@ -11,8 +15,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: `${baseUrl}/products`, lastModified: now, changeFrequency: 'hourly', priority: 0.9 },
     { url: `${baseUrl}/categories`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
-    // { url: `${baseUrl}/auctions`, lastModified: now, changeFrequency: 'hourly', priority: 0.75 }, // موقتاً غیرفعال
     { url: `${baseUrl}/about-us`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${baseUrl}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${baseUrl}/roles`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
   ];
@@ -44,5 +48,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: product.type === 'SHOP' ? 0.8 : 0.65,
     })) ?? [];
 
-  return [...staticRoutes, ...categoryRoutes, ...apiCategoryRoutes, ...productRoutes];
+  const blogPosts = (await fetchBlogPosts()) ?? [];
+  const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: post.publishedAt ? new Date(post.publishedAt) : now,
+    changeFrequency: 'monthly' as const,
+    priority: 0.55,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...categoryRoutes,
+    ...apiCategoryRoutes,
+    ...productRoutes,
+    ...blogRoutes,
+  ];
 }

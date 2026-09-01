@@ -1,4 +1,5 @@
 import {
+  ALL_ADMIN_PERMISSION_KEYS,
   IRAN_TEN_DIGIT_REGEX,
   normalizeTenDigits,
   USER_ACCOUNT_KINDS,
@@ -6,6 +7,7 @@ import {
 } from '@offroad/shared';
 import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
@@ -96,6 +98,18 @@ export class UpdateAdminUserDto {
   @IsOptional()
   @IsEnum(UserRole, { message: 'نقش کاربر نامعتبر است' })
   role?: UserRole;
+
+  /** Super admin only. */
+  @IsOptional()
+  @IsBoolean()
+  isSuperAdmin?: boolean;
+
+  /** Super admin only — sidebar sections for ADMIN users. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsIn(ALL_ADMIN_PERMISSION_KEYS, { each: true })
+  adminPermissions?: string[];
 
   /** Custom free active listing cap. null = reset to platform default. */
   @IsOptional()

@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module';
 import { AuctionsModule } from './auctions/auctions.module';
+import { AdminPermissionGuard } from './auth/admin-permission.guard';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
+import { BlogModule } from './blog/blog.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ConfigModule } from './config.module';
 import { MailModule } from './mail/mail.module';
@@ -24,6 +26,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     ProductsModule,
+    BlogModule,
     CategoriesModule,
     OrdersModule,
     PaymentsModule,
@@ -35,6 +38,7 @@ import { UsersModule } from './users/users.module';
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: AdminPermissionGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

@@ -1,4 +1,4 @@
-import { resolveApiBaseUrl } from '@offroad/shared';
+import { type AdminAccessProfile, resolveApiBaseUrl } from '@offroad/shared';
 
 const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
@@ -41,6 +41,7 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify({ identifier, password }),
     }),
+  me: () => request<AdminAccessProfile>('/admin/me'),
   dashboard: () => request<any>('/admin/dashboard'),
   users: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
@@ -57,6 +58,8 @@ export const adminApi = {
     role?: string;
     maxActiveListings?: number;
     maxActiveNewListings?: number;
+    isSuperAdmin?: boolean;
+    adminPermissions?: string[];
   }) =>
     request<any>('/admin/users', {
       method: 'POST',
@@ -174,4 +177,53 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   deleteLibrary: (id: string) => request<any>(`/libraries/${id}`, { method: 'DELETE' }),
+  blogPosts: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return request<{
+      posts: import('@offroad/shared').BlogPostAdmin[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(`/admin/blog/posts${qs}`);
+  },
+  getBlogPost: (id: string) =>
+    request<import('@offroad/shared').BlogPostAdmin>(`/admin/blog/posts/${id}`),
+  createBlogPost: (data: {
+    title: string;
+    slug: string;
+    excerpt: string;
+    bodyHtml: string;
+    bodyJson?: Record<string, unknown>;
+    coverImage: string;
+    tags?: string[];
+    status?: 'DRAFT' | 'PUBLISHED';
+  }) =>
+    request<import('@offroad/shared').BlogPostAdmin>('/admin/blog/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateBlogPost: (
+    id: string,
+    data: {
+      title?: string;
+      slug?: string;
+      excerpt?: string;
+      bodyHtml?: string;
+      bodyJson?: Record<string, unknown> | null;
+      coverImage?: string;
+      tags?: string[];
+      status?: 'DRAFT' | 'PUBLISHED';
+    },
+  ) =>
+    request<import('@offroad/shared').BlogPostAdmin>(`/admin/blog/posts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  updateBlogPostStatus: (id: string, status: 'DRAFT' | 'PUBLISHED') =>
+    request<import('@offroad/shared').BlogPostAdmin>(`/admin/blog/posts/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  deleteBlogPost: (id: string) =>
+    request<{ deleted: true }>(`/admin/blog/posts/${id}`, { method: 'DELETE' }),
 };

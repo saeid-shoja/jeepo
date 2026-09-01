@@ -29,6 +29,7 @@ const accountLinks = [
 
 const infoLinks = [
   { href: '/about-us', label: 'درباره ما' },
+  { href: '/blog', label: 'وبلاگ' },
   { href: '/roles', label: 'قوانین وب‌سایت و کسب‌وکار' },
   { href: '/faq', label: 'سوالات پرتکرار' },
 ];

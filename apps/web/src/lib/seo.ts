@@ -1,4 +1,5 @@
 import {
+  type BlogPost,
   FAQ_ITEMS,
   SITE_DESCRIPTION,
   SITE_EMAIL,
@@ -451,6 +452,76 @@ export function buildCategoryJsonLd(name: string, slug: string, productCount?: n
         { '@type': 'ListItem', position: 1, name: 'خانه', item: siteUrl },
         { '@type': 'ListItem', position: 2, name: 'دسته‌بندی‌ها', item: `${siteUrl}/categories` },
         { '@type': 'ListItem', position: 3, name, item: `${siteUrl}/category/${slug}` },
+      ],
+    },
+  };
+}
+
+/** Schema.org CollectionPage + ItemList for blog index. */
+export function buildBlogListJsonLd(
+  posts: Pick<BlogPost, 'slug' | 'title' | 'excerpt' | 'publishedAt'>[],
+) {
+  const siteUrl = getSiteUrl();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `وبلاگ ${SITE_NAME_FA}`,
+    url: `${siteUrl}/blog`,
+    description: `مقالات و راهنماهای ${SITE_NAME_FA}`,
+    inLanguage: 'fa-IR',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: posts.map((post, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${siteUrl}/blog/${post.slug}`,
+        name: post.title,
+      })),
+    },
+  };
+}
+
+/** Schema.org BlogPosting for article detail pages. */
+export function buildArticleJsonLd(post: BlogPost) {
+  const siteUrl = getSiteUrl();
+  const image = toAbsoluteUrl(post.coverImage);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.publishedAt ?? undefined,
+    dateModified: post.publishedAt ?? undefined,
+    inLanguage: 'fa-IR',
+    author: {
+      '@type': 'Organization',
+      name: SITE_NAME_FA,
+      url: siteUrl,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME_FA,
+      url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: toAbsoluteUrl(SITE_LOGO),
+      },
+    },
+    image: image ? [image] : undefined,
+    mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
+    url: `${siteUrl}/blog/${post.slug}`,
+    keywords: post.tags.join(', '),
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'خانه', item: siteUrl },
+        { '@type': 'ListItem', position: 2, name: 'وبلاگ', item: `${siteUrl}/blog` },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: post.title,
+          item: `${siteUrl}/blog/${post.slug}`,
+        },
       ],
     },
   };

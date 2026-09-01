@@ -33,6 +33,17 @@ export const MOTORCYCLE_ATV_SALE_CHILDREN = [
   },
 ] as const;
 
+/** All category slugs under the «چهارچرخ و موتورسیکلت» library. */
+export const MOTORCYCLE_ATV_CATEGORY_SLUGS = [
+  ...MOTORCYCLE_ATV_SUBCATEGORIES.map((s) => s.slug),
+  ...MOTORCYCLE_ATV_SALE_CHILDREN.map((s) => s.slug),
+] as const;
+
+export function isMotorcycleAtvCategory(slug: string | null | undefined): boolean {
+  if (!slug) return false;
+  return (MOTORCYCLE_ATV_CATEGORY_SLUGS as readonly string[]).includes(slug);
+}
+
 /**
  * Leaf categories for vehicle/motorcycle sales.
  * Mileage + paint condition fields are required for these listings.

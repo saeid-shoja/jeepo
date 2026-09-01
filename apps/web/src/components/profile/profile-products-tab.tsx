@@ -172,10 +172,12 @@ export function ProfileProductsTab({ enabled, onListingsChanged }: ProfileProduc
             {product.awaitingAdminApproval && (
               <div className="space-y-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-2 dark:border-blue-900 dark:bg-blue-950/30">
                 <p className="text-center text-[11px] font-medium text-blue-800 dark:text-blue-200">
-                  در انتظار تأیید مدیر
+                  {product.hasGuarantee ? 'در انتظار تأیید تضمین جیپو' : 'در انتظار تأیید مدیر'}
                 </p>
                 <p className="text-muted-foreground text-center text-[10px]">
-                  پس از بررسی قیمت، آگهی در سایت نمایش داده می‌شود.
+                  {product.hasGuarantee
+                    ? 'پس از بررسی تیم جیپو، آگهی با نشان تضمین در سایت منتشر می‌شود.'
+                    : 'پس از بررسی، آگهی در سایت نمایش داده می‌شود.'}
                 </p>
               </div>
             )}

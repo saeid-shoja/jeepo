@@ -183,6 +183,13 @@ export function Navbar() {
             >
               فروشگاه
             </Link>
+            <Link
+              href="/blog"
+              onClick={closeMenu}
+              className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
+            >
+              وبلاگ
+            </Link>
             {/* مزایده — موقتاً غیرفعال
             <Link
               href="/products?advertiserType=AUCTION"

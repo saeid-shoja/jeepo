@@ -1,11 +1,18 @@
 'use client';
 
-import { FREE_CLIENT_LISTING_LIMIT, FREE_CLIENT_NEW_LISTING_LIMIT } from '@offroad/shared';
+import {
+  type AdminPermissionKey,
+  FREE_CLIENT_LISTING_LIMIT,
+  FREE_CLIENT_NEW_LISTING_LIMIT,
+  sanitizeAdminPermissions,
+} from '@offroad/shared';
 import { Calendar, Loader2, MapPin, Package, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+import { AdminPermissionsEditor } from '@/components/admin/admin-permissions-editor';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useAdminAccess } from '@/lib/admin-access-context';
 import { adminApi } from '@/lib/api';
 import { ADMIN_LIST_PAGE_SIZE, useInfiniteScrollList } from '@/lib/use-infinite-scroll-list';
 
@@ -15,6 +22,8 @@ type UserRow = {
   email?: string | null;
   name: string;
   role: string;
+  isSuperAdmin?: boolean;
+  adminPermissions?: string[];
   city?: string | null;
   maxActiveListings?: number | null;
   maxActiveNewListings?: number | null;
@@ -34,11 +43,15 @@ const emptyForm = {
   password: '',
   city: '',
   role: 'CLIENT',
+  isSuperAdmin: false,
+  adminPermissions: [] as AdminPermissionKey[],
   maxActiveListings: '',
   maxActiveNewListings: '',
 };
 
 export default function AdminUsersPage() {
+  const { profile } = useAdminAccess();
+  const isSuperAdmin = profile?.isSuperAdmin ?? false;
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -87,6 +100,8 @@ export default function AdminUsersPage() {
       password: '',
       city: user.city ?? '',
       role: user.role,
+      isSuperAdmin: user.isSuperAdmin ?? false,
+      adminPermissions: sanitizeAdminPermissions(user.adminPermissions),
       maxActiveListings: user.maxActiveListings != null ? String(user.maxActiveListings) : '',
       maxActiveNewListings:
         user.maxActiveNewListings != null ? String(user.maxActiveNewListings) : '',
@@ -99,7 +114,7 @@ export default function AdminUsersPage() {
     const wasEditing = Boolean(editingId);
     try {
       if (editingId) {
-        const payload: Record<string, string | number | null> = {
+        const payload: Record<string, unknown> = {
           phone: form.phone.trim(),
           email: form.email.trim(),
           name: form.name.trim(),
@@ -113,6 +128,10 @@ export default function AdminUsersPage() {
         payload.maxActiveNewListings = form.maxActiveNewListings.trim()
           ? Number(form.maxActiveNewListings)
           : null;
+        if (form.role === 'ADMIN' && isSuperAdmin) {
+          payload.isSuperAdmin = form.isSuperAdmin;
+          payload.adminPermissions = form.isSuperAdmin ? [] : form.adminPermissions;
+        }
         await adminApi.updateUser(editingId, payload);
       } else {
         const createPayload: Parameters<typeof adminApi.createUser>[0] & {
@@ -131,6 +150,10 @@ export default function AdminUsersPage() {
         }
         if (form.maxActiveNewListings.trim()) {
           createPayload.maxActiveNewListings = Number(form.maxActiveNewListings);
+        }
+        if (form.role === 'ADMIN' && isSuperAdmin) {
+          createPayload.isSuperAdmin = form.isSuperAdmin;
+          createPayload.adminPermissions = form.isSuperAdmin ? [] : form.adminPermissions;
         }
         await adminApi.createUser(createPayload);
       }
@@ -277,11 +300,20 @@ export default function AdminUsersPage() {
               <span className="mb-1 block text-gray-600">نقش</span>
               <select
                 value={form.role}
-                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                onChange={(e) => {
+                  const role = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    role,
+                    ...(role === 'CLIENT'
+                      ? { isSuperAdmin: false, adminPermissions: [] as AdminPermissionKey[] }
+                      : {}),
+                  }));
+                }}
                 className="w-full rounded-sm border px-3 py-2"
               >
                 <option value="CLIENT">کاربر</option>
-                <option value="ADMIN">مدیر</option>
+                {isSuperAdmin && <option value="ADMIN">مدیر</option>}
               </select>
             </label>
             <label className="block text-sm">
@@ -319,6 +351,24 @@ export default function AdminUsersPage() {
               </span>
             </label>
           </div>
+
+          {form.role === 'ADMIN' && isSuperAdmin && (
+            <AdminPermissionsEditor
+              permissions={form.adminPermissions}
+              isSuperAdmin={form.isSuperAdmin}
+              onPermissionsChange={(adminPermissions) =>
+                setForm((f) => ({ ...f, adminPermissions }))
+              }
+              onSuperAdminChange={(value) =>
+                setForm((f) => ({
+                  ...f,
+                  isSuperAdmin: value,
+                  adminPermissions: value ? [] : f.adminPermissions,
+                }))
+              }
+            />
+          )}
+
           <div className="flex gap-2">
             <button type="submit" className="bg-primary rounded-sm px-4 py-2 text-sm text-white">
               ذخیره
@@ -393,7 +443,7 @@ export default function AdminUsersPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}
                     >
-                      {u.role === 'ADMIN' ? 'مدیر' : 'کاربر'}
+                      {u.role === 'ADMIN' ? (u.isSuperAdmin ? 'مدیر اصلی' : 'مدیر') : 'کاربر'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500">

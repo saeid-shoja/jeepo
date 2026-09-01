@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -10,8 +11,10 @@ import {
   FREE_CLIENT_LISTING_LIMIT,
   FREE_CLIENT_NEW_LISTING_LIMIT,
   isAdminApprovalRequiredCategory,
+  resolveEffectiveAdminPermissions,
   resolveUserListingLimit,
   resolveUserNewListingLimit,
+  sanitizeAdminPermissions,
   toEnglishDigits,
 } from '@offroad/shared';
 import * as bcrypt from 'bcryptjs';
@@ -38,6 +41,49 @@ export class AdminService {
     private productsService: ProductsService,
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
+
+  private async getAdminActor(actorId: string) {
+    const actor = await this.prisma.user.findUnique({
+      where: { id: actorId },
+      select: { id: true, role: true, isSuperAdmin: true, adminPermissions: true, adminAccessConfigured: true },
+    });
+    if (!actor || actor.role !== 'ADMIN') {
+      throw new ForbiddenException('دسترسی غیرمجاز');
+    }
+    return actor;
+  }
+
+  private assertSuperAdmin(actor: { isSuperAdmin: boolean }) {
+    if (!actor.isSuperAdmin) {
+      throw new ForbiddenException('فقط مدیر اصلی می‌تواند این عملیات را انجام دهد');
+    }
+  }
+
+  async getAdminProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
+        adminAccessConfigured: true,
+      },
+    });
+    if (!user || user.role !== 'ADMIN') {
+      throw new ForbiddenException('دسترسی غیرمجاز');
+    }
+    const effectivePermissions = resolveEffectiveAdminPermissions(user);
+    return {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      isSuperAdmin: user.isSuperAdmin,
+      adminPermissions: sanitizeAdminPermissions(user.adminPermissions),
+      effectivePermissions,
+    };
+  }
 
   async getDashboard() {
     const [products, clientProducts, orders, users] = await Promise.all([
@@ -97,6 +143,8 @@ export class AdminService {
           email: true,
           name: true,
           role: true,
+          isSuperAdmin: true,
+          adminPermissions: true,
           city: true,
           maxActiveListings: true,
           maxActiveNewListings: true,
@@ -136,6 +184,8 @@ export class AdminService {
       email: user.email,
       name: user.name,
       role: user.role,
+      isSuperAdmin: user.isSuperAdmin,
+      adminPermissions: sanitizeAdminPermissions(user.adminPermissions),
       city: user.city,
       maxActiveListings: user.maxActiveListings,
       maxActiveNewListings: user.maxActiveNewListings,
@@ -156,7 +206,14 @@ export class AdminService {
     };
   }
 
-  async createUser(data: CreateAdminUserDto) {
+  async createUser(actorId: string, data: CreateAdminUserDto) {
+    const actor = await this.getAdminActor(actorId);
+    const targetRole = data.role ?? 'CLIENT';
+
+    if (targetRole === 'ADMIN') {
+      this.assertSuperAdmin(actor);
+    }
+
     const existingPhone = await this.prisma.user.findUnique({ where: { phone: data.phone } });
     if (existingPhone) {
       throw new ConflictException('این شماره موبایل قبلاً ثبت شده است');
@@ -170,6 +227,12 @@ export class AdminService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
+    const isSuperAdmin =
+      targetRole === 'ADMIN' && actor.isSuperAdmin ? (data.isSuperAdmin ?? false) : false;
+    const adminPermissions =
+      targetRole === 'ADMIN' && actor.isSuperAdmin
+        ? sanitizeAdminPermissions(data.adminPermissions)
+        : [];
 
     return this.prisma.user.create({
       data: {
@@ -178,7 +241,10 @@ export class AdminService {
         name: data.name,
         password: hashedPassword,
         city: data.city,
-        role: data.role ?? 'CLIENT',
+        role: targetRole,
+        isSuperAdmin,
+        adminPermissions,
+        adminAccessConfigured: targetRole === 'ADMIN' && actor.isSuperAdmin,
         maxActiveListings: data.maxActiveListings ?? null,
         maxActiveNewListings: data.maxActiveNewListings ?? null,
         emailVerified: true,
@@ -190,15 +256,35 @@ export class AdminService {
         email: true,
         name: true,
         role: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
         city: true,
         createdAt: true,
       },
     });
   }
 
-  async updateUser(id: string, data: UpdateAdminUserDto) {
+  async updateUser(actorId: string, id: string, data: UpdateAdminUserDto) {
+    const actor = await this.getAdminActor(actorId);
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    const nextRole = data.role ?? user.role;
+    const roleChanging = data.role != null && data.role !== user.role;
+    const permissionFieldsTouched =
+      data.isSuperAdmin !== undefined || data.adminPermissions !== undefined;
+
+    if (user.role === 'ADMIN' && actor.id !== user.id && !actor.isSuperAdmin) {
+      throw new ForbiddenException('فقط مدیر اصلی می‌تواند مدیران دیگر را ویرایش کند');
+    }
+
+    if (roleChanging && (nextRole === 'ADMIN' || user.role === 'ADMIN')) {
+      this.assertSuperAdmin(actor);
+    }
+
+    if (permissionFieldsTouched) {
+      this.assertSuperAdmin(actor);
+    }
 
     if (data.phone && data.phone !== user.phone) {
       const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } });
@@ -219,6 +305,13 @@ export class AdminService {
       }
     }
 
+    if (user.isSuperAdmin && data.isSuperAdmin === false) {
+      const superCount = await this.prisma.user.count({ where: { isSuperAdmin: true } });
+      if (superCount <= 1) {
+        throw new BadRequestException('حداقل یک مدیر اصلی باید در سیستم باقی بماند');
+      }
+    }
+
     const updateData: Record<string, unknown> = {};
 
     if (data.phone) updateData.phone = data.phone;
@@ -226,6 +319,18 @@ export class AdminService {
     if (data.name) updateData.name = data.name;
     if (data.city !== undefined) updateData.city = data.city;
     if (data.role) updateData.role = data.role;
+    if (data.isSuperAdmin !== undefined) updateData.isSuperAdmin = data.isSuperAdmin;
+    if (data.adminPermissions !== undefined) {
+      updateData.adminPermissions = sanitizeAdminPermissions(data.adminPermissions);
+    }
+    if (permissionFieldsTouched || (roleChanging && nextRole === 'ADMIN')) {
+      updateData.adminAccessConfigured = true;
+    }
+    if (roleChanging && nextRole === 'CLIENT') {
+      updateData.adminAccessConfigured = false;
+      updateData.isSuperAdmin = false;
+      updateData.adminPermissions = [];
+    }
     if (data.password) updateData.password = await bcrypt.hash(data.password, 12);
     if (data.maxActiveListings !== undefined) {
       updateData.maxActiveListings = data.maxActiveListings;
@@ -261,6 +366,8 @@ export class AdminService {
         email: true,
         name: true,
         role: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
         city: true,
         maxActiveListings: true,
         maxActiveNewListings: true,
@@ -295,6 +402,8 @@ export class AdminService {
       email: updated.email,
       name: updated.name,
       role: updated.role,
+      isSuperAdmin: updated.isSuperAdmin,
+      adminPermissions: sanitizeAdminPermissions(updated.adminPermissions),
       city: updated.city,
       maxActiveListings: updated.maxActiveListings,
       maxActiveNewListings: updated.maxActiveNewListings,
@@ -379,14 +488,26 @@ export class AdminService {
     };
   }
 
-  async deleteUser(id: string) {
+  async deleteUser(actorId: string, id: string) {
+    const actor = await this.getAdminActor(actorId);
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    if (user.role === 'ADMIN' && !actor.isSuperAdmin) {
+      throw new ForbiddenException('فقط مدیر اصلی می‌تواند مدیران را حذف کند');
+    }
 
     if (user.role === 'ADMIN') {
       const adminCount = await this.prisma.user.count({ where: { role: 'ADMIN' } });
       if (adminCount <= 1) {
         throw new BadRequestException('حداقل یک مدیر باید در سیستم باقی بماند');
+      }
+    }
+
+    if (user.isSuperAdmin) {
+      const superCount = await this.prisma.user.count({ where: { isSuperAdmin: true } });
+      if (superCount <= 1) {
+        throw new BadRequestException('حداقل یک مدیر اصلی باید در سیستم باقی بماند');
       }
     }
 

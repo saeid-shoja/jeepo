@@ -2,6 +2,7 @@
 
 import {
   ChevronLeft,
+  FileText,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -12,39 +13,74 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { SiteLogo } from '@/components/layout/site-logo';
+import { AdminAccessProvider, useAdminAccess } from '@/lib/admin-access-context';
 
-const navItems = [
-  { href: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
-  { href: '/dashboard/products', label: 'محصولات', icon: Package },
-  { href: '/dashboard/categories', label: 'دسته‌بندی‌ها', icon: FolderTree },
-  { href: '/dashboard/users', label: 'کاربران', icon: Users },
-  { href: '/dashboard/orders', label: 'سفارشات', icon: ShoppingCart },
-  { href: '/dashboard/messages', label: 'پیام‌ها', icon: Megaphone },
-];
+const NAV_ICONS = {
+  dashboard: LayoutDashboard,
+  products: Package,
+  categories: FolderTree,
+  blog: FileText,
+  users: Users,
+  orders: ShoppingCart,
+  messages: Megaphone,
+} as const;
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { loading, error, navItems, profile, refresh } = useAdminAccess();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) router.push('/login');
-  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     router.push('/login');
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">
+        در حال بارگذاری…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-sm text-gray-600">
+        <p>{error}</p>
+        <button
+          type="button"
+          onClick={() => refresh()}
+          className="rounded-sm bg-primary px-4 py-2 text-white hover:bg-primary-dark"
+        >
+          تلاش مجدد
+        </button>
+      </div>
+    );
+  }
+
+  if (profile && navItems.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-sm text-gray-600">
+        <p>شما به هیچ بخشی از پنل دسترسی ندارید.</p>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="rounded-sm border px-4 py-2 text-red-600 hover:bg-red-50"
+        >
+          خروج
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen">
       <aside
-        className={`fixed right-0 top-0 z-40 h-full bg-white shadow-lg transition-all ${
-          sidebarOpen ? 'w-60' : 'w-16'
-        }`}
+        className={`fixed right-0 top-0 z-40 h-full bg-white shadow-lg transition-all ${sidebarOpen ? 'w-60' : 'w-16'
+          }`}
       >
         <div className="flex items-center justify-between border-b p-4">
           <SiteLogo href="/dashboard" size="sm" showName={sidebarOpen} nameClassName="text-sm" />
@@ -61,19 +97,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <nav className="mt-4 space-y-1 px-3">
           {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
+            const Icon = NAV_ICONS[item.key];
+            const active =
+              pathname === item.href ||
+              (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors ${
-                  active
+                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors ${active
                     ? 'bg-primary/10 font-medium text-primary'
                     : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                  }`}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className="h-5 w-5 shrink-0" />
                 {sidebarOpen && <span>{item.label}</span>}
               </Link>
             );
@@ -96,5 +133,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-6">{children}</div>
       </main>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminAccessProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </AdminAccessProvider>
   );
 }

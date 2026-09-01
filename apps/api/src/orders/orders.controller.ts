@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Public, Roles } from '../auth/custom.decorator';
+import { AdminPermission, Public, Roles } from '../auth/custom.decorator';
 import { PaymentsService } from '../payments/payments.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { CreateOrderDto, PreviewOrderDto, UpdateOrderStatusDto } from './dto';
@@ -13,9 +13,10 @@ export class OrdersController {
   constructor(
     private ordersService: OrdersService,
     private paymentsService: PaymentsService,
-  ) {}
+  ) { }
 
   @Roles('ADMIN')
+  @AdminPermission('orders')
   @Get()
   findAll() {
     return this.ordersService.findAll();
@@ -45,6 +46,7 @@ export class OrdersController {
   }
 
   @Roles('ADMIN')
+  @AdminPermission('orders')
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: UpdateOrderStatusDto) {
     return this.ordersService.updateStatus(id, body.status);

@@ -127,7 +127,7 @@ export class ProductsService {
     private mailService: MailService,
     private telegramChannel: TelegramChannelService,
     @Inject('WEB_URL') private readonly webUrl: string,
-  ) { }
+  ) {}
 
   private readonly listCache = new TtlCache<{
     products: Record<string, unknown>[];
@@ -510,7 +510,7 @@ export class ProductsService {
           city: product.user.city,
         },
       })
-      .catch(() => { });
+      .catch(() => {});
   }
 
   private async resolveVehicleSaleFields(
@@ -684,26 +684,26 @@ export class ProductsService {
     const createOptions = needsAdminApproval
       ? requiresListingFee
         ? {
-          status: 'PENDING' as const,
-          listingFeePaid: false,
-          listingPaymentDueAt: listingPaymentDueAt(),
-        }
+            status: 'PENDING' as const,
+            listingFeePaid: false,
+            listingPaymentDueAt: listingPaymentDueAt(),
+          }
         : {
-          status: 'PENDING' as const,
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-        }
+            status: 'PENDING' as const,
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+          }
       : requiresListingFee
         ? {
-          status: 'PENDING' as const,
-          listingFeePaid: false,
-          listingPaymentDueAt: listingPaymentDueAt(),
-        }
+            status: 'PENDING' as const,
+            listingFeePaid: false,
+            listingPaymentDueAt: listingPaymentDueAt(),
+          }
         : {
-          status: 'ACTIVE' as const,
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-        };
+            status: 'ACTIVE' as const,
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+          };
 
     const product = await this.prisma.product.create({
       data: await this.buildCreateData(
@@ -834,17 +834,17 @@ export class ProductsService {
       where: { id: productId },
       data: needsAdminApproval
         ? {
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          status: 'PENDING',
-        }
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            status: 'PENDING',
+          }
         : {
-          status: 'ACTIVE',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          activeUntil: computeActiveUntil(now),
-          listedAt: now,
-        },
+            status: 'ACTIVE',
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            activeUntil: computeActiveUntil(now),
+            listedAt: now,
+          },
     });
 
     if (!needsAdminApproval) {
@@ -1446,19 +1446,19 @@ export class ProductsService {
       where: { id },
       data: needsAdminApproval
         ? {
-          status: 'PENDING',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          deprecatedAt: null,
-        }
+            status: 'PENDING',
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            deprecatedAt: null,
+          }
         : {
-          status: 'ACTIVE',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-          activeUntil: computeActiveUntil(now),
-          deprecatedAt: null,
-          listedAt: now,
-        },
+            status: 'ACTIVE',
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+            activeUntil: computeActiveUntil(now),
+            deprecatedAt: null,
+            listedAt: now,
+          },
       include: productIncludeDetail,
     });
 
@@ -1518,12 +1518,12 @@ export class ProductsService {
       },
       advertiser: product.user
         ? {
-          id: product.user.id,
-          name: product.user.name,
-          phone: product.user.phone,
-          email: product.user.email,
-          city: product.user.city,
-        }
+            id: product.user.id,
+            name: product.user.name,
+            phone: product.user.phone,
+            email: product.user.email,
+            city: product.user.city,
+          }
         : null,
       reporter: {
         id: reporter.id,

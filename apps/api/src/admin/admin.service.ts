@@ -45,7 +45,13 @@ export class AdminService {
   private async getAdminActor(actorId: string) {
     const actor = await this.prisma.user.findUnique({
       where: { id: actorId },
-      select: { id: true, role: true, isSuperAdmin: true, adminPermissions: true, adminAccessConfigured: true },
+      select: {
+        id: true,
+        role: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
+        adminAccessConfigured: true,
+      },
     });
     if (!actor || actor.role !== 'ADMIN') {
       throw new ForbiddenException('دسترسی غیرمجاز');

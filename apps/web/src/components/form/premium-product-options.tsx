@@ -117,8 +117,8 @@ export function PremiumProductOptions({
                   <div className="space-y-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-950 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-50">
                     <p className="font-semibold">پیشنهاد برای تسریع در تأیید:</p>
                     <p>
-                      اطلاعات پروفایل شما هنوز کامل نیست. می‌توانید همین حالا درخواست تضمین بدهید؛
-                      در صورت نیاز، تیم جیپو از طریق ایمیل درخواست تکمیل پروفایل می‌کند.
+                      اطلاعات پروفایل شما هنوز کامل نیست. می‌توانید همین حالا درخواست تضمین بدهید؛ در
+                      صورت نیاز، تیم جیپو از طریق ایمیل درخواست تکمیل پروفایل می‌کند.
                     </p>
                     <ul className="list-disc space-y-1 pr-4">
                       {guaranteeProfileMissing.map((field) => (
@@ -152,9 +152,10 @@ export function PremiumProductOptions({
                 <DialogDescription asChild>
                   <div className="text-foreground space-y-3 text-start text-sm">
                     <p>
-                      با فعال‌سازی تضمین جیپو، آگهی شما با نشان ویژه تضمین جیپو نمایش داده می‌شود و خریداران
-                      می‌توانند مستقیماً از طریق درگاه جیپو خرید کنند. مبلغ خرید تا زمان تحویل و تأیید
-                      طرفین نزد جیپو می‌ماند و سپس پس از کسر کارمزد به حساب شما واریز می‌شود.
+                      با فعال‌سازی تضمین جیپو، آگهی شما با نشان ویژه تضمین جیپو نمایش داده می‌شود و
+                      خریداران می‌توانند مستقیماً از طریق درگاه جیپو خرید کنند. مبلغ خرید تا زمان
+                      تحویل و تأیید طرفین نزد جیپو می‌ماند و سپس پس از کسر کارمزد به حساب شما واریز
+                      می‌شود.
                     </p>
                     <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-50">
                       <p className="mb-2 font-semibold">شرایط انتشار:</p>

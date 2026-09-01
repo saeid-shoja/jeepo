@@ -13,7 +13,7 @@ export class OrdersController {
   constructor(
     private ordersService: OrdersService,
     private paymentsService: PaymentsService,
-  ) { }
+  ) {}
 
   @Roles('ADMIN')
   @AdminPermission('orders')

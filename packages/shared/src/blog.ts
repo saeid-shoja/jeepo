@@ -62,9 +62,7 @@ export function paragraphsToTiptapDoc(paragraphs: string[]): Record<string, unkn
 }
 
 export function paragraphsToBlogHtml(paragraphs: string[]): string {
-  return paragraphs
-    .map((p) => `<p>${escapeHtml(p)}</p>`)
-    .join('');
+  return paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('');
 }
 
 function escapeHtml(value: string): string {

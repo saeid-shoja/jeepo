@@ -71,9 +71,7 @@ export function adminPathPermission(pathname: string): AdminPermissionKey | null
   return null;
 }
 
-export function firstAllowedAdminPath(
-  effectivePermissions: AdminPermissionKey[],
-): string | null {
+export function firstAllowedAdminPath(effectivePermissions: AdminPermissionKey[]): string | null {
   for (const item of ADMIN_PERMISSIONS) {
     if (effectivePermissions.includes(item.key)) return item.href;
   }

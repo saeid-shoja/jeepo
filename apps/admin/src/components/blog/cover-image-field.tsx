@@ -54,16 +54,18 @@ export function CoverImageField({ value, onChange }: CoverImageFieldProps) {
           <button
             type="button"
             onClick={() => switchSource('external')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${source === 'external' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
-              }`}
+            className={`rounded-md px-2.5 py-1 transition-colors ${
+              source === 'external' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+            }`}
           >
             لینک خارجی
           </button>
           <button
             type="button"
             onClick={() => switchSource('internal')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${source === 'internal' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
-              }`}
+            className={`rounded-md px-2.5 py-1 transition-colors ${
+              source === 'internal' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+            }`}
           >
             مسیر داخلی
           </button>
@@ -80,9 +82,7 @@ export function CoverImageField({ value, onChange }: CoverImageFieldProps) {
         }}
         className="w-full rounded-lg border px-3 py-2 text-sm"
         placeholder={
-          source === 'external'
-            ? 'https://example.com/cover.jpg'
-            : '/images/categories/parts.webp'
+          source === 'external' ? 'https://example.com/cover.jpg' : '/images/categories/parts.webp'
         }
       />
       <span className="text-xs text-gray-400">

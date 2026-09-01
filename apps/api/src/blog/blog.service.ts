@@ -27,7 +27,7 @@ type BlogRow = {
 
 @Injectable()
 export class BlogService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private mapPublic(row: BlogRow): BlogPost {
     return {

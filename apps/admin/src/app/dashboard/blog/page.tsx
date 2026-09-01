@@ -87,10 +87,11 @@ export default function AdminBlogPage() {
             key={value}
             type="button"
             onClick={() => setStatusFilter(value)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${statusFilter === value
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              statusFilter === value
                 ? 'bg-primary/10 text-primary'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+            }`}
           >
             {value === 'ALL' ? 'همه' : value === 'PUBLISHED' ? 'منتشر شده' : 'پیش‌نویس'}
           </button>
@@ -135,10 +136,11 @@ export default function AdminBlogPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${post.status === 'PUBLISHED'
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          post.status === 'PUBLISHED'
                             ? 'bg-green-100 text-green-700'
                             : 'bg-amber-100 text-amber-700'
-                          }`}
+                        }`}
                       >
                         {post.status === 'PUBLISHED' ? 'منتشر شده' : 'پیش‌نویس'}
                       </span>

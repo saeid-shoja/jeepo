@@ -8,7 +8,7 @@ import { CreateCategoryDto, CreateLibraryDto, UpdateCategoryDto, UpdateLibraryDt
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoriesController {
-  constructor(private categoriesService: CategoriesService) { }
+  constructor(private categoriesService: CategoriesService) {}
 
   @Public()
   @Get()
@@ -51,7 +51,7 @@ export class CategoriesController {
 @ApiBearerAuth(SWAGGER_BEARER_KEY)
 @Controller('libraries')
 export class LibrariesController {
-  constructor(private categoriesService: CategoriesService) { }
+  constructor(private categoriesService: CategoriesService) {}
 
   @Roles('ADMIN')
   @AdminPermission('categories')

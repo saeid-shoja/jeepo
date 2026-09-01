@@ -122,7 +122,9 @@ export function RichTextEditor({
 
   if (!editor) {
     return (
-      <div className="rounded-lg border bg-white p-4 text-sm text-gray-500">در حال بارگذاری ویرایشگر…</div>
+      <div className="rounded-lg border bg-white p-4 text-sm text-gray-500">
+        در حال بارگذاری ویرایشگر…
+      </div>
     );
   }
 

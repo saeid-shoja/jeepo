@@ -8,7 +8,7 @@ import { CreateBlogPostDto, UpdateBlogPostDto, UpdateBlogPostStatusDto } from '.
 @ApiTags('Blog')
 @Controller('blog')
 export class BlogController {
-  constructor(private blogService: BlogService) { }
+  constructor(private blogService: BlogService) {}
 
   @Public()
   @Get('posts')
@@ -34,7 +34,7 @@ export class BlogController {
 @Roles('ADMIN')
 @Controller('admin/blog/posts')
 export class AdminBlogController {
-  constructor(private blogService: BlogService) { }
+  constructor(private blogService: BlogService) {}
 
   @AdminPermission('blog')
   @Get()

@@ -79,8 +79,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <aside
-        className={`fixed right-0 top-0 z-40 h-full bg-white shadow-lg transition-all ${sidebarOpen ? 'w-60' : 'w-16'
-          }`}
+        className={`fixed right-0 top-0 z-40 h-full bg-white shadow-lg transition-all ${
+          sidebarOpen ? 'w-60' : 'w-16'
+        }`}
       >
         <div className="flex items-center justify-between border-b p-4">
           <SiteLogo href="/dashboard" size="sm" showName={sidebarOpen} nameClassName="text-sm" />
@@ -105,10 +106,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors ${active
+                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors ${
+                  active
                     ? 'bg-primary/10 font-medium text-primary'
                     : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                }`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 {sidebarOpen && <span>{item.label}</span>}

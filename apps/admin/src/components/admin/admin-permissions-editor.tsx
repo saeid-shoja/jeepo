@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  ADMIN_PERMISSIONS,
-  type AdminPermissionKey,
-} from '@offroad/shared';
+import { ADMIN_PERMISSIONS, type AdminPermissionKey } from '@offroad/shared';
 
 type AdminPermissionsEditorProps = {
   permissions: AdminPermissionKey[];

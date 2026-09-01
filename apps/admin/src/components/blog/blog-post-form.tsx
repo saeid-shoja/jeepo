@@ -211,7 +211,9 @@ export function BlogPostForm({ mode, initial }: BlogPostFormProps) {
         <span className="text-sm font-medium text-gray-700">متن مقاله</span>
         <RichTextEditor
           key={initial?.id ?? `new-${editorKey}`}
-          valueJson={mode === 'create' && editorKey > 0 ? undefined : (initial?.bodyJson ?? undefined)}
+          valueJson={
+            mode === 'create' && editorKey > 0 ? undefined : (initial?.bodyJson ?? undefined)
+          }
           valueHtml={mode === 'create' && editorKey > 0 ? undefined : initial?.bodyHtml}
           onChange={setBody}
         />

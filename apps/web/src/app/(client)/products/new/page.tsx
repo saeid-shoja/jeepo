@@ -281,18 +281,18 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition
           ? {
-            mileageKm: data.mileageKm,
-            paintCondition: data.paintCondition,
-          }
+              mileageKm: data.mileageKm,
+              paintCondition: data.paintCondition,
+            }
           : {}),
         ...(data.isAuction
           ? {
-            auctionStartPrice: data.auctionStartPrice,
-            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-            realPriceMin: data.realPriceMin,
-            realPriceMax: data.realPriceMax,
-            buyNowPrice: data.buyNowPrice,
-          }
+              auctionStartPrice: data.auctionStartPrice,
+              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+              realPriceMin: data.realPriceMin,
+              realPriceMax: data.realPriceMax,
+              buyNowPrice: data.buyNowPrice,
+            }
           : {}),
       });
 
@@ -319,7 +319,9 @@ export default function NewProductPage() {
       }
 
       if (result.requiresAdminApproval) {
-        showSubmitResult(data.hasGuarantee && canOfferGuarantee ? 'pending_guarantee' : 'pending_review');
+        showSubmitResult(
+          data.hasGuarantee && canOfferGuarantee ? 'pending_guarantee' : 'pending_review',
+        );
         return;
       }
 

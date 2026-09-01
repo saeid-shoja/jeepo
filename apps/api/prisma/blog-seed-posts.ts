@@ -51,8 +51,7 @@ export const BLOG_SEED_POSTS = [
   {
     slug: 'motorcycle-adventure-gear-tips',
     title: 'نکات انتخاب تجهیزات موتورسیکلت سفری و آفرودی',
-    excerpt:
-      'لباس، کیف، محافظ و لوازم جانبی — چه چیزهایی را در خرید دست‌دوم بیشتر بررسی کنیم؟',
+    excerpt: 'لباس، کیف، محافظ و لوازم جانبی — چه چیزهایی را در خرید دست‌دوم بیشتر بررسی کنیم؟',
     coverImage: '/images/categories/motorcycle-atv.webp',
     publishedAt: '2026-07-05',
     tags: ['موتورسیکلت', 'تجهیزات سفر', 'خرید دست‌دوم'],

@@ -126,10 +126,18 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('space-y-2 mt-4', className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="shrink-0 space-y-2">
-          <Label htmlFor="product-images">تصاویر و ویدیو</Label>
+          <Label
+            htmlFor="product-images"
+            className="w-full flex justify-between items-center gap-2"
+          >
+            <p>انتخاب تصاویر و ویدیو</p>
+            <div className="text-muted-foreground flex w-26 h-12 md:h-26 items-center justify-center rounded-sm border border-dashed">
+              <ImagePlus className="size-6 opacity-50" />
+            </div>
+          </Label>
           <Input
             id="product-images"
             ref={inputRef}
@@ -137,7 +145,7 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
             accept="image/*,.webp,video/*,.mp4,.webm,.mov"
             multiple
             disabled={processing}
-            className="cursor-pointer file:me-3 file:rounded-sm file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground disabled:opacity-60"
+            className="hidden cursor-pointer file:me-3 file:rounded-sm file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground disabled:opacity-60"
             onChange={(e) => void handleFiles(e.target.files)}
           />
           <p className="text-muted-foreground text-xs leading-relaxed">
@@ -154,7 +162,7 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
               return (
                 <li
                   key={`${i}-${src.slice(0, 48)}`}
-                  className="bg-muted relative size-20 overflow-hidden rounded-sm border"
+                  className="bg-muted relative size-22 overflow-hidden rounded-sm border"
                 >
                   {isVideo ? (
                     <>
@@ -194,11 +202,11 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
           </ul>
         )}
 
-        {images.length === 0 && (
+        {/* {images.length === 0 && (
           <div className="text-muted-foreground flex size-20 items-center justify-center rounded-sm border border-dashed">
             <ImagePlus className="size-6 opacity-50" />
           </div>
-        )}
+        )} */}
       </div>
 
       <FormError message={error} />

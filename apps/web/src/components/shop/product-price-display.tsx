@@ -25,7 +25,7 @@ export function ProductPriceDisplay({
       <p
         className={cn(
           'font-semibold',
-          variant === 'detail' ? 'text-3xl font-bold text-primary' : 'text-sm',
+          variant === 'detail' ? 'text-3xl font-bold text-foreground' : 'text-sm',
           className,
         )}
       >
@@ -44,7 +44,7 @@ export function ProductPriceDisplay({
         {discountPercent != null && (
           <span
             className={cn(
-              'text-white mr-1 font-semibold p-1 bg-primary rounded-full',
+              'text-white mr-1 font-semibold py-2 px-1 bg-primary rounded-full',
               variant === 'detail' ? 'text-sm' : 'text-[10px]',
             )}
           >
@@ -55,13 +55,13 @@ export function ProductPriceDisplay({
       <p
         className={cn(
           'font-bold',
-          variant === 'detail' ? 'text-4xl text-destructive' : 'text-base font-semibold',
+          variant === 'detail' ? 'text-4xl text-foreground' : 'text-base font-semibold',
         )}
       >
         {formatPrice(effectivePrice)}{' '}
         <span
           className={
-            variant === 'detail' ? 'text-lg font-normal text-destructive' : 'text-[8px] font-normal'
+            variant === 'detail' ? 'text-lg font-normal text-foreground' : 'text-[8px] font-normal'
           }
         >
           تومان

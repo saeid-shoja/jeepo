@@ -1,10 +1,26 @@
 'use client';
 
-import { formatPrice, isProductColorSelectable, parseProductColorIds } from '@offroad/shared';
-import { ArrowRight, Edit3, Flag, Package, Shield, Trash2, TrendingUp } from 'lucide-react';
+import {
+  formatPrice,
+  formatSellerRatingLabel,
+  isProductColorSelectable,
+  LISTING_INTENT_LABELS,
+  parseProductColorIds,
+} from '@offroad/shared';
+import {
+  ArrowRight,
+  BadgeCheck,
+  Edit3,
+  Flag,
+  Package,
+  Shield,
+  Star,
+  Trash2,
+  UserRound,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
@@ -12,16 +28,31 @@ import { FavoriteButton } from '@/components/shop/favorite-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductColorSwatches } from '@/components/shop/product-color-swatches';
 import { ProductGallery } from '@/components/shop/product-gallery';
+import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductShareButton } from '@/components/shop/product-share-button';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
 import { RelatedProductsStrip } from '@/components/shop/related-products-strip';
 import { ReportProductDialog } from '@/components/shop/report-product-dialog';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
-import { resolveProductSituation } from '@/lib/product-utils';
+import { isClientProduct } from '@/lib/product-advertiser';
+import { getSituationLabel, resolveProductSituation } from '@/lib/product-utils';
 import { canViewerPurchase } from '@/lib/purchasable';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/stores/auth-store';
+
+type SpecItem = { label: string; value: string };
+
+function SpecRow({ label, value }: SpecItem) {
+  return (
+    <div className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-border/60 py-2.5 last:border-0 sm:grid-cols-[9rem_1fr]">
+      <dt className="text-muted-foreground text-sm">{label}</dt>
+      <dd className="text-sm font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
 
 export function ProductDetailClient() {
   const { id } = useParams<{ id: string }>();
@@ -53,29 +84,62 @@ export function ProductDetailClient() {
     }
   }, [product?.id]);
 
+  const specs = useMemo((): SpecItem[] => {
+    if (!product) return [];
+    const situation = resolveProductSituation(product);
+    const situationLabel = getSituationLabel(situation);
+    const stockQuantity = product.stockQuantity ?? 1;
+    const rows: SpecItem[] = [];
+
+    if (situationLabel) rows.push({ label: 'وضعیت', value: situationLabel });
+    if (product.category?.name) rows.push({ label: 'دسته‌بندی', value: product.category.name });
+
+    const brands = (product.carBrands as { label?: string; value?: string }[] | undefined) ?? [];
+    if (brands.length) {
+      rows.push({
+        label: 'نوع خودرو',
+        value: brands
+          .map((b) => b.label || b.value)
+          .filter(Boolean)
+          .join('، '),
+      });
+    }
+
+    if (!product.isAuction) {
+      rows.push({
+        label: 'موجودی',
+        value: stockQuantity > 0 ? `${stockQuantity.toLocaleString('fa-IR')} عدد` : 'ناموجود',
+      });
+    }
+
+    if (product.listingIntent === 'BUYER') {
+      rows.push({ label: 'نوع آگهی', value: LISTING_INTENT_LABELS.BUYER });
+    }
+
+    if (product.hasGuarantee) {
+      rows.push({ label: 'تضمین', value: 'با تضمین جیپو' });
+    }
+
+    return rows;
+  }, [product]);
+
   if (loading) {
     return (
-      <div className="grid animate-pulse gap-8 lg:grid-cols-2">
-        <div className="space-y-3">
-          <div className="aspect-square rounded-lg bg-muted" />
-          <div className="flex gap-2">
-            <div className="h-16 w-16 rounded-sm bg-muted" />
-            <div className="h-16 w-16 rounded-sm bg-muted" />
-            <div className="h-16 w-16 rounded-sm bg-muted" />
+      <div className="container animate-pulse py-6">
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="aspect-square rounded-2xl bg-muted lg:col-span-5" />
+          <div className="space-y-4 lg:col-span-4">
+            <div className="h-8 w-3/4 rounded bg-muted" />
+            <div className="h-40 rounded-2xl bg-muted" />
           </div>
-        </div>
-        <div className="space-y-4">
-          <div className="h-8 w-3/4 rounded bg-muted" />
-          <div className="h-6 w-1/3 rounded bg-muted" />
-          <div className="h-24 w-full rounded bg-muted" />
-          <div className="h-10 w-1/2 rounded bg-muted" />
+          <div className="h-48 rounded-2xl bg-muted lg:col-span-3" />
         </div>
       </div>
     );
   }
 
   if (!product) {
-    return <div className="py-16 text-center text-gray-500">محصول یافت نشد</div>;
+    return <div className="text-muted-foreground py-16 text-center">محصول یافت نشد</div>;
   }
 
   const images = product.images || [];
@@ -83,11 +147,14 @@ export function ProductDetailClient() {
   const situation = resolveProductSituation(product);
   const canBuy = canViewerPurchase(product, user?.id);
   const stockQuantity = product.stockQuantity ?? 1;
-  const showStock = !product.isAuction;
+  const isClient = isClientProduct(product);
   const colorIds: string[] = Array.isArray(product.colors)
     ? product.colors
     : parseProductColorIds(product.color);
   const colorSelectable = isProductColorSelectable(product) && canBuy && colorIds.length > 0;
+  const sellerName = product.user?.name as string | undefined;
+  const sellerRating = product.user?.rating as number | null | undefined;
+  const sellerVerified = Boolean(product.user?.verifiedSeller);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -103,240 +170,270 @@ export function ProductDetailClient() {
     }
   };
 
-  return (
-    <div className="space-y-8">
-      <div className="grid gap-8 lg:grid-cols-2 container">
-        <div className="min-w-0 max-w-full">
-          <ProductGallery
-            images={images}
-            title={product.title}
-            resetKey={product.id ?? id}
-            badge={<ProductSituationBadge situation={situation} />}
-          />
-        </div>
+  const purchaseCard = !product.isAuction && canBuy && stockQuantity > 0 && (
+    <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
+      <CardHeader className="border-b border-border/60 px-5 py-4">
+        <CardTitle className="text-base font-semibold">خرید محصول</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 px-5 py-5">
+        <ProductPriceDisplay price={product.price} salePrice={product.salePrice} variant="detail" />
+        {product.newPrice != null && product.newPrice > 0 && (
+          <p className="text-muted-foreground text-sm">
+            قیمت نو:{' '}
+            <span className="text-foreground font-medium">
+              {formatPrice(product.newPrice)} تومان
+            </span>
+          </p>
+        )}
+        {colorIds.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">رنگ</p>
+            <ProductColorSwatches
+              colorIds={colorIds}
+              selectable={colorSelectable}
+              selectedId={colorSelectable ? selectedColor : null}
+              onSelect={setSelectedColor}
+              showLabels
+            />
+          </div>
+        )}
+        {stockQuantity > 1 ? (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground text-sm">تعداد</span>
+            <div className="flex items-center gap-1 rounded-xl border">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              >
+                −
+              </Button>
+              <span className="min-w-8 text-center text-sm font-medium">{quantity}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                onClick={() => setQuantity((q) => Math.min(stockQuantity, q + 1))}
+                disabled={quantity >= stockQuantity}
+              >
+                +
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">۱ عدد موجود برای خرید</p>
+        )}
+        <AddToCartButton
+          product={product}
+          quantity={quantity}
+          maxQuantity={stockQuantity}
+          color={selectedColor}
+          requireColor={colorSelectable}
+          className="w-full rounded-xl mb-2"
+        />
+        <Button variant="outline" className="w-full rounded-xl" asChild>
+          <Link href="/cart">رفتن به سبد خرید</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
 
-        <div className="space-y-5">
-          <div>
-            <div className="flex items-start justify-between gap-2">
-              <h1 className="text-2xl font-bold">{product.title}</h1>
-              <div className="flex shrink-0 items-center gap-1">
-                <FavoriteButton productId={product.id ?? id} />
-                <ProductShareButton productId={product.id ?? id} title={product.title} />
-                {isOwner && (
-                  <>
-                    <Link
-                      href={`/products/${product.id}/edit`}
-                      className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 mt-1"
-                    >
-                      <Edit3 className="h-5 w-4" />
-                    </Link>
-                    <button
-                      type="button"
-                      className="rounded-sm p-2 text-red-500 hover:bg-red-50 disabled:opacity-50"
-                      disabled={deleting}
-                      aria-label="حذف آگهی"
-                      onClick={() => setDeleteOpen(true)}
-                    >
-                      <Trash2 className={`h-4 w-4 ${deleting ? 'animate-pulse' : ''}`} />
-                    </button>
-                  </>
+  const priceOnlyCard = !product.isAuction && !(canBuy && stockQuantity > 0) && (
+    <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
+      <CardContent className="space-y-2 px-5 py-5">
+        <ProductPriceDisplay price={product.price} salePrice={product.salePrice} variant="detail" />
+        {colorIds.length > 0 && (
+          <div className="space-y-2 pt-2">
+            <p className="text-sm font-medium">رنگ</p>
+            <ProductColorSwatches colorIds={colorIds} selectable={false} showLabels />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const sellerCard = isClient && product.userId && (
+    <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
+      <CardHeader className="border-b border-border/60 px-5 py-4">
+        <CardTitle className="text-base font-semibold">اطلاعات فروشنده</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 px-5 py-5">
+        <div className="flex items-start gap-3">
+          <div className="bg-muted text-muted-foreground flex size-11 shrink-0 items-center justify-center rounded-full">
+            <UserRound className="size-5" />
+          </div>
+          <div className="min-w-0 space-y-1">
+            <Link
+              href={`/seller/${product.userId}`}
+              className="hover:text-primary block truncate text-sm font-semibold"
+            >
+              {sellerName || 'فروشنده'}
+            </Link>
+            <Link
+              href={`/seller/${product.userId}`}
+              className="text-muted-foreground inline-flex items-center gap-1 text-xs"
+            >
+              <Star className="size-3.5 fill-amber-500 text-amber-500" />
+              {formatSellerRatingLabel(sellerRating)}
+              {sellerVerified ? <BadgeCheck className="size-3.5 text-emerald-600" /> : null}
+            </Link>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-10 pb-10">
+      <div className="container">
+        <Link
+          href="/products"
+          className="text-muted-foreground hover:text-foreground mb-5 inline-flex items-center gap-1 text-sm transition-colors"
+        >
+          <ArrowRight className="size-4" />
+          بازگشت به لیست
+        </Link>
+
+        <div className="grid items-start gap-4 lg:grid-cols-12 lg:gap-6">
+          <div className="min-w-0 lg:col-span-5">
+            <ProductGallery
+              images={images}
+              title={product.title}
+              resetKey={product.id ?? id}
+              badge={
+                <>
+                  <ProductSituationBadge situation={situation} />
+                  <ProductListingIntentBadge listingIntent={product.listingIntent} />
+                </>
+              }
+            />
+          </div>
+
+          <div className="min-w-0 space-y-5 lg:col-span-4">
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-xl leading-snug font-bold sm:text-2xl">{product.title}</h1>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <FavoriteButton productId={product.id ?? id} />
+                  <ProductShareButton productId={product.id ?? id} title={product.title} />
+                  {isOwner && (
+                    <>
+                      <Link
+                        href={`/products/${product.id}/edit`}
+                        className="text-muted-foreground hover:bg-muted rounded-md p-2"
+                        aria-label="ویرایش"
+                      >
+                        <Edit3 className="size-4" />
+                      </Link>
+                      <button
+                        type="button"
+                        className="text-destructive hover:bg-destructive/10 rounded-md p-2 disabled:opacity-50"
+                        disabled={deleting}
+                        aria-label="حذف"
+                        onClick={() => setDeleteOpen(true)}
+                      >
+                        <Trash2 className={cn('size-4', deleting && 'animate-pulse')} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <ProductSituationBadge situation={situation} />
+                <ProductListingIntentBadge listingIntent={product.listingIntent} />
+                {product.hasGuarantee && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800 hover:bg-emerald-200"
+                    onClick={() => setGuaranteeOpen(true)}
+                  >
+                    <Shield className="size-3" />
+                    تضمین جیپو
+                  </button>
                 )}
               </div>
             </div>
-            <p className="mt-1 text-sm text-gray-400">در {product.category?.name}</p>
-          </div>
 
-          {!product.isAuction && (
-            <div className="space-y-1">
-              <ProductPriceDisplay
-                price={product.price}
-                salePrice={product.salePrice}
-                variant="detail"
-              />
-              {colorIds.length > 0 ? (
-                <div className="space-y-2 pt-2">
-                  <span className="text-foreground text-sm font-medium">رنگ</span>
-                  <ProductColorSwatches
-                    colorIds={colorIds}
-                    selectable={colorSelectable}
-                    selectedId={colorSelectable ? selectedColor : null}
-                    onSelect={setSelectedColor}
-                    showLabels
-                  />
-                  {colorSelectable ? (
-                    <p className="text-muted-foreground text-xs">
-                      یک رنگ را انتخاب کنید و به سبد اضافه کنید. برای رنگ دیگر، دوباره انتخاب و
-                      افزودن بزنید.
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-              {product.newPrice != null && product.newPrice > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  قیمت نو محصول:{' '}
-                  <span className="font-medium text-foreground">
-                    {formatPrice(product.newPrice)} تومان
-                  </span>
+            <div className="space-y-4 lg:hidden">
+              {purchaseCard}
+              {priceOnlyCard}
+            </div>
+
+            <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
+              <CardHeader className="border-b border-border/60 px-5 py-4">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Package className="text-muted-foreground size-4" />
+                  ویژگی‌های محصول
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 py-2">
+                {specs.length ? (
+                  <dl>
+                    {specs.map((item) => (
+                      <SpecRow key={item.label} label={item.label} value={item.value} />
+                    ))}
+                  </dl>
+                ) : (
+                  <p className="text-muted-foreground py-4 text-sm">ویژگی ثبت نشده است.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
+              <CardHeader className="border-b border-border/60 px-5 py-4">
+                <CardTitle className="text-base font-semibold">توضیحات</CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 py-5">
+                <p className="text-foreground/90 whitespace-pre-wrap text-sm leading-7">
+                  {product.description}
                 </p>
-              )}
-            </div>
-          )}
+              </CardContent>
+            </Card>
 
-          <div className="flex flex-wrap gap-2">
-            <ProductSituationBadge situation={situation} />
-            {product.carBrands?.map((b: { value: string; label: string }) => (
-              <span
-                key={b.value}
-                className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
-              >
-                {b.label}
-              </span>
-            ))}
-            {product.hasGuarantee && (
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 transition-colors hover:bg-green-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600/40"
-                aria-label="اطلاعات تضمین جیپو"
-                onClick={() => setGuaranteeOpen(true)}
-              >
-                <Shield className="h-4 w-4" />
-                با تضمین جیپو
-              </button>
-            )}
-            {/* مزایده — موقتاً غیرفعال
-          {product.isAuction && (
-            <Badge className="bg-violet-600 text-white hover:bg-violet-600">مزایده</Badge>
-          )}
-          */}
-            {/* تقویت شده — موقتاً غیرفعال
-          {product.isStrengthenedActive && (
-            <span className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm text-violet-700">
-              <Sparkles className="h-4 w-4" />
-              تقویت شده
-            </span>
-          )}
-          */}
-            {product.isBoosted && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-700">
-                <TrendingUp className="h-4 w-4" />
-                پله شده
-              </span>
-            )}
-          </div>
+            <div className="lg:hidden">{sellerCard}</div>
 
-          {showStock && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm dark:text-gray-200">
-              <span className="flex items-center gap-1">
-                <Package className="h-4 w-4" />
-                {stockQuantity > 0
-                  ? `${stockQuantity.toLocaleString('fa-IR')} عدد موجود`
-                  : 'ناموجود'}
-              </span>
-            </div>
-          )}
-
-          <GuaranteeInfoDialog open={guaranteeOpen} onOpenChange={setGuaranteeOpen} />
-
-          <div>
-            <h3 className="mb-2 font-bold">توضیحات</h3>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed dark:text-gray-200">
-              {product.description}
-            </p>
-          </div>
-
-          {/* مزایده — موقتاً غیرفعال
-        {product.isAuction && <AuctionPanel product={product} />}
-        */}
-
-          {canBuy && !product.isAuction && stockQuantity > 0 && (
-            <div className="rounded-lg border bg-card p-4 space-y-4">
-              <h3 className="font-bold">خرید از فروشگاه</h3>
-              {stockQuantity > 1 ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">تعداد:</span>
-                  <div className="flex items-center gap-2 rounded-lg border">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    >
-                      −
-                    </Button>
-                    <span className="min-w-8 text-center font-medium">{quantity}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      onClick={() => setQuantity((q) => Math.min(stockQuantity, q + 1))}
-                      disabled={quantity >= stockQuantity}
-                    >
-                      +
-                    </Button>
-                  </div>
-                  <span className="text-muted-foreground text-xs">
-                    حداکثر {stockQuantity.toLocaleString('fa-IR')} عدد
-                  </span>
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">۱ عدد موجود برای خرید</p>
-              )}
-              <AddToCartButton
-                product={product}
-                quantity={quantity}
-                maxQuantity={stockQuantity}
-                color={selectedColor}
-                requireColor={colorSelectable}
-                className="w-full"
-              />
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/cart">رفتن به سبد خرید</Link>
-              </Button>
-            </div>
-          )}
-
-          <Link
-            href="/products"
-            className="flex items-center gap-1 text-sm text-gray-300 hover:text-primary"
-          >
-            <ArrowRight className="h-4 w-4" />
-            بازگشت به لیست
-          </Link>
-
-          {!isOwner && (
-            <>
+            {!isOwner && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                className="text-destructive hover:text-destructive px-0"
                 onClick={() => setReportOpen(true)}
               >
-                <Flag className="size-4" />
+                <Flag className="size-3.5" />
                 گزارش مشکل
               </Button>
-              <ReportProductDialog
-                open={reportOpen}
-                onOpenChange={setReportOpen}
-                productId={product.id ?? id}
-                productTitle={product.title}
-                isAuthenticated={Boolean(user)}
-              />
-            </>
-          )}
-        </div>
+            )}
+          </div>
 
-        <DeleteListingDialog
-          open={deleteOpen}
-          onOpenChange={setDeleteOpen}
-          listingTitle={product.title}
-          loading={deleting}
-          onConfirm={handleDelete}
-        />
+          <aside className="hidden space-y-4 lg:col-span-3 lg:block lg:sticky lg:top-20 lg:z-10">
+            {purchaseCard}
+            {priceOnlyCard}
+            {sellerCard}
+          </aside>
+        </div>
       </div>
+
       <RelatedProductsStrip productId={product.id ?? id} />
+
+      <GuaranteeInfoDialog open={guaranteeOpen} onOpenChange={setGuaranteeOpen} />
+      <ReportProductDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        productId={product.id ?? id}
+        productTitle={product.title}
+        isAuthenticated={Boolean(user)}
+      />
+      <DeleteListingDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        listingTitle={product.title}
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

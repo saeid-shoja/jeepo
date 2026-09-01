@@ -5,6 +5,7 @@ import { Clock, MapPin, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { AddToCartButton } from '@/components/cart/add-to-cart-button';
 import { FavoriteButton } from '@/components/shop/favorite-button';
+import { ProductListingIntentBadge } from '@/components/shop/product-listing-intent-badge';
 import { ProductMedia } from '@/components/shop/product-media';
 import { ProductPriceDisplay } from '@/components/shop/product-price-display';
 import { ProductSituationBadge } from '@/components/shop/product-situation-badge';
@@ -49,6 +50,7 @@ interface ProductCardProps {
     stockQuantity?: number;
     colors?: string[];
     color?: string | null;
+    listingIntent?: string | null;
   };
 }
 
@@ -91,15 +93,16 @@ export function ProductCard({ product }: ProductCardProps) {
             className="absolute inset-0"
             mediaClassName="object-cover transition-transform duration-300 group-hover:scale-105 border-3 border-card rounded-sm"
           />
-          <div className="absolute top-2 right-2 flex flex-col gap-1">
+          <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
             {product.status === 'DEPRECATED' && (
               <Badge className="bg-red-600 text-white hover:bg-red-600">منقضی شده</Badge>
             )}
             <ProductSituationBadge situation={situation} />
+            <ProductListingIntentBadge listingIntent={product.listingIntent} />
             {product.hasGuarantee && (
               <Badge className="bg-green-600 text-white hover:bg-green-600">
                 <Shield className="h-3 w-3" />
-                تضمین شده
+                تضمین جیپو
               </Badge>
             )}
             {/* {product.isBoosted && (

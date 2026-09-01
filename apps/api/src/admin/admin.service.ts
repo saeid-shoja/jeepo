@@ -219,16 +219,7 @@ export class AdminService {
       }
     }
 
-    const updateData: {
-      phone?: string;
-      email?: string;
-      name?: string;
-      city?: string | null;
-      role?: UserRole;
-      password?: string;
-      maxActiveListings?: number | null;
-      maxActiveNewListings?: number | null;
-    } = {};
+    const updateData: Record<string, unknown> = {};
 
     if (data.phone) updateData.phone = data.phone;
     if (data.email) updateData.email = data.email.toLowerCase();
@@ -242,6 +233,24 @@ export class AdminService {
     if (data.maxActiveNewListings !== undefined) {
       updateData.maxActiveNewListings = data.maxActiveNewListings;
     }
+    if (data.nationalId !== undefined) updateData.nationalId = data.nationalId;
+    if (data.nationalIdCardImage !== undefined) {
+      updateData.nationalIdCardImage = data.nationalIdCardImage;
+    }
+    if (data.consentSelfieImage !== undefined) {
+      updateData.consentSelfieImage = data.consentSelfieImage;
+    }
+    if (data.shopLicenseImage !== undefined) {
+      updateData.shopLicenseImage = data.shopLicenseImage;
+    }
+    if (data.address !== undefined) updateData.address = data.address;
+    if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
+    if (data.violationReportCount !== undefined) {
+      updateData.violationReportCount = data.violationReportCount;
+    }
+    if (data.accountKind !== undefined) updateData.accountKind = data.accountKind;
+    if (data.verifiedSeller !== undefined) updateData.verifiedSeller = data.verifiedSeller;
+    if (data.rating !== undefined) updateData.rating = data.rating;
 
     const updated = await this.prisma.user.update({
       where: { id },
@@ -255,6 +264,13 @@ export class AdminService {
         city: true,
         maxActiveListings: true,
         maxActiveNewListings: true,
+        nationalId: true,
+        address: true,
+        postalCode: true,
+        violationReportCount: true,
+        accountKind: true,
+        verifiedSeller: true,
+        rating: true,
         createdAt: true,
         _count: {
           select: {
@@ -282,6 +298,13 @@ export class AdminService {
       city: updated.city,
       maxActiveListings: updated.maxActiveListings,
       maxActiveNewListings: updated.maxActiveNewListings,
+      nationalId: updated.nationalId,
+      address: updated.address,
+      postalCode: updated.postalCode,
+      violationReportCount: updated.violationReportCount,
+      accountKind: updated.accountKind,
+      verifiedSeller: updated.verifiedSeller,
+      rating: updated.rating,
       activeListingCount: updated._count.products,
       activeNewListingCount,
       effectiveListingLimit: resolveUserListingLimit(updated.maxActiveListings),
@@ -289,6 +312,70 @@ export class AdminService {
       defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
       defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: updated.createdAt,
+    };
+  }
+
+  async getUserDetail(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        phone: true,
+        email: true,
+        name: true,
+        role: true,
+        city: true,
+        nationalId: true,
+        nationalIdCardImage: true,
+        consentSelfieImage: true,
+        shopLicenseImage: true,
+        address: true,
+        postalCode: true,
+        violationReportCount: true,
+        accountKind: true,
+        verifiedSeller: true,
+        rating: true,
+        maxActiveListings: true,
+        maxActiveNewListings: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        telegramLinkedAt: true,
+        boostCredits: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            products: true,
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    const [activeListingCount, activeNewListingCount] = await Promise.all([
+      this.prisma.product.count({
+        where: { userId: id, advertiser: 'CLIENT', status: 'ACTIVE' },
+      }),
+      this.prisma.product.count({
+        where: {
+          userId: id,
+          advertiser: 'CLIENT',
+          status: 'ACTIVE',
+          situation: 'NEW',
+        },
+      }),
+    ]);
+
+    const { _count, ...rest } = user;
+    return {
+      ...rest,
+      totalProducts: _count.products,
+      activeListingCount,
+      activeNewListingCount,
+      effectiveListingLimit: resolveUserListingLimit(user.maxActiveListings),
+      effectiveNewListingLimit: resolveUserNewListingLimit(user.maxActiveNewListings),
+      defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
+      defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
     };
   }
 

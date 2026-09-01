@@ -12,6 +12,12 @@ enum UserRole {
   ADMIN
 }
 
+/** Regular marketplace user vs shop/store account. */
+enum UserAccountKind {
+  REGULAR
+  SHOP
+}
+
 enum Advertiser {
   CLIENT
   SHOP
@@ -26,6 +32,12 @@ enum ProductStatus {
 enum ProductSituation {
   NEW
   USED
+}
+
+/** Client marketplace listing role — seller (default) or buyer request. */
+enum ListingIntent {
+  SELLER
+  BUYER
 }
 
 enum VehiclePaintCondition {
@@ -95,6 +107,26 @@ model User {
   password  String
   role      UserRole  @default(CLIENT)
   city      String?
+  /// Iranian national ID (۱۰ رقم) — optional identity field.
+  nationalId                 String?
+  /// WebP data URL of national ID card photo.
+  nationalIdCardImage        String?
+  /// WebP selfie holding ID + handwritten consent text.
+  consentSelfieImage         String?
+  /// WebP shop/store license image (optional).
+  shopLicenseImage           String?
+  /// Exact street address (optional).
+  address                    String?
+  /// Iranian postal code (۱۰ رقم).
+  postalCode                 String?
+  /// Admin-editable count of reported violations.
+  violationReportCount       Int       @default(0)
+  /// Shop account vs regular user.
+  accountKind                UserAccountKind @default(REGULAR)
+  /// Admin-granted verified seller badge.
+  verifiedSeller             Boolean   @default(false)
+  /// Seller rating 0–5; null = no rating shown.
+  rating                     Float?
   telegramChatId             String?   @unique
   telegramLinkedAt           DateTime?
   telegramLinkToken          String?
@@ -214,6 +246,7 @@ model Product {
   userId             String?
   user               User?              @relation(fields: [userId], references: [id])
   advertiser         Advertiser        @default(CLIENT)
+  listingIntent      ListingIntent      @default(SELLER)
   hasGuarantee       Boolean            @default(false)
   isBoosted          Boolean            @default(false)
   strengthenedUntil  DateTime?

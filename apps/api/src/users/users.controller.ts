@@ -10,6 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/custom.decorator';
 import { FavoritesService } from '../favorites/favorites.service';
 import { MessagesService } from '../messages/messages.service';
 import { PushSubscribeDto, PushUnsubscribeDto } from '../push/dto/push-subscribe.dto';
@@ -34,6 +35,13 @@ export class UsersController {
   @Get('profile')
   getProfile(@Request() req: { user: { userId: string } }) {
     return this.usersService.getProfile(req.user.userId);
+  }
+
+  /** Public seller profile (no auth). */
+  @Public()
+  @Get('sellers/:id')
+  getPublicSeller(@Param('id') id: string) {
+    return this.usersService.getPublicSeller(id);
   }
 
   @Get('telegram/link')

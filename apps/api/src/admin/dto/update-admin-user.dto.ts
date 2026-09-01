@@ -1,12 +1,22 @@
-import { Transform } from 'class-transformer';
 import {
+  IRAN_TEN_DIGIT_REGEX,
+  normalizeTenDigits,
+  USER_ACCOUNT_KINDS,
+  USER_ADDRESS_MAX_LENGTH,
+} from '@offroad/shared';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
   Max,
+  MaxLength,
   Min,
   MinLength,
   ValidateIf,
@@ -21,6 +31,40 @@ function optionalNullableInt({ value }: { value: unknown }) {
   if (typeof value === 'string' && value.trim() !== '') {
     const n = Number(value);
     return Number.isFinite(n) ? Math.trunc(n) : value;
+  }
+  return value;
+}
+
+function emptyToNull({ value }: { value: unknown }) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
+
+function tenDigitsOrNull({ value }: { value: unknown }) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') return value;
+  const digits = normalizeTenDigits(value);
+  return digits.length ? digits : null;
+}
+
+function optionalImage({ value }: { value: unknown }) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') return value;
+  return value.trim() || null;
+}
+
+function optionalRating({ value }: { value: unknown }) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : value;
   }
   return value;
 }
@@ -74,4 +118,64 @@ export class UpdateAdminUserDto {
     message: `حداکثر ${ADMIN_LISTING_CAP_MAX.toLocaleString('fa-IR')} آگهی نو فعال قابل تنظیم است`,
   })
   maxActiveNewListings?: number | null;
+
+  @Transform(tenDigitsOrNull)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @Matches(IRAN_TEN_DIGIT_REGEX, { message: 'کد ملی باید ۱۰ رقم باشد' })
+  nationalId?: string | null;
+
+  @Transform(optionalImage)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  nationalIdCardImage?: string | null;
+
+  @Transform(optionalImage)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  consentSelfieImage?: string | null;
+
+  @Transform(optionalImage)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  shopLicenseImage?: string | null;
+
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  @MaxLength(USER_ADDRESS_MAX_LENGTH)
+  address?: string | null;
+
+  @Transform(tenDigitsOrNull)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @Matches(IRAN_TEN_DIGIT_REGEX, { message: 'کد پستی باید ۱۰ رقم باشد' })
+  postalCode?: string | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'تعداد گزارش تخلف باید عدد صحیح باشد' })
+  @Min(0, { message: 'تعداد گزارش تخلف نمی‌تواند منفی باشد' })
+  @Max(9999)
+  violationReportCount?: number;
+
+  @IsOptional()
+  @IsIn(USER_ACCOUNT_KINDS, { message: 'نوع حساب نامعتبر است' })
+  accountKind?: (typeof USER_ACCOUNT_KINDS)[number];
+
+  @IsOptional()
+  @IsBoolean()
+  verifiedSeller?: boolean;
+
+  @Transform(optionalRating)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsNumber({}, { message: 'امتیاز نامعتبر است' })
+  @Min(0, { message: 'امتیاز حداقل ۰ است' })
+  @Max(5, { message: 'امتیاز حداکثر ۵ است' })
+  rating?: number | null;
 }

@@ -88,7 +88,7 @@ function DashboardContent() {
 
   return (
     <div className="container space-y-6">
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-card p-4 md:p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-10 w-10 lg:h-16 lg:w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <User className="h-5 w-5 lg:h-8 lg:w-8" />
@@ -130,10 +130,10 @@ function DashboardContent() {
           </div>
         </div>
         {profile && (
-          <div className="md:flex md:flex-wrap grid grid-cols-3 items-center gap-1 border-t mt-4 pt-3">
+          <div className="md:flex md:flex-wrap grid grid-cols-2 items-center gap-1 border-t mt-4 pt-3">
             <Link
               href="/chats"
-              className="flex items-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
+              className="flex items-center justify-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
             >
               <MessageCircle className="h-3 w-3" />
               گفتگوها
@@ -145,16 +145,10 @@ function DashboardContent() {
             </Link>
             <Link
               href="/orders"
-              className="flex items-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
+              className="flex items-center justify-center gap-1 rounded-sm border px-2.5 py-2 formTextSize hover:bg-primary"
             >
               <ShoppingBag className="h-3 w-3" />
               سفارش‌های من
-            </Link>
-            <Link
-              href="/products/new"
-              className="rounded-sm bg-primary px-2.5 py-2 formTextSize text-white hover:bg-primary-dark"
-            >
-              ثبت آگهی جدید
             </Link>
           </div>
         )}

@@ -1,6 +1,8 @@
 import {
   containsLinkOrPhone,
   isVehicleSaleCategory,
+  LISTING_INTENTS,
+  type ListingIntent,
   NO_CONTACT_IN_TEXT_MESSAGE,
   PRODUCT_COLOR_IDS,
   PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
@@ -108,12 +110,17 @@ function stockQuantityField(allowZeroStock: boolean) {
     .max(9999, 'حداکثر ۹۹۹۹ عدد');
 }
 
+const listingIntentSchema = z.enum(
+  LISTING_INTENTS as unknown as [ListingIntent, ...ListingIntent[]],
+);
+
 const sharedProductFieldsBase = {
   title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
   description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
   categoryId: z.string().min(1, 'دسته‌بندی را انتخاب کنید'),
   /** Synced from selected category — used to require vehicle-sale fields. */
   categorySlug: z.string().optional().or(z.literal('')),
+  listingIntent: listingIntentSchema,
   city: z.string().optional(),
   neighborhood: neighborhoodField.optional().or(z.literal('')),
   phone: phoneField,

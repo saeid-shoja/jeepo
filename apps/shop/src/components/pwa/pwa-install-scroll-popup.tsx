@@ -1,7 +1,7 @@
 'use client';
 
 import { Download, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SiteLogo } from '@/components/layout/site-logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { isPwaInstallDismissed, markPwaInstallDismissed } from '@/lib/pwa-install-dismiss';
 import { cn } from '@/lib/utils';
 
 type BeforeInstallPromptEvent = Event & {
@@ -42,14 +43,22 @@ const guideDialogClass =
 export function PwaInstallScrollPopup() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [standalone, setStandalone] = useState(true);
+  const [bannerDismissed, setBannerDismissed] = useState(true);
   const [visible, setVisible] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideMode, setGuideMode] = useState<GuideMode>('android');
   const [isMobile, setIsMobile] = useState(false);
   const lastYRef = useRef(0);
 
+  const dismissBannerPermanently = useCallback(() => {
+    markPwaInstallDismissed();
+    setBannerDismissed(true);
+    setVisible(false);
+  }, []);
+
   useEffect(() => {
     setStandalone(isStandaloneDisplay());
+    setBannerDismissed(isPwaInstallDismissed());
     setIsMobile(window.matchMedia('(max-width: 767px)').matches);
     lastYRef.current = window.scrollY;
 
@@ -58,9 +67,10 @@ export function PwaInstallScrollPopup() {
       event.preventDefault();
       setDeferred(event as BeforeInstallPromptEvent);
     };
+    const onAppInstalled = () => dismissBannerPermanently();
 
     const onScroll = () => {
-      if (!isMobile || standalone) return;
+      if (!isMobile || standalone || isPwaInstallDismissed()) return;
       const y = window.scrollY;
       const delta = y - lastYRef.current;
       if (y > 220 && delta > 8) {
@@ -73,67 +83,72 @@ export function PwaInstallScrollPopup() {
 
     window.addEventListener('resize', onResize);
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onAppInstalled);
     window.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onAppInstalled);
       window.removeEventListener('scroll', onScroll);
     };
-  }, [isMobile, standalone]);
+  }, [dismissBannerPermanently, isMobile, standalone]);
 
   if (!isMobile || standalone) return null;
 
   const openGuide = () => {
+    dismissBannerPermanently();
     setGuideMode(isIosDevice() ? 'ios' : 'android');
     setGuideOpen(true);
   };
 
   const installAndroidDirect = async () => {
+    dismissBannerPermanently();
     if (!deferred) return;
     await deferred.prompt();
     await deferred.userChoice;
     setDeferred(null);
     setGuideOpen(false);
-    setVisible(false);
   };
 
   return (
     <>
-      <div
-        className={cn(
-          'safe-area-pb fixed right-3 bottom-3 left-3 z-40 transition-all duration-300 sm:hidden',
-          visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0',
-        )}
-      >
-        <div className="bg-card/95 border-border/80 rounded-2xl border p-3 shadow-xl backdrop-blur">
-          <div className="flex items-start gap-3">
-            <SiteLogo href="" size="xs" imageClassName="h-10 w-10" className="shrink-0" />
-            <div className="min-w-0 flex-1 text-right">
-              <p className="text-sm font-semibold">نصب وب اپلیکیشن جیپو</p>
-              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                برای دسترسی سریع‌تر، جیپو را روی گوشی نصب کنید.
-              </p>
+      {!bannerDismissed ? (
+        <div
+          className={cn(
+            'safe-area-pb fixed right-3 bottom-3 left-3 z-40 transition-all duration-300 sm:hidden',
+            visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0',
+          )}
+        >
+          <div className="bg-card/95 border-border/80 rounded-2xl border p-3 shadow-xl backdrop-blur">
+            <div className="flex items-start gap-3">
+              <SiteLogo href="" size="xs" imageClassName="h-10 w-10" className="shrink-0" />
+              <div className="min-w-0 flex-1 text-right">
+                <p className="text-sm font-semibold">نصب وب اپلیکیشن جیپو</p>
+                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                  برای دسترسی سریع‌تر، جیپو را روی گوشی نصب کنید.
+                </p>
+                <button
+                  type="button"
+                  onClick={openGuide}
+                  className="bg-primary text-primary-foreground mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium"
+                >
+                  <Download className="size-3.5" />
+                  نصب اپ
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={openGuide}
-                className="bg-primary text-primary-foreground mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium"
+                aria-label="بستن"
+                onClick={dismissBannerPermanently}
+                className="text-muted-foreground hover:text-foreground shrink-0 rounded-md p-1"
               >
-                <Download className="size-3.5" />
-                نصب اپ
+                <X className="size-4" />
               </button>
             </div>
-            <button
-              type="button"
-              aria-label="بستن"
-              onClick={() => setVisible(false)}
-              className="text-muted-foreground hover:text-foreground shrink-0 rounded-md p-1"
-            >
-              <X className="size-4" />
-            </button>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <Dialog open={guideOpen} onOpenChange={setGuideOpen}>
         <DialogContent className={guideDialogClass}>

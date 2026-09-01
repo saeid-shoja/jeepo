@@ -1,9 +1,18 @@
 'use client';
 
+import {
+  IRAN_TEN_DIGIT_REGEX,
+  normalizeTenDigits,
+  USER_ACCOUNT_KIND_LABELS,
+  USER_ACCOUNT_KINDS,
+  type UserAccountKind,
+} from '@offroad/shared';
 import { Loader2, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CitySelect } from '@/components/form/city-select';
+import { DigitsInput } from '@/components/form/digits-input';
+import { ProfileDocImageField } from '@/components/profile/profile-doc-image-field';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,12 +24,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
+import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/auth-store';
 
+type ProfileShape = {
+  name?: string;
+  city?: string | null;
+  nationalId?: string | null;
+  nationalIdCardImage?: string | null;
+  consentSelfieImage?: string | null;
+  shopLicenseImage?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+  accountKind?: UserAccountKind | string | null;
+};
+
 type ProfileEditDialogProps = {
-  profile: { name?: string; city?: string | null } | null;
-  onUpdated: (profile: { name: string; city?: string | null }) => void;
+  profile: ProfileShape | null;
+  onUpdated: (profile: ProfileShape & { name: string }) => void;
 };
 
 export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps) {
@@ -28,25 +50,49 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
+  const [nationalId, setNationalId] = useState('');
+  const [nationalIdCardImage, setNationalIdCardImage] = useState<string | null>(null);
+  const [consentSelfieImage, setConsentSelfieImage] = useState<string | null>(null);
+  const [shopLicenseImage, setShopLicenseImage] = useState<string | null>(null);
+  const [address, setAddress] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [accountKind, setAccountKind] = useState<UserAccountKind>('REGULAR');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setName(profile?.name ?? '');
-      setCity(profile?.city ?? '');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    }
-  }, [open, profile?.name, profile?.city]);
+    if (!open) return;
+    setName(profile?.name ?? '');
+    setCity(profile?.city ?? '');
+    setNationalId(profile?.nationalId ?? '');
+    setNationalIdCardImage(profile?.nationalIdCardImage ?? null);
+    setConsentSelfieImage(profile?.consentSelfieImage ?? null);
+    setShopLicenseImage(profile?.shopLicenseImage ?? null);
+    setAddress(profile?.address ?? '');
+    setPostalCode(profile?.postalCode ?? '');
+    setAccountKind(profile?.accountKind === 'SHOP' ? 'SHOP' : 'REGULAR');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  }, [open, profile]);
 
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (trimmedName.length < 2) {
       toast.error('نام باید حداقل ۲ کاراکتر باشد');
+      return;
+    }
+
+    const nationalDigits = nationalId ? normalizeTenDigits(nationalId) : '';
+    if (nationalDigits && !IRAN_TEN_DIGIT_REGEX.test(nationalDigits)) {
+      toast.error('کد ملی باید ۱۰ رقم باشد');
+      return;
+    }
+    const postalDigits = postalCode ? normalizeTenDigits(postalCode) : '';
+    if (postalDigits && !IRAN_TEN_DIGIT_REGEX.test(postalDigits)) {
+      toast.error('کد پستی باید ۱۰ رقم باشد');
       return;
     }
 
@@ -80,6 +126,13 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       const updated = await api.users.updateProfile({
         name: trimmedName,
         city: city.trim() || null,
+        nationalId: nationalDigits || null,
+        nationalIdCardImage,
+        consentSelfieImage,
+        shopLicenseImage,
+        address: address.trim() || null,
+        postalCode: postalDigits || null,
+        accountKind,
       });
       patchUser({
         name: updated.name,
@@ -111,11 +164,11 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
       </Button>
 
       <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="border-b px-6 py-4">
             <DialogTitle>ویرایش پروفایل</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 py-2">
+          <div className="space-y-4 overflow-y-auto px-6 py-4">
             <div className="space-y-2">
               <Label htmlFor="profile-name">نام</Label>
               <Input
@@ -127,6 +180,80 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
               />
             </div>
             <CitySelect value={city} onChange={setCity} label="شهر (اختیاری)" required={false} />
+
+            <div className="space-y-2">
+              <Label>نوع حساب (اختیاری)</Label>
+              <div className="flex flex-wrap gap-2">
+                {USER_ACCOUNT_KINDS.map((kind) => (
+                  <Button
+                    key={kind}
+                    type="button"
+                    size="sm"
+                    variant={accountKind === kind ? 'default' : 'outline'}
+                    onClick={() => setAccountKind(kind)}
+                  >
+                    {USER_ACCOUNT_KIND_LABELS[kind]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-national-id">کد ملی (اختیاری)</Label>
+              <DigitsInput
+                id="profile-national-id"
+                inputMode="numeric"
+                maxLength={10}
+                value={nationalId}
+                onChange={(e) => setNationalId(e.target.value)}
+                placeholder="۱۰ رقم"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-postal">کد پستی (اختیاری)</Label>
+              <DigitsInput
+                id="profile-postal"
+                inputMode="numeric"
+                maxLength={10}
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                placeholder="۱۰ رقم"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-address">آدرس دقیق (اختیاری)</Label>
+              <Textarea
+                id="profile-address"
+                rows={3}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="آدرس کامل محل سکونت یا فروشگاه"
+              />
+            </div>
+
+            <ProfileDocImageField
+              id="profile-national-card"
+              label="عکس کارت ملی (اختیاری)"
+              hint="پس از انتخاب، تصویر به WebP تبدیل و فشرده می‌شود."
+              value={nationalIdCardImage}
+              onChange={setNationalIdCardImage}
+            />
+            <ProfileDocImageField
+              id="profile-consent-selfie"
+              label="عکس رضایت سلفی (اختیاری)"
+              hint="سلفی در حالی که کارت ملی و دست‌نوشته رضایت در دست دارید."
+              value={consentSelfieImage}
+              onChange={setConsentSelfieImage}
+            />
+            <ProfileDocImageField
+              id="profile-shop-license"
+              label="تصویر پروانه مغازه یا فروشگاه (اختیاری)"
+              value={shopLicenseImage}
+              onChange={setShopLicenseImage}
+            />
+
             <div className="space-y-2 border-t pt-4">
               <p className="text-sm font-medium">تغییر رمز عبور</p>
               <p className="text-muted-foreground text-xs">
@@ -161,7 +288,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-1 sm:gap-0">
+          <DialogFooter className="gap-1 border-t px-6 py-4 sm:gap-0">
             <Button
               type="button"
               variant="outline"

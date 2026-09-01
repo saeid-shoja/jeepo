@@ -21,6 +21,7 @@ import { dateTimeLocalToIso, defaultMinDateTimeLocal } from '@/components/form/d
 import { DigitsInput } from '@/components/form/digits-input';
 import { FieldError } from '@/components/form/field-error';
 import { ListingFormTips } from '@/components/form/listing-form-tips';
+import { ListingIntentField } from '@/components/form/listing-intent-field';
 import {
   ListingSubmitResultDialog,
   type ListingSubmitResultVariant,
@@ -75,6 +76,7 @@ const EMPTY_FORM_VALUES: NewProductFormValues = {
   newPrice: 0,
   salePrice: 0,
   categorySlug: '',
+  listingIntent: 'SELLER',
   mileageKm: null,
   paintCondition: '',
 };
@@ -234,6 +236,7 @@ export default function NewProductPage() {
         hasGuarantee: false,
         applyStrengthened: data.applyStrengthened,
         situation: data.situation,
+        listingIntent: data.listingIntent,
         images: data.images,
         stockQuantity: data.isAuction ? 1 : data.stockQuantity,
         colors: data.isAuction ? undefined : data.colors,
@@ -335,7 +338,7 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
+    <div className="mx-auto w-full max-w-2xl md:px-4 py-6 md:py-8">
       <h1 className="mb-8 text-2xl font-bold">{isAdmin ? 'ثبت محصول فروشگاه' : 'ثبت آگهی جدید'}</h1>
       {isAdmin ? (
         <p className="text-muted-foreground mb-6 text-sm">
@@ -353,7 +356,7 @@ export default function NewProductPage() {
           <CardHeader>
             <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 px-3 md:px-6">
             <div className="space-y-2">
               <Label>دسته‌بندی</Label>
               <Controller
@@ -379,6 +382,16 @@ export default function NewProductPage() {
               />
             )}
 
+            {!isAdmin && (
+              <Controller
+                name="listingIntent"
+                control={control}
+                render={({ field }) => (
+                  <ListingIntentField value={field.value} onChange={field.onChange} />
+                )}
+              />
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="title">عنوان آگهی</Label>
               <Input
@@ -401,6 +414,24 @@ export default function NewProductPage() {
             </div>
 
             <div className="space-y-2">
+              <Controller
+                name="situation"
+                control={control}
+                render={({ field }) => (
+                  <ProductSituationSelect value={field.value} onChange={field.onChange} />
+                )}
+              />
+              {situation === 'NEW' && newQuota && !isAdmin && (
+                <p
+                  className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
+                >
+                  آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
+                  {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
+                  {newQuota.atNewLimit
+                    ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
+                    : ''}
+                </p>
+              )}
               <Label htmlFor="price">{isAuction ? 'قیمت پایه (اختیاری)' : 'قیمت (تومان)'}</Label>
               <Controller
                 name="price"
@@ -487,27 +518,8 @@ export default function NewProductPage() {
         />
 
         <Card>
-          <CardContent className="space-y-2 pt-6">
-            <Controller
-              name="situation"
-              control={control}
-              render={({ field }) => (
-                <ProductSituationSelect value={field.value} onChange={field.onChange} />
-              )}
-            />
-            {situation === 'NEW' && newQuota && !isAdmin && (
-              <p
-                className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
-              >
-                آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
-                {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
-                {newQuota.atNewLimit
-                  ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
-                  : ''}
-              </p>
-            )}
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <CardContent className="space-y-2 pt-6 p-4 md:p-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-center">
               <Controller
                 name="city"
                 control={control}
@@ -515,12 +527,12 @@ export default function NewProductPage() {
                   <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                 )}
               />
-              <div className="space-y-2">
+              <div className="space-y-2.5 md:mt-1">
                 <Label htmlFor="neighborhood">محله</Label>
                 <Input
                   id="neighborhood"
                   type="text"
-                  maxLength={15}
+                  maxLength={20}
                   placeholder="مثلاً ونک"
                   {...register('neighborhood')}
                 />
@@ -537,7 +549,6 @@ export default function NewProductPage() {
                 <FieldError message={errors.phone?.message} />
               </div>
             </div>
-
             <Controller
               name="images"
               control={control}

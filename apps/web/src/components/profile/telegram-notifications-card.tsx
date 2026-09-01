@@ -91,7 +91,7 @@ export function TelegramNotificationsCard() {
             ) : null}
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm">
+        <CardContent className="text-sm p-4 md:p-6">
           <p className="text-muted-foreground leading-relaxed">
             اطلاعیه‌ها و پیام‌های مدیریت را در تلگرام و در تب «پیام‌ها» همین صفحه دریافت می‌کنید.
           </p>

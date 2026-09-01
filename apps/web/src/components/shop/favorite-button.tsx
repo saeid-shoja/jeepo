@@ -11,9 +11,14 @@ import { useFavoritesStore } from '@/stores/favorites-store';
 type FavoriteButtonProps = {
   productId: string;
   className?: string;
+  isDetailPage?: boolean;
 };
 
-export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
+export function FavoriteButton({
+  productId,
+  className,
+  isDetailPage = false,
+}: FavoriteButtonProps) {
   const router = useRouter();
   const { user } = useAuth();
   const isFavorite = useFavoritesStore((s) => Boolean(s.ids[productId]));
@@ -57,8 +62,9 @@ export function FavoriteButton({ productId, className }: FavoriteButtonProps) {
     >
       <Bookmark
         className={cn(
-          'h-3 w-3 transition-colors',
-          isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground hover:text-primary',
+          isDetailPage ? 'size-4' : 'h-3 w-3',
+          'transition-colors',
+          isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground/80 hover:text-primary',
         )}
       />
     </button>

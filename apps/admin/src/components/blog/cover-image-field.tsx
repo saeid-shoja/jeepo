@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
 type CoverImageFieldProps = {
@@ -54,18 +53,16 @@ export function CoverImageField({ value, onChange }: CoverImageFieldProps) {
           <button
             type="button"
             onClick={() => switchSource('external')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              source === 'external' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
-            }`}
+            className={`rounded-md px-2.5 py-1 transition-colors ${source === 'external' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+              }`}
           >
             لینک خارجی
           </button>
           <button
             type="button"
             onClick={() => switchSource('internal')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              source === 'internal' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
-            }`}
+            className={`rounded-md px-2.5 py-1 transition-colors ${source === 'internal' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+              }`}
           >
             مسیر داخلی
           </button>

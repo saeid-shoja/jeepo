@@ -6,7 +6,7 @@ export function findProvinceNameByCity(city?: string | null): string | undefined
   if (!normalized) return undefined;
 
   for (const province of Iran.main) {
-    if (province.cities.some((name) => name === normalized)) {
+    if (province.cities.some((name: string) => name === normalized)) {
       return province.name;
     }
   }

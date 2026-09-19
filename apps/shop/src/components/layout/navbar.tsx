@@ -190,6 +190,13 @@ export function Navbar() {
                 پروفایل
               </Link>
             ) : null}
+            <Link
+              href="/blog"
+              onClick={closeMenu}
+              className="hover:bg-accent rounded-sm px-3 py-2 text-sm"
+            >
+              وبلاگ
+            </Link>
             <hr className="my-2" />
             <CategoriesNavLinks onNavigate={closeMenu} />
             <hr className="my-2" />

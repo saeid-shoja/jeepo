@@ -18,6 +18,7 @@ const shopLinks = [
   { href: '/products', label: 'محصولات' },
   { href: '/categories', label: 'دسته‌بندی‌ها' },
   { href: '/favorites', label: 'علاقه‌مندی‌ها' },
+  { href: '/blog', label: 'وبلاگ' },
 ];
 
 const accountLinks = [

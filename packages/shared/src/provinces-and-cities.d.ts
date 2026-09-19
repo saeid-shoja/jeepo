@@ -1,10 +1,10 @@
-declare module 'provinces-and-cities' {
+declare module "provinces-and-cities" {
+  export type Province = {
+    name: string;
+    cities: string[];
+  };
+
   export const Iran: {
-    main: Array<{
-      id: number;
-      name: string;
-      tel_prefix: string;
-      cities: string[];
-    }>;
+    main: Province[];
   };
 }

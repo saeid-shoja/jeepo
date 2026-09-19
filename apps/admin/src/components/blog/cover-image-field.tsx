@@ -54,18 +54,16 @@ export function CoverImageField({ value, onChange }: CoverImageFieldProps) {
           <button
             type="button"
             onClick={() => switchSource('external')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              source === 'external' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
-            }`}
+            className={`rounded-md px-2.5 py-1 transition-colors ${source === 'external' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+              }`}
           >
             لینک خارجی
           </button>
           <button
             type="button"
             onClick={() => switchSource('internal')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              source === 'internal' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
-            }`}
+            className={`rounded-md px-2.5 py-1 transition-colors ${source === 'internal' ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+              }`}
           >
             مسیر داخلی
           </button>
@@ -95,11 +93,9 @@ export function CoverImageField({ value, onChange }: CoverImageFieldProps) {
         <div className="overflow-hidden rounded-lg border bg-gray-50">
           <div className="relative aspect-video w-full max-w-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <Image
+            <img
               src={value.trim()}
               alt="پیش‌نمایش تصویر شاخص"
-              width={400}
-              height={400}
               className="size-full object-contain"
               onError={() => setPreviewFailed(true)}
             />

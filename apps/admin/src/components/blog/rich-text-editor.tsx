@@ -6,6 +6,10 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Youtube from '@tiptap/extension-youtube';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { createLowlight, common } from 'lowlight';
 import {
   AlignCenter,
   AlignLeft,
@@ -22,8 +26,14 @@ import {
   Strikethrough,
   Underline as UnderlineIcon,
   Undo2,
+  Code,
+  ImageIcon,
+  YoutubeIcon,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+
+// ایجاد نمونه lowlight با زبان‌های پرکاربرد
+const lowlight = createLowlight(common);
 
 type RichTextEditorProps = {
   valueJson?: Record<string, unknown> | null;
@@ -48,9 +58,8 @@ function ToolbarButton({
       type="button"
       title={title}
       onClick={onClick}
-      className={`rounded p-1.5 transition-colors ${
-        active ? 'bg-primary/15 text-primary' : 'text-gray-600 hover:bg-gray-100'
-      }`}
+      className={`rounded p-1.5 transition-colors ${active ? 'bg-primary/15 text-primary' : 'text-gray-600 hover:bg-gray-100'
+        }`}
     >
       {children}
     </button>
@@ -68,6 +77,8 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
+        // غیرفعال کردن codeBlock پیش‌فرض تا از CodeBlockLowlight استفاده کنیم
+        codeBlock: false,
       }),
       Underline,
       Link.configure({
@@ -76,13 +87,42 @@ export function RichTextEditor({
       }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder }),
+      Image.configure({
+        inline: true,
+        allowBase64: true, // اجازه ذخیره base64 (اگر آپلود مستقیم ندارید)
+        HTMLAttributes: {
+          class: 'rounded-lg max-w-full h-auto',
+        },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        defaultLanguage: 'javascript', // زبان پیش‌فرض
+      }),
+      Youtube.configure({
+        inline: false,
+        width: 640,
+        height: 360,
+        HTMLAttributes: {
+          class: 'rounded-lg w-full aspect-video',
+        },
+      }),
     ],
     content: valueJson ?? valueHtml ?? '',
     editorProps: {
       attributes: {
         dir: 'rtl',
         class:
-          'min-h-[320px] px-4 py-3 text-sm leading-8 outline-none [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pr-6 [&_ul]:list-disc [&_ul]:pr-6 [&_blockquote]:border-r-4 [&_blockquote]:border-gray-200 [&_blockquote]:pr-4 [&_blockquote]:text-gray-600 [&_a]:text-primary [&_a]:underline',
+          'min-h-[320px] px-4 py-3 text-sm leading-8 outline-none' +
+          '[&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-bold' +
+          '[&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-semibold' +
+          '[&_ol]:list-decimal [&_ol]:pr-6 [&_ul]:list-disc [&_ul]:pr-6' +
+          '[&_blockquote]:border-r-4 [&_blockquote]:border-gray-200 [&_blockquote]:pr-4' +
+          '[&_blockquote]:text-gray-600 [&_a]:text-primary [&_a]:underline' +
+          '[&_pre]:bg-gray-900 [&_pre]:text-gray-100 [&_pre]:rounded-lg' +
+          '[&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-4 [&_pre]:text-xs [&_pre]:leading-6' +
+          '[&_code]:font-mono ' +
+          '[&_img]:rounded-lg [&_img]:max-w-full [&_img]:h-auto [&_img]:my-4 ' +
+          '[&_iframe]:rounded-lg [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-4',
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -118,6 +158,22 @@ export function RichTextEditor({
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const addImage = () => {
+    if (!editor) return;
+    const url = window.prompt('آدرس تصویر (URL):');
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
+
+  const addYoutube = () => {
+    if (!editor) return;
+    const url = window.prompt('آدرس ویدیوی یوتیوب:');
+    if (url) {
+      editor.chain().focus().setYoutubeVideo({ src: url }).run();
+    }
   };
 
   if (!editor) {
@@ -188,6 +244,19 @@ export function RichTextEditor({
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           <ListOrdered className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          title="بلوک کد"
+          active={editor.isActive('codeBlock')}
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        >
+          <Code className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton title="درج تصویر" onClick={addImage}>
+          <ImageIcon className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton title="درج ویدیو" onClick={addYoutube}>
+          <YoutubeIcon className="size-4" />
         </ToolbarButton>
         <ToolbarButton
           title="نقل‌قول"

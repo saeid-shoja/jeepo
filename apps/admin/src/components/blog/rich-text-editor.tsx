@@ -1,22 +1,24 @@
 'use client';
 
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
+import Youtube from '@tiptap/extension-youtube';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Youtube from '@tiptap/extension-youtube';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { createLowlight, common } from 'lowlight';
+import { common, createLowlight } from 'lowlight';
 import {
   AlignCenter,
   AlignLeft,
   AlignRight,
   Bold,
+  Code,
   Heading2,
   Heading3,
+  ImageIcon,
   Italic,
   Link2,
   List,
@@ -26,8 +28,6 @@ import {
   Strikethrough,
   Underline as UnderlineIcon,
   Undo2,
-  Code,
-  ImageIcon,
   YoutubeIcon,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -58,8 +58,9 @@ function ToolbarButton({
       type="button"
       title={title}
       onClick={onClick}
-      className={`rounded p-1.5 transition-colors ${active ? 'bg-primary/15 text-primary' : 'text-gray-600 hover:bg-gray-100'
-        }`}
+      className={`rounded p-1.5 transition-colors ${
+        active ? 'bg-primary/15 text-primary' : 'text-gray-600 hover:bg-gray-100'
+      }`}
     >
       {children}
     </button>

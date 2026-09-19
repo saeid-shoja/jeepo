@@ -1,4 +1,4 @@
-import { type BlogPost, resolveApiBaseUrl } from "@offroad/shared";
+import { type BlogPost, resolveApiBaseUrl } from '@offroad/shared';
 
 const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
@@ -59,13 +59,13 @@ export async function fetchProductsForSitemap(limit = 500) {
 }
 
 export async function fetchCategoriesForSitemap() {
-  return serverFetch<{ parts: ServerCategory[] }>("/categories", {
+  return serverFetch<{ parts: ServerCategory[] }>('/categories', {
     revalidate: 86400,
   });
 }
 
 export async function fetchBlogPosts(): Promise<ServerBlogPost[] | null> {
-  return serverFetch<ServerBlogPost[]>("/blog/posts", { revalidate: false });
+  return serverFetch<ServerBlogPost[]>('/blog/posts', { revalidate: false });
 }
 
 /** Same as fetchBlogPosts but distinguishes API failure from an empty list. */
@@ -77,17 +77,12 @@ export async function fetchBlogPostsResult(): Promise<
   return { ok: true, posts };
 }
 
-export async function fetchBlogPost(
-  slug: string,
-): Promise<ServerBlogPost | null> {
-  return serverFetch<ServerBlogPost>(
-    `/blog/posts/${encodeURIComponent(slug)}`,
-    {
-      revalidate: false,
-    },
-  );
+export async function fetchBlogPost(slug: string): Promise<ServerBlogPost | null> {
+  return serverFetch<ServerBlogPost>(`/blog/posts/${encodeURIComponent(slug)}`, {
+    revalidate: false,
+  });
 }
 
 export async function fetchBlogSlugs() {
-  return serverFetch<string[]>("/blog/posts/slugs", { revalidate: false });
+  return serverFetch<string[]>('/blog/posts/slugs', { revalidate: false });
 }

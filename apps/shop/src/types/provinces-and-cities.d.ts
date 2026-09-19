@@ -1,4 +1,4 @@
-declare module "provinces-and-cities" {
+declare module 'provinces-and-cities' {
   export interface Province {
     id: number;
     name: string;

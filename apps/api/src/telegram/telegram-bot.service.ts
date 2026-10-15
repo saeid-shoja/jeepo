@@ -1,10 +1,6 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import {
-  type TelegramMessage,
-  TelegramService,
-  type TelegramUpdate,
-} from "./telegram.service";
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { type TelegramMessage, TelegramService, type TelegramUpdate } from './telegram.service';
 
 @Injectable()
 export class TelegramBotService {
@@ -13,8 +9,8 @@ export class TelegramBotService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly telegram: TelegramService,
-    @Inject("TELEGRAM_WEBHOOK_SECRET") private readonly webhookSecret: string,
-    @Inject("TELEGRAM_CHANNEL_CHAT_ID") private readonly channelChatId: string,
+    @Inject('TELEGRAM_WEBHOOK_SECRET') private readonly webhookSecret: string,
+    @Inject('TELEGRAM_CHANNEL_CHAT_ID') private readonly channelChatId: string,
   ) {}
 
   async getSubscriberCount(): Promise<number> {
@@ -60,7 +56,7 @@ export class TelegramBotService {
 
   async handleWebhook(update: TelegramUpdate, secret?: string) {
     if (this.webhookSecret && secret !== this.webhookSecret) {
-      this.logger.warn("Telegram webhook rejected: invalid secret");
+      this.logger.warn('Telegram webhook rejected: invalid secret');
       return { ok: false };
     }
 
@@ -69,24 +65,20 @@ export class TelegramBotService {
   }
 
   /** Reply with message_thread_id when admin sends /topicid inside a @jeeppo forum topic. */
-  private async handleChannelTopicCommand(
-    message: TelegramMessage,
-  ): Promise<boolean> {
+  private async handleChannelTopicCommand(message: TelegramMessage): Promise<boolean> {
     if (!this.channelChatId || !message.text) return false;
 
-    const normalized = message.text.trim().split(/\s+/)[0]?.split("@")[0];
-    if (normalized !== "/topicid") return false;
+    const normalized = message.text.trim().split(/\s+/)[0]?.split('@')[0];
+    if (normalized !== '/topicid') return false;
 
-    const resolvedChannelId = await this.telegram.resolveChatId(
-      this.channelChatId,
-    );
+    const resolvedChannelId = await this.telegram.resolveChatId(this.channelChatId);
     if (String(message.chat.id) !== resolvedChannelId) return false;
 
     const threadId = message.message_thread_id;
     if (!threadId) {
       await this.telegram.sendMessage(
         resolvedChannelId,
-        "این دستور را داخل یک تاپیک بفرستید (نه در صفحهٔ اصلی گروه).",
+        'این دستور را داخل یک تاپیک بفرستید (نه در صفحهٔ اصلی گروه).',
       );
       return true;
     }
@@ -97,9 +89,7 @@ export class TelegramBotService {
       `✅ <b>message_thread_id این تاپیک:</b> <code>${threadId}</code>\n\nبرای اعلان‌ها در <code>apps/api/.env</code>:\n<code>TELEGRAM_TOPIC_NEWS=${threadId}</code>\n\nسایر تاپیک‌ها:\nTELEGRAM_TOPIC_STRENGTHENED / TELEGRAM_TOPIC_BOOST / TELEGRAM_TOPIC_GUARANTEE / TELEGRAM_TOPIC_BEST_PRICE / TELEGRAM_TOPIC_SHOP / TELEGRAM_TOPIC_AUCTION`,
     );
 
-    this.logger.log(
-      `Topic id reported for thread ${threadId} in ${resolvedChannelId}`,
-    );
+    this.logger.log(`Topic id reported for thread ${threadId} in ${resolvedChannelId}`);
     return true;
   }
 }

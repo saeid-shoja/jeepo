@@ -11,9 +11,9 @@ import {
   toEnglishDigits,
   VEHICLE_GEARBOXES,
   VEHICLE_PAINT_CONDITIONS,
-} from "@offroad/shared";
-import { z } from "zod";
-import { dateTimeLocalToIso } from "@/components/form/datetime-picker";
+} from '@offroad/shared';
+import { z } from 'zod';
+import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
 import {
   dataUrlByteSize,
   isVideoDataUrl,
@@ -24,29 +24,26 @@ import {
   productImageSizeError,
   productVideoFormatError,
   productVideoSizeError,
-} from "@/lib/product-image";
-import { IRAN_MOBILE_REGEX } from "@/lib/validations/digits";
+} from '@/lib/product-image';
+import { IRAN_MOBILE_REGEX } from '@/lib/validations/digits';
 
-const situationSchema = z.enum(["NEW", "USED"]);
+const situationSchema = z.enum(['NEW', 'USED']);
 const paintConditionSchema = z.enum(
   VEHICLE_PAINT_CONDITIONS.map((o) => o.value) as [
-    (typeof VEHICLE_PAINT_CONDITIONS)[number]["value"],
-    ...(typeof VEHICLE_PAINT_CONDITIONS)[number]["value"][],
+    (typeof VEHICLE_PAINT_CONDITIONS)[number]['value'],
+    ...(typeof VEHICLE_PAINT_CONDITIONS)[number]['value'][],
   ],
 );
 const gearboxSchema = z.enum(
   VEHICLE_GEARBOXES.map((item) => item.value) as [
-    (typeof VEHICLE_GEARBOXES)[number]["value"],
-    ...(typeof VEHICLE_GEARBOXES)[number]["value"][],
+    (typeof VEHICLE_GEARBOXES)[number]['value'],
+    ...(typeof VEHICLE_GEARBOXES)[number]['value'][],
   ],
 );
 
 const phoneField = z
   .string()
-  .refine(
-    (v) => !v || IRAN_MOBILE_REGEX.test(toEnglishDigits(v)),
-    "شماره موبایل معتبر نیست",
-  );
+  .refine((v) => !v || IRAN_MOBILE_REGEX.test(toEnglishDigits(v)), 'شماره موبایل معتبر نیست');
 
 const listingTextField = (minLen: number, minMsg: string) =>
   z
@@ -67,7 +64,7 @@ function createImagesField(requireWebp: boolean) {
     images.forEach((image, index) => {
       if (/^https?:\/\//i.test(image)) return;
 
-      const label = `رسانه ${(index + 1).toLocaleString("fa-IR")}`;
+      const label = `رسانه ${(index + 1).toLocaleString('fa-IR')}`;
 
       if (isVideoDataUrl(image)) {
         if (dataUrlByteSize(image) > PRODUCT_VIDEO_MAX_BYTES) {
@@ -80,12 +77,10 @@ function createImagesField(requireWebp: boolean) {
         return;
       }
 
-      if (!image.startsWith("data:image/")) {
+      if (!image.startsWith('data:image/')) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: requireWebp
-            ? productImageFormatError(label)
-            : productVideoFormatError(label),
+          message: requireWebp ? productImageFormatError(label) : productVideoFormatError(label),
           path: [index],
         });
         return;
@@ -115,12 +110,12 @@ function createImagesField(requireWebp: boolean) {
 function stockQuantityField(allowZeroStock: boolean) {
   return z
     .number()
-    .int("تعداد باید عدد صحیح باشد")
+    .int('تعداد باید عدد صحیح باشد')
     .min(
       allowZeroStock ? 0 : 1,
-      allowZeroStock ? "موجودی نمی‌تواند منفی باشد" : "تعداد باید حداقل ۱ باشد",
+      allowZeroStock ? 'موجودی نمی‌تواند منفی باشد' : 'تعداد باید حداقل ۱ باشد',
     )
-    .max(9999, "حداکثر ۹۹۹۹ عدد");
+    .max(9999, 'حداکثر ۹۹۹۹ عدد');
 }
 
 const listingIntentSchema = z.enum(
@@ -128,33 +123,29 @@ const listingIntentSchema = z.enum(
 );
 
 const sharedProductFieldsBase = {
-  title: listingTextField(5, "عنوان باید حداقل ۵ کاراکتر باشد"),
-  description: listingTextField(10, "توضیحات باید حداقل ۱۰ کاراکتر باشد"),
-  categoryId: z.string().min(1, "دسته‌بندی را انتخاب کنید"),
+  title: listingTextField(5, 'عنوان باید حداقل ۵ کاراکتر باشد'),
+  description: listingTextField(10, 'توضیحات باید حداقل ۱۰ کاراکتر باشد'),
+  categoryId: z.string().min(1, 'دسته‌بندی را انتخاب کنید'),
   /** Synced from selected category — used to require vehicle-sale fields. */
-  categorySlug: z.string().optional().or(z.literal("")),
+  categorySlug: z.string().optional().or(z.literal('')),
   listingIntent: listingIntentSchema,
   city: z.string().optional(),
-  neighborhood: neighborhoodField.optional().or(z.literal("")),
+  neighborhood: neighborhoodField.optional().or(z.literal('')),
   phone: phoneField,
   situation: situationSchema,
   carBrands: z.array(z.string()),
   hasGuarantee: z.boolean(),
   applyStrengthened: z.boolean(),
-  colors: z.array(
-    z.enum(
-      PRODUCT_COLOR_IDS as unknown as [ProductColorId, ...ProductColorId[]],
-    ),
-  ),
+  colors: z.array(z.enum(PRODUCT_COLOR_IDS as unknown as [ProductColorId, ...ProductColorId[]])),
   /** Approximate retail / new price; required when situation is USED (non-auction). */
   newPrice: z.number(),
   /** Optional discounted selling price; must be lower than price when set. */
   salePrice: z.number(),
   mileageKm: z.number().nullable(),
-  paintCondition: z.union([paintConditionSchema, z.literal("")]),
+  paintCondition: z.union([paintConditionSchema, z.literal('')]),
   productionYear: z.string().nullable(),
   productionYearBefore1370: z.boolean(),
-  gearbox: z.union([gearboxSchema, z.literal("")]),
+  gearbox: z.union([gearboxSchema, z.literal('')]),
 };
 
 function refineVehicleSaleFields(
@@ -169,39 +160,32 @@ function refineVehicleSaleFields(
   ctx: z.RefinementCtx,
 ) {
   if (!data.categorySlug || !isVehicleSaleCategory(data.categorySlug)) return;
-  if (
-    data.mileageKm == null ||
-    !Number.isFinite(data.mileageKm) ||
-    data.mileageKm < 0
-  ) {
+  if (data.mileageKm == null || !Number.isFinite(data.mileageKm) || data.mileageKm < 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "میزان کارکرد (کیلومتر) را وارد کنید",
-      path: ["mileageKm"],
+      message: 'میزان کارکرد (کیلومتر) را وارد کنید',
+      path: ['mileageKm'],
     });
   }
   if (!data.paintCondition) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "وضعیت رنگ را انتخاب کنید",
-      path: ["paintCondition"],
+      message: 'وضعیت رنگ را انتخاب کنید',
+      path: ['paintCondition'],
     });
   }
-  if (
-    !data.productionYearBefore1370 &&
-    !isValidVehicleProductionYear(data.productionYear)
-  ) {
+  if (!data.productionYearBefore1370 && !isValidVehicleProductionYear(data.productionYear)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "سال تولید را انتخاب کنید",
-      path: ["productionYear"],
+      message: 'سال تولید را انتخاب کنید',
+      path: ['productionYear'],
     });
   }
   if (!data.gearbox) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "نوع گیربکس را انتخاب کنید",
-      path: ["gearbox"],
+      message: 'نوع گیربکس را انتخاب کنید',
+      path: ['gearbox'],
     });
   }
 }
@@ -217,7 +201,7 @@ function refineNewProductForm(
     isAuction: boolean;
     price: number;
     salePrice: number;
-    situation: "NEW" | "USED";
+    situation: 'NEW' | 'USED';
     newPrice: number;
     auctionStartPrice: number;
     buyNowPrice: number;
@@ -233,29 +217,29 @@ function refineNewProductForm(
     if (data.price <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "قیمت محصول را وارد کنید",
-        path: ["price"],
+        message: 'قیمت محصول را وارد کنید',
+        path: ['price'],
       });
     }
-    if (data.situation === "USED" && data.newPrice <= 0) {
+    if (data.situation === 'USED' && data.newPrice <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "قیمت تقریبی نو محصول را وارد کنید",
-        path: ["newPrice"],
+        message: 'قیمت تقریبی نو محصول را وارد کنید',
+        path: ['newPrice'],
       });
     }
     if (data.salePrice > 0) {
       if (data.price <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "ابتدا قیمت اصلی را وارد کنید",
-          path: ["price"],
+          message: 'ابتدا قیمت اصلی را وارد کنید',
+          path: ['price'],
         });
       } else if (data.salePrice >= data.price) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "قیمت با تخفیف باید کمتر از قیمت اصلی باشد",
-          path: ["salePrice"],
+          message: 'قیمت با تخفیف باید کمتر از قیمت اصلی باشد',
+          path: ['salePrice'],
         });
       }
     }
@@ -265,15 +249,15 @@ function refineNewProductForm(
   if (data.auctionStartPrice <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "قیمت شروع مزایده را وارد کنید",
-      path: ["auctionStartPrice"],
+      message: 'قیمت شروع مزایده را وارد کنید',
+      path: ['auctionStartPrice'],
     });
   }
   if (data.buyNowPrice <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "قیمت خرید فوری را وارد کنید",
-      path: ["buyNowPrice"],
+      message: 'قیمت خرید فوری را وارد کنید',
+      path: ['buyNowPrice'],
     });
   }
   if (
@@ -283,37 +267,37 @@ function refineNewProductForm(
   ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "قیمت خرید فوری باید بیشتر از قیمت شروع باشد",
-      path: ["buyNowPrice"],
+      message: 'قیمت خرید فوری باید بیشتر از قیمت شروع باشد',
+      path: ['buyNowPrice'],
     });
   }
   if (data.realPriceMin <= 0 || data.realPriceMax <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "بازه قیمت واقعی را کامل وارد کنید",
-      path: ["realPriceMin"],
+      message: 'بازه قیمت واقعی را کامل وارد کنید',
+      path: ['realPriceMin'],
     });
   }
   if (data.realPriceMin > data.realPriceMax) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "حداقل قیمت واقعی نمی‌تواند بیشتر از حداکثر باشد",
-      path: ["realPriceMin"],
+      message: 'حداقل قیمت واقعی نمی‌تواند بیشتر از حداکثر باشد',
+      path: ['realPriceMin'],
     });
   }
   if (!data.auctionEndsAtLocal) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "زمان پایان مزایده را انتخاب کنید",
-      path: ["auctionEndsAtLocal"],
+      message: 'زمان پایان مزایده را انتخاب کنید',
+      path: ['auctionEndsAtLocal'],
     });
   } else {
     const ends = new Date(dateTimeLocalToIso(data.auctionEndsAtLocal));
     if (ends.getTime() <= Date.now()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "زمان پایان باید در آینده باشد",
-        path: ["auctionEndsAtLocal"],
+        message: 'زمان پایان باید در آینده باشد',
+        path: ['auctionEndsAtLocal'],
       });
     }
   }
@@ -343,8 +327,7 @@ export const newProductSchema = createNewProductSchema({
 });
 
 export function createEditProductSchema(options: { allowZeroStock: boolean }) {
-  const { applyStrengthened: _applyStrengthened, ...editProductFields } =
-    sharedProductFieldsBase;
+  const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedProductFieldsBase;
 
   return z
     .object({
@@ -352,24 +335,24 @@ export function createEditProductSchema(options: { allowZeroStock: boolean }) {
       stockQuantity: stockQuantityField(options.allowZeroStock),
       /** Legacy JPEG/PNG data-URLs allowed until re-uploaded; size is always enforced. */
       images: createImagesField(false),
-      price: z.number().positive("قیمت محصول را وارد کنید"),
+      price: z.number().positive('قیمت محصول را وارد کنید'),
       salePrice: z.number(),
     })
     .superRefine((data, ctx) => {
       refineVehicleSaleFields(data, ctx);
 
-      if (data.situation === "USED" && data.newPrice <= 0) {
+      if (data.situation === 'USED' && data.newPrice <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "قیمت تقریبی نو محصول را وارد کنید",
-          path: ["newPrice"],
+          message: 'قیمت تقریبی نو محصول را وارد کنید',
+          path: ['newPrice'],
         });
       }
       if (data.salePrice > 0 && data.salePrice >= data.price) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "قیمت با تخفیف باید کمتر از قیمت اصلی باشد",
-          path: ["salePrice"],
+          message: 'قیمت با تخفیف باید کمتر از قیمت اصلی باشد',
+          path: ['salePrice'],
         });
       }
     });

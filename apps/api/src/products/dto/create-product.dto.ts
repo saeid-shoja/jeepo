@@ -1,8 +1,5 @@
-import {
-  PRODUCT_COLOR_IDS,
-  PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
-} from "@offroad/shared";
-import { Transform, Type } from "class-transformer";
+import { PRODUCT_COLOR_IDS, PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -18,44 +15,44 @@ import {
   Min,
   MinLength,
   ValidateIf,
-} from "class-validator";
-import { NoContactInText } from "../../common/no-contact-in-text.validator";
+} from 'class-validator';
+import { NoContactInText } from '../../common/no-contact-in-text.validator';
 import {
   Advertiser,
   ListingIntent,
   ProductSituation,
   VehicleGearbox,
   VehiclePaintCondition,
-} from "../../prisma/generated/client";
+} from '../../prisma/generated/client';
 
 export class CreateProductDto {
   @IsString()
-  @MinLength(3, { message: "عنوان باید حداقل ۳ کاراکتر باشد" })
+  @MinLength(3, { message: 'عنوان باید حداقل ۳ کاراکتر باشد' })
   @NoContactInText()
   title!: string;
 
   @IsString()
-  @MinLength(10, { message: "توضیحات باید حداقل ۱۰ کاراکتر باشد" })
+  @MinLength(10, { message: 'توضیحات باید حداقل ۱۰ کاراکتر باشد' })
   @NoContactInText()
   description!: string;
 
   @Type(() => Number)
   @IsNumber()
-  @Min(0, { message: "قیمت نمی‌تواند منفی باشد" })
+  @Min(0, { message: 'قیمت نمی‌تواند منفی باشد' })
   price!: number;
 
   /** Optional discounted selling price (must be lower than price). */
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: "قیمت با تخفیف باید بیشتر از صفر باشد" })
+  @Min(1, { message: 'قیمت با تخفیف باید بیشتر از صفر باشد' })
   salePrice?: number;
 
   /** Approximate retail / new price (optional; mainly for USED listings). */
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: "قیمت نو محصول باید بیشتر از صفر باشد" })
+  @Min(1, { message: 'قیمت نو محصول باید بیشتر از صفر باشد' })
   newPrice?: number;
 
   @IsString()
@@ -90,7 +87,7 @@ export class CreateProductDto {
 
   @IsOptional()
   @Transform(({ value }) => {
-    if (typeof value !== "string") return value;
+    if (typeof value !== 'string') return value;
     const trimmed = value.trim();
     return trimmed.length ? trimmed : undefined;
   })
@@ -121,18 +118,18 @@ export class CreateProductDto {
   /** Odometer mileage in km — required for vehicle/motorcycle sale categories. */
   @IsOptional()
   @Type(() => Number)
-  @IsInt({ message: "میزان کارکرد باید عدد صحیح باشد" })
-  @Min(0, { message: "میزان کارکرد نمی‌تواند منفی باشد" })
+  @IsInt({ message: 'میزان کارکرد باید عدد صحیح باشد' })
+  @Min(0, { message: 'میزان کارکرد نمی‌تواند منفی باشد' })
   mileageKm?: number;
 
   /** Body/paint condition — required for vehicle/motorcycle sale categories. */
   @IsOptional()
-  @IsEnum(VehiclePaintCondition, { message: "وضعیت رنگ را انتخاب کنید" })
+  @IsEnum(VehiclePaintCondition, { message: 'وضعیت رنگ را انتخاب کنید' })
   paintCondition?: VehiclePaintCondition;
 
   @IsOptional()
   @IsString()
-  @Matches(/^\d{4}\/\d{4}$/, { message: "سال تولید معتبر نیست" })
+  @Matches(/^\d{4}\/\d{4}$/, { message: 'سال تولید معتبر نیست' })
   productionYear?: string;
 
   @IsOptional()
@@ -140,7 +137,7 @@ export class CreateProductDto {
   productionYearBefore1370?: boolean;
 
   @IsOptional()
-  @IsEnum(VehicleGearbox, { message: "نوع گیربکس را انتخاب کنید" })
+  @IsEnum(VehicleGearbox, { message: 'نوع گیربکس را انتخاب کنید' })
   gearbox?: VehicleGearbox;
 
   @IsOptional()
@@ -150,23 +147,23 @@ export class CreateProductDto {
   @ValidateIf((o) => o.isAuction === true)
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: "قیمت شروع مزایده را وارد کنید" })
+  @Min(1, { message: 'قیمت شروع مزایده را وارد کنید' })
   auctionStartPrice?: number;
 
   @ValidateIf((o) => o.isAuction === true)
-  @IsDateString({}, { message: "تاریخ پایان مزایده معتبر نیست" })
+  @IsDateString({}, { message: 'تاریخ پایان مزایده معتبر نیست' })
   auctionEndsAt?: string;
 
   @ValidateIf((o) => o.isAuction === true)
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: "حداقل قیمت واقعی را وارد کنید" })
+  @Min(1, { message: 'حداقل قیمت واقعی را وارد کنید' })
   realPriceMin?: number;
 
   @ValidateIf((o) => o.isAuction === true)
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: "حداکثر قیمت واقعی را وارد کنید" })
+  @Min(1, { message: 'حداکثر قیمت واقعی را وارد کنید' })
   realPriceMax?: number;
 
   @IsOptional()
@@ -178,8 +175,8 @@ export class CreateProductDto {
   /** How many units available. Shop may use 0 (out of stock); client listings require ≥ 1. */
   @IsOptional()
   @Type(() => Number)
-  @IsInt({ message: "موجودی باید عدد صحیح باشد" })
-  @Min(0, { message: "موجودی نمی‌تواند منفی باشد" })
+  @IsInt({ message: 'موجودی باید عدد صحیح باشد' })
+  @Min(0, { message: 'موجودی نمی‌تواند منفی باشد' })
   stockQuantity?: number;
 
   /** Selected listing colors (canonical ids). */
@@ -188,14 +185,14 @@ export class CreateProductDto {
   @IsString({ each: true })
   @IsIn(PRODUCT_COLOR_IDS, {
     each: true,
-    message: "رنگ انتخاب‌شده نامعتبر است",
+    message: 'رنگ انتخاب‌شده نامعتبر است',
   })
   colors?: string[];
 
   /** @deprecated use colors — kept so older clients still submit a single label. */
   @IsOptional()
   @Transform(({ value }) => {
-    if (typeof value !== "string") return value;
+    if (typeof value !== 'string') return value;
     const trimmed = value.trim();
     return trimmed.length ? trimmed : undefined;
   })

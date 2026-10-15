@@ -5,7 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
+} from '@nestjs/common';
 import {
   ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS,
   FREE_CLIENT_LISTING_LIMIT,
@@ -16,24 +16,16 @@ import {
   resolveUserNewListingLimit,
   sanitizeAdminPermissions,
   toEnglishDigits,
-} from "@offroad/shared";
-import * as bcrypt from "bcryptjs";
-import { MailService } from "../mail/mail.service";
-import type {
-  Advertiser,
-  ProductStatus,
-  UserRole,
-} from "../prisma/generated/client";
-import { PrismaService } from "../prisma/prisma.service";
-import { computeActiveUntil } from "../products/product-lifecycle.constants";
-import { ProductsService } from "../products/products.service";
-import { TelegramChannelService } from "../telegram/telegram-channel.service";
-import type {
-  CreateAdminUserDto,
-  SetProductsGuaranteeDto,
-  UpdateAdminUserDto,
-} from "./dto";
-import type { AdminProductTab } from "./dto/find-admin-products-query.dto";
+} from '@offroad/shared';
+import * as bcrypt from 'bcryptjs';
+import { MailService } from '../mail/mail.service';
+import type { Advertiser, ProductStatus, UserRole } from '../prisma/generated/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { computeActiveUntil } from '../products/product-lifecycle.constants';
+import { ProductsService } from '../products/products.service';
+import { TelegramChannelService } from '../telegram/telegram-channel.service';
+import type { CreateAdminUserDto, SetProductsGuaranteeDto, UpdateAdminUserDto } from './dto';
+import type { AdminProductTab } from './dto/find-admin-products-query.dto';
 
 function normalizeAdminSearch(raw?: string): string | undefined {
   const trimmed = raw?.trim();
@@ -47,7 +39,7 @@ export class AdminService {
     private mailService: MailService,
     private telegramChannel: TelegramChannelService,
     private productsService: ProductsService,
-    @Inject("WEB_URL") private readonly webUrl: string,
+    @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
   private async getAdminActor(actorId: string) {
@@ -61,17 +53,15 @@ export class AdminService {
         adminAccessConfigured: true,
       },
     });
-    if (!actor || actor.role !== "ADMIN") {
-      throw new ForbiddenException("دسترسی غیرمجاز");
+    if (!actor || actor.role !== 'ADMIN') {
+      throw new ForbiddenException('دسترسی غیرمجاز');
     }
     return actor;
   }
 
   private assertSuperAdmin(actor: { isSuperAdmin: boolean }) {
     if (!actor.isSuperAdmin) {
-      throw new ForbiddenException(
-        "فقط مدیر اصلی می‌تواند این عملیات را انجام دهد",
-      );
+      throw new ForbiddenException('فقط مدیر اصلی می‌تواند این عملیات را انجام دهد');
     }
   }
 
@@ -87,8 +77,8 @@ export class AdminService {
         adminAccessConfigured: true,
       },
     });
-    if (!user || user.role !== "ADMIN") {
-      throw new ForbiddenException("دسترسی غیرمجاز");
+    if (!user || user.role !== 'ADMIN') {
+      throw new ForbiddenException('دسترسی غیرمجاز');
     }
     const effectivePermissions = resolveEffectiveAdminPermissions(user);
     return {
@@ -103,20 +93,20 @@ export class AdminService {
 
   async getDashboard() {
     const [products, clientProducts, orders, users] = await Promise.all([
-      this.prisma.product.count({ where: { advertiser: "SHOP" } }),
-      this.prisma.product.count({ where: { advertiser: "CLIENT" } }),
+      this.prisma.product.count({ where: { advertiser: 'SHOP' } }),
+      this.prisma.product.count({ where: { advertiser: 'CLIENT' } }),
       this.prisma.order.count(),
       this.prisma.user.count(),
     ]);
 
     const recentProducts = await this.prisma.product.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 5,
       include: { category: true, user: { select: { name: true } } },
     });
 
     const recentOrders = await this.prisma.order.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 5,
       include: {
         user: { select: { name: true } },
@@ -134,9 +124,7 @@ export class AdminService {
     };
   }
 
-  async getAllUsers(
-    params: { search?: string; page?: number; limit?: number } = {},
-  ) {
+  async getAllUsers(params: { search?: string; page?: number; limit?: number } = {}) {
     const search = normalizeAdminSearch(params.search);
     const page = params.page || 1;
     const limit = params.limit || 24;
@@ -145,8 +133,8 @@ export class AdminService {
     const where = search
       ? {
           OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { email: { contains: search, mode: "insensitive" as const } },
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
             { phone: { contains: search } },
           ],
         }
@@ -169,11 +157,11 @@ export class AdminService {
           createdAt: true,
           _count: {
             select: {
-              products: { where: { advertiser: "CLIENT", status: "ACTIVE" } },
+              products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
@@ -185,18 +173,16 @@ export class AdminService {
       userIds.length === 0
         ? []
         : await this.prisma.product.groupBy({
-            by: ["userId"],
+            by: ['userId'],
             where: {
               userId: { in: userIds },
-              advertiser: "CLIENT",
-              status: "ACTIVE",
-              situation: "NEW",
+              advertiser: 'CLIENT',
+              status: 'ACTIVE',
+              situation: 'NEW',
             },
             _count: { _all: true },
           });
-    const newCountByUser = new Map(
-      newCounts.map((row) => [row.userId!, row._count._all] as const),
-    );
+    const newCountByUser = new Map(newCounts.map((row) => [row.userId!, row._count._all] as const));
 
     const mapped = users.map((user) => ({
       id: user.id,
@@ -212,9 +198,7 @@ export class AdminService {
       activeListingCount: user._count.products,
       activeNewListingCount: newCountByUser.get(user.id) ?? 0,
       effectiveListingLimit: resolveUserListingLimit(user.maxActiveListings),
-      effectiveNewListingLimit: resolveUserNewListingLimit(
-        user.maxActiveNewListings,
-      ),
+      effectiveNewListingLimit: resolveUserNewListingLimit(user.maxActiveNewListings),
       defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
       defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: user.createdAt,
@@ -230,9 +214,9 @@ export class AdminService {
 
   async createUser(actorId: string, data: CreateAdminUserDto) {
     const actor = await this.getAdminActor(actorId);
-    const targetRole = data.role ?? "CLIENT";
+    const targetRole = data.role ?? 'CLIENT';
 
-    if (targetRole === "ADMIN") {
+    if (targetRole === 'ADMIN') {
       this.assertSuperAdmin(actor);
     }
 
@@ -240,23 +224,21 @@ export class AdminService {
       where: { phone: data.phone },
     });
     if (existingPhone) {
-      throw new ConflictException("این شماره موبایل قبلاً ثبت شده است");
+      throw new ConflictException('این شماره موبایل قبلاً ثبت شده است');
     }
 
     const existingEmail = await this.prisma.user.findUnique({
       where: { email: data.email.toLowerCase() },
     });
     if (existingEmail) {
-      throw new ConflictException("این ایمیل قبلاً ثبت شده است");
+      throw new ConflictException('این ایمیل قبلاً ثبت شده است');
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
     const isSuperAdmin =
-      targetRole === "ADMIN" && actor.isSuperAdmin
-        ? (data.isSuperAdmin ?? false)
-        : false;
+      targetRole === 'ADMIN' && actor.isSuperAdmin ? (data.isSuperAdmin ?? false) : false;
     const adminPermissions =
-      targetRole === "ADMIN" && actor.isSuperAdmin
+      targetRole === 'ADMIN' && actor.isSuperAdmin
         ? sanitizeAdminPermissions(data.adminPermissions)
         : [];
 
@@ -270,7 +252,7 @@ export class AdminService {
         role: targetRole,
         isSuperAdmin,
         adminPermissions,
-        adminAccessConfigured: targetRole === "ADMIN" && actor.isSuperAdmin,
+        adminAccessConfigured: targetRole === 'ADMIN' && actor.isSuperAdmin,
         maxActiveListings: data.maxActiveListings ?? null,
         maxActiveNewListings: data.maxActiveNewListings ?? null,
         emailVerified: true,
@@ -293,20 +275,18 @@ export class AdminService {
   async updateUser(actorId: string, id: string, data: UpdateAdminUserDto) {
     const actor = await this.getAdminActor(actorId);
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException("کاربر یافت نشد");
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
 
     const nextRole = data.role ?? user.role;
     const roleChanging = data.role != null && data.role !== user.role;
     const permissionFieldsTouched =
       data.isSuperAdmin !== undefined || data.adminPermissions !== undefined;
 
-    if (user.role === "ADMIN" && actor.id !== user.id && !actor.isSuperAdmin) {
-      throw new ForbiddenException(
-        "فقط مدیر اصلی می‌تواند مدیران دیگر را ویرایش کند",
-      );
+    if (user.role === 'ADMIN' && actor.id !== user.id && !actor.isSuperAdmin) {
+      throw new ForbiddenException('فقط مدیر اصلی می‌تواند مدیران دیگر را ویرایش کند');
     }
 
-    if (roleChanging && (nextRole === "ADMIN" || user.role === "ADMIN")) {
+    if (roleChanging && (nextRole === 'ADMIN' || user.role === 'ADMIN')) {
       this.assertSuperAdmin(actor);
     }
 
@@ -318,23 +298,22 @@ export class AdminService {
       const existing = await this.prisma.user.findUnique({
         where: { phone: data.phone },
       });
-      if (existing)
-        throw new ConflictException("این شماره موبایل قبلاً ثبت شده است");
+      if (existing) throw new ConflictException('این شماره موبایل قبلاً ثبت شده است');
     }
 
     if (data.email && data.email.toLowerCase() !== user.email) {
       const existing = await this.prisma.user.findUnique({
         where: { email: data.email.toLowerCase() },
       });
-      if (existing) throw new ConflictException("این ایمیل قبلاً ثبت شده است");
+      if (existing) throw new ConflictException('این ایمیل قبلاً ثبت شده است');
     }
 
-    if (data.role === "CLIENT" && user.role === "ADMIN") {
+    if (data.role === 'CLIENT' && user.role === 'ADMIN') {
       const adminCount = await this.prisma.user.count({
-        where: { role: "ADMIN" },
+        where: { role: 'ADMIN' },
       });
       if (adminCount <= 1) {
-        throw new BadRequestException("حداقل یک مدیر باید در سیستم باقی بماند");
+        throw new BadRequestException('حداقل یک مدیر باید در سیستم باقی بماند');
       }
     }
 
@@ -343,9 +322,7 @@ export class AdminService {
         where: { isSuperAdmin: true },
       });
       if (superCount <= 1) {
-        throw new BadRequestException(
-          "حداقل یک مدیر اصلی باید در سیستم باقی بماند",
-        );
+        throw new BadRequestException('حداقل یک مدیر اصلی باید در سیستم باقی بماند');
       }
     }
 
@@ -356,23 +333,19 @@ export class AdminService {
     if (data.name) updateData.name = data.name;
     if (data.city !== undefined) updateData.city = data.city;
     if (data.role) updateData.role = data.role;
-    if (data.isSuperAdmin !== undefined)
-      updateData.isSuperAdmin = data.isSuperAdmin;
+    if (data.isSuperAdmin !== undefined) updateData.isSuperAdmin = data.isSuperAdmin;
     if (data.adminPermissions !== undefined) {
-      updateData.adminPermissions = sanitizeAdminPermissions(
-        data.adminPermissions,
-      );
+      updateData.adminPermissions = sanitizeAdminPermissions(data.adminPermissions);
     }
-    if (permissionFieldsTouched || (roleChanging && nextRole === "ADMIN")) {
+    if (permissionFieldsTouched || (roleChanging && nextRole === 'ADMIN')) {
       updateData.adminAccessConfigured = true;
     }
-    if (roleChanging && nextRole === "CLIENT") {
+    if (roleChanging && nextRole === 'CLIENT') {
       updateData.adminAccessConfigured = false;
       updateData.isSuperAdmin = false;
       updateData.adminPermissions = [];
     }
-    if (data.password)
-      updateData.password = await bcrypt.hash(data.password, 12);
+    if (data.password) updateData.password = await bcrypt.hash(data.password, 12);
     if (data.maxActiveListings !== undefined) {
       updateData.maxActiveListings = data.maxActiveListings;
     }
@@ -394,10 +367,8 @@ export class AdminService {
     if (data.violationReportCount !== undefined) {
       updateData.violationReportCount = data.violationReportCount;
     }
-    if (data.accountKind !== undefined)
-      updateData.accountKind = data.accountKind;
-    if (data.verifiedSeller !== undefined)
-      updateData.verifiedSeller = data.verifiedSeller;
+    if (data.accountKind !== undefined) updateData.accountKind = data.accountKind;
+    if (data.verifiedSeller !== undefined) updateData.verifiedSeller = data.verifiedSeller;
     if (data.rating !== undefined) updateData.rating = data.rating;
 
     const updated = await this.prisma.user.update({
@@ -424,7 +395,7 @@ export class AdminService {
         createdAt: true,
         _count: {
           select: {
-            products: { where: { advertiser: "CLIENT", status: "ACTIVE" } },
+            products: { where: { advertiser: 'CLIENT', status: 'ACTIVE' } },
           },
         },
       },
@@ -433,9 +404,9 @@ export class AdminService {
     const activeNewListingCount = await this.prisma.product.count({
       where: {
         userId: updated.id,
-        advertiser: "CLIENT",
-        status: "ACTIVE",
-        situation: "NEW",
+        advertiser: 'CLIENT',
+        status: 'ACTIVE',
+        situation: 'NEW',
       },
     });
 
@@ -460,9 +431,7 @@ export class AdminService {
       activeListingCount: updated._count.products,
       activeNewListingCount,
       effectiveListingLimit: resolveUserListingLimit(updated.maxActiveListings),
-      effectiveNewListingLimit: resolveUserNewListingLimit(
-        updated.maxActiveNewListings,
-      ),
+      effectiveNewListingLimit: resolveUserNewListingLimit(updated.maxActiveNewListings),
       defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
       defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: updated.createdAt,
@@ -503,18 +472,18 @@ export class AdminService {
         },
       },
     });
-    if (!user) throw new NotFoundException("کاربر یافت نشد");
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
 
     const [activeListingCount, activeNewListingCount] = await Promise.all([
       this.prisma.product.count({
-        where: { userId: id, advertiser: "CLIENT", status: "ACTIVE" },
+        where: { userId: id, advertiser: 'CLIENT', status: 'ACTIVE' },
       }),
       this.prisma.product.count({
         where: {
           userId: id,
-          advertiser: "CLIENT",
-          status: "ACTIVE",
-          situation: "NEW",
+          advertiser: 'CLIENT',
+          status: 'ACTIVE',
+          situation: 'NEW',
         },
       }),
     ]);
@@ -526,9 +495,7 @@ export class AdminService {
       activeListingCount,
       activeNewListingCount,
       effectiveListingLimit: resolveUserListingLimit(user.maxActiveListings),
-      effectiveNewListingLimit: resolveUserNewListingLimit(
-        user.maxActiveNewListings,
-      ),
+      effectiveNewListingLimit: resolveUserNewListingLimit(user.maxActiveNewListings),
       defaultListingLimit: FREE_CLIENT_LISTING_LIMIT,
       defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
     };
@@ -537,18 +504,18 @@ export class AdminService {
   async deleteUser(actorId: string, id: string) {
     const actor = await this.getAdminActor(actorId);
     const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException("کاربر یافت نشد");
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
 
-    if (user.role === "ADMIN" && !actor.isSuperAdmin) {
-      throw new ForbiddenException("فقط مدیر اصلی می‌تواند مدیران را حذف کند");
+    if (user.role === 'ADMIN' && !actor.isSuperAdmin) {
+      throw new ForbiddenException('فقط مدیر اصلی می‌تواند مدیران را حذف کند');
     }
 
-    if (user.role === "ADMIN") {
+    if (user.role === 'ADMIN') {
       const adminCount = await this.prisma.user.count({
-        where: { role: "ADMIN" },
+        where: { role: 'ADMIN' },
       });
       if (adminCount <= 1) {
-        throw new BadRequestException("حداقل یک مدیر باید در سیستم باقی بماند");
+        throw new BadRequestException('حداقل یک مدیر باید در سیستم باقی بماند');
       }
     }
 
@@ -557,9 +524,7 @@ export class AdminService {
         where: { isSuperAdmin: true },
       });
       if (superCount <= 1) {
-        throw new BadRequestException(
-          "حداقل یک مدیر اصلی باید در سیستم باقی بماند",
-        );
+        throw new BadRequestException('حداقل یک مدیر اصلی باید در سیستم باقی بماند');
       }
     }
 
@@ -575,15 +540,15 @@ export class AdminService {
     const where: Record<string, unknown> = {};
 
     switch (params.tab) {
-      case "shop":
-        where.advertiser = "SHOP";
+      case 'shop':
+        where.advertiser = 'SHOP';
         break;
-      case "client":
-        where.advertiser = "CLIENT";
+      case 'client':
+        where.advertiser = 'CLIENT';
         where.isAuction = false;
         break;
-      case "pending_approval":
-        where.status = "PENDING";
+      case 'pending_approval':
+        where.status = 'PENDING';
         where.listingFeePaid = true;
         where.OR = [
           {
@@ -594,7 +559,7 @@ export class AdminService {
           { hasGuarantee: true },
         ];
         break;
-      case "auction":
+      case 'auction':
         where.isAuction = true;
         break;
       default:
@@ -605,9 +570,9 @@ export class AdminService {
     const search = normalizeAdminSearch(params.search);
     if (search) {
       const searchOr = [
-        { title: { contains: search, mode: "insensitive" } },
-        { user: { name: { contains: search, mode: "insensitive" } } },
-        { user: { email: { contains: search, mode: "insensitive" } } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
         { user: { phone: { contains: search } } },
       ];
       if (where.OR) {
@@ -644,7 +609,7 @@ export class AdminService {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
     ]);
@@ -660,15 +625,12 @@ export class AdminService {
     };
   }
 
-  async getUserProducts(
-    userId: string,
-    params: { page?: number; limit?: number } = {},
-  ) {
+  async getUserProducts(userId: string, params: { page?: number; limit?: number } = {}) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, phone: true, email: true, city: true },
     });
-    if (!user) throw new NotFoundException("کاربر یافت نشد");
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
 
     const page = params.page || 1;
     const limit = params.limit || 20;
@@ -682,7 +644,7 @@ export class AdminService {
         include: { category: true },
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
     ]);
@@ -721,19 +683,16 @@ export class AdminService {
       listedAt?: Date;
     } = { status };
 
-    if (status === "ACTIVE" && product?.advertiser === "CLIENT") {
-      if (product.status !== "ACTIVE" && product.userId) {
-        await this.productsService.assertNewListingQuota(
-          product.userId,
-          product.situation,
-        );
+    if (status === 'ACTIVE' && product?.advertiser === 'CLIENT') {
+      if (product.status !== 'ACTIVE' && product.userId) {
+        await this.productsService.assertNewListingQuota(product.userId, product.situation);
       }
       data.activeUntil = computeActiveUntil();
       data.deprecatedAt = null;
-      if (product.status === "DEPRECATED" || product.status === "PENDING") {
+      if (product.status === 'DEPRECATED' || product.status === 'PENDING') {
         data.listedAt = new Date();
       }
-    } else if (status === "DEPRECATED") {
+    } else if (status === 'DEPRECATED') {
       data.deprecatedAt = new Date();
     }
 
@@ -744,26 +703,20 @@ export class AdminService {
 
     const categorySlug = product?.category?.slug;
     const needsSellerApprovalEmail =
-      status === "ACTIVE" &&
-      product?.status === "PENDING" &&
+      status === 'ACTIVE' &&
+      product?.status === 'PENDING' &&
       product.user?.email &&
       (Boolean(product.hasGuarantee) ||
-        (categorySlug != null &&
-          isAdminApprovalRequiredCategory(categorySlug)));
+        (categorySlug != null && isAdminApprovalRequiredCategory(categorySlug)));
 
     if (needsSellerApprovalEmail && product.user?.email) {
-      const productUrl = `${this.webUrl.replace(/\/$/, "")}/product/${id}`;
+      const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${id}`;
       await this.mailService
-        .sendListingApproved(
-          product.user.email,
-          product.user.name,
-          product.title,
-          productUrl,
-        )
+        .sendListingApproved(product.user.email, product.user.name, product.title, productUrl)
         .catch(() => {});
     }
 
-    if (status === "ACTIVE" && product?.status === "PENDING") {
+    if (status === 'ACTIVE' && product?.status === 'PENDING') {
       this.telegramChannel.announceProductActive(id);
     }
 
@@ -773,18 +726,16 @@ export class AdminService {
 
   async announceBestPrice(productIds: string[]) {
     if (!this.telegramChannel.isChannelConfigured()) {
-      throw new BadRequestException("کانال تلگرام پیکربندی نشده است");
+      throw new BadRequestException('کانال تلگرام پیکربندی نشده است');
     }
 
-    const uniqueIds = [
-      ...new Set(productIds.map((id) => id.trim()).filter(Boolean)),
-    ];
+    const uniqueIds = [...new Set(productIds.map((id) => id.trim()).filter(Boolean))];
     if (uniqueIds.length === 0) {
-      throw new BadRequestException("حداقل یک محصول را انتخاب کنید");
+      throw new BadRequestException('حداقل یک محصول را انتخاب کنید');
     }
 
     const products = await this.prisma.product.findMany({
-      where: { id: { in: uniqueIds }, status: "ACTIVE" },
+      where: { id: { in: uniqueIds }, status: 'ACTIVE' },
       select: { id: true, title: true },
     });
 
@@ -820,18 +771,18 @@ export class AdminService {
     const scopes = [dto.productId, dto.categoryId, dto.userId].filter(Boolean);
     if (scopes.length !== 1) {
       throw new BadRequestException(
-        "دقیقاً یکی از فیلدهای productId، categoryId یا userId را ارسال کنید",
+        'دقیقاً یکی از فیلدهای productId، categoryId یا userId را ارسال کنید',
       );
     }
 
     const where: {
-      advertiser: "CLIENT";
+      advertiser: 'CLIENT';
       isAuction: false;
       id?: string;
       userId?: string;
       categoryId?: { in: string[] };
     } = {
-      advertiser: "CLIENT",
+      advertiser: 'CLIENT',
       isAuction: false,
     };
 
@@ -840,11 +791,9 @@ export class AdminService {
         where: { id: dto.productId },
         select: { id: true, advertiser: true, isAuction: true },
       });
-      if (!product) throw new NotFoundException("محصول یافت نشد");
-      if (product.advertiser !== "CLIENT" || product.isAuction) {
-        throw new BadRequestException(
-          "تضمین جیپو فقط برای آگهی‌های کاربری غیرمزایده است",
-        );
+      if (!product) throw new NotFoundException('محصول یافت نشد');
+      if (product.advertiser !== 'CLIENT' || product.isAuction) {
+        throw new BadRequestException('تضمین جیپو فقط برای آگهی‌های کاربری غیرمزایده است');
       }
       where.id = dto.productId;
     } else if (dto.userId) {
@@ -852,14 +801,14 @@ export class AdminService {
         where: { id: dto.userId },
         select: { id: true },
       });
-      if (!user) throw new NotFoundException("کاربر یافت نشد");
+      if (!user) throw new NotFoundException('کاربر یافت نشد');
       where.userId = dto.userId;
     } else if (dto.categoryId) {
       const category = await this.prisma.category.findUnique({
         where: { id: dto.categoryId },
         select: { id: true },
       });
-      if (!category) throw new NotFoundException("دسته‌بندی یافت نشد");
+      if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
       where.categoryId = { in: await this.collectCategoryIds(dto.categoryId) };
     }
 

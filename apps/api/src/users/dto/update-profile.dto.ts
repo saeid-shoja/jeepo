@@ -4,8 +4,8 @@ import {
   toEnglishDigits,
   USER_ACCOUNT_KINDS,
   USER_ADDRESS_MAX_LENGTH,
-} from "@offroad/shared";
-import { Transform } from "class-transformer";
+} from '@offroad/shared';
+import { Transform } from 'class-transformer';
 import {
   IsIn,
   IsOptional,
@@ -14,40 +14,39 @@ import {
   MaxLength,
   MinLength,
   ValidateIf,
-} from "class-validator";
+} from 'class-validator';
 
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === "string" ? value.trim() : value;
+const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 function emptyToNull({ value }: { value: unknown }) {
   if (value === undefined) return undefined;
   if (value === null) return null;
-  if (typeof value !== "string") return value;
+  if (typeof value !== 'string') return value;
   const trimmed = value.trim();
   return trimmed.length ? trimmed : null;
 }
 
 function tenDigitsOrNull({ value }: { value: unknown }) {
   if (value === undefined) return undefined;
-  if (value === null || value === "") return null;
-  if (typeof value !== "string") return value;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') return value;
   const digits = normalizeTenDigits(value);
   return digits.length ? digits : null;
 }
 
 function bankAccountOrNull({ value }: { value: unknown }) {
   if (value === undefined) return undefined;
-  if (value === null || value === "") return null;
-  if (typeof value !== "string") return value;
-  const normalized = toEnglishDigits(value).toUpperCase().replace(/[\s-]/g, "");
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') return value;
+  const normalized = toEnglishDigits(value).toUpperCase().replace(/[\s-]/g, '');
   return normalized || null;
 }
 
 /** Optional WebP data URL (or clear with null/empty). */
 function optionalImage({ value }: { value: unknown }) {
   if (value === undefined) return undefined;
-  if (value === null || value === "") return null;
-  if (typeof value !== "string") return value;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') return value;
   return value.trim() || null;
 }
 
@@ -55,7 +54,7 @@ export class UpdateProfileDto {
   @Transform(trim)
   @IsOptional()
   @IsString()
-  @MinLength(2, { message: "نام باید حداقل ۲ کاراکتر باشد" })
+  @MinLength(2, { message: 'نام باید حداقل ۲ کاراکتر باشد' })
   name?: string;
 
   @Transform(emptyToNull)
@@ -66,14 +65,14 @@ export class UpdateProfileDto {
   @Transform(tenDigitsOrNull)
   @IsOptional()
   @ValidateIf((_, v) => v != null)
-  @Matches(IRAN_TEN_DIGIT_REGEX, { message: "کد ملی باید ۱۰ رقم باشد" })
+  @Matches(IRAN_TEN_DIGIT_REGEX, { message: 'کد ملی باید ۱۰ رقم باشد' })
   nationalId?: string | null;
 
   @Transform(optionalImage)
   @IsOptional()
   @ValidateIf((_, v) => v != null)
   @IsString()
-  @Matches(/^data:image\/webp[;,]/i, { message: "عکس کارت ملی باید WebP باشد" })
+  @Matches(/^data:image\/webp[;,]/i, { message: 'عکس کارت ملی باید WebP باشد' })
   nationalIdCardImage?: string | null;
 
   @Transform(optionalImage)
@@ -81,7 +80,7 @@ export class UpdateProfileDto {
   @ValidateIf((_, v) => v != null)
   @IsString()
   @Matches(/^data:image\/webp[;,]/i, {
-    message: "عکس رضایت سلفی باید WebP باشد",
+    message: 'عکس رضایت سلفی باید WebP باشد',
   })
   consentSelfieImage?: string | null;
 
@@ -89,7 +88,7 @@ export class UpdateProfileDto {
   @IsOptional()
   @ValidateIf((_, v) => v != null)
   @IsString()
-  @Matches(/^data:image\/webp[;,]/i, { message: "تصویر پروانه باید WebP باشد" })
+  @Matches(/^data:image\/webp[;,]/i, { message: 'تصویر پروانه باید WebP باشد' })
   shopLicenseImage?: string | null;
 
   @Transform(emptyToNull)
@@ -104,13 +103,13 @@ export class UpdateProfileDto {
   @Transform(tenDigitsOrNull)
   @IsOptional()
   @ValidateIf((_, v) => v != null)
-  @Matches(IRAN_TEN_DIGIT_REGEX, { message: "کد پستی باید ۱۰ رقم باشد" })
+  @Matches(IRAN_TEN_DIGIT_REGEX, { message: 'کد پستی باید ۱۰ رقم باشد' })
   postalCode?: string | null;
 
   @Transform(bankAccountOrNull)
   @IsOptional()
   @ValidateIf((_, v) => v != null)
-  @Matches(/^IR\d{24}$/, { message: "شماره شبا باید با IR و ۲۴ رقم وارد شود" })
+  @Matches(/^IR\d{24}$/, { message: 'شماره شبا باید با IR و ۲۴ رقم وارد شود' })
   bankAccount?: string | null;
 
   @Transform(emptyToNull)
@@ -121,6 +120,6 @@ export class UpdateProfileDto {
   telegramChatId?: string | null;
 
   @IsOptional()
-  @IsIn(USER_ACCOUNT_KINDS, { message: "نوع حساب نامعتبر است" })
+  @IsIn(USER_ACCOUNT_KINDS, { message: 'نوع حساب نامعتبر است' })
   accountKind?: (typeof USER_ACCOUNT_KINDS)[number];
 }

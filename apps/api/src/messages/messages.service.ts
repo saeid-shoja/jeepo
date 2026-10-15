@@ -1,23 +1,16 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
-import type {
-  MessageTarget,
-  UserMessageType,
-} from "../prisma/generated/client";
-import { PrismaService } from "../prisma/prisma.service";
-import { PushService } from "../push/push.service";
-import { TelegramService } from "../telegram/telegram.service";
-import { TelegramBotService } from "../telegram/telegram-bot.service";
-import { TelegramChannelService } from "../telegram/telegram-channel.service";
-import type { CreateMessageDto } from "./dto";
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { MessageTarget, UserMessageType } from '../prisma/generated/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
+import { TelegramService } from '../telegram/telegram.service';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
+import { TelegramChannelService } from '../telegram/telegram-channel.service';
+import type { CreateMessageDto } from './dto';
 
 const MESSAGE_TYPE_LABELS: Record<UserMessageType, string> = {
-  ANNOUNCEMENT: "اطلاعیه",
-  NOTIFICATION: "اعلان",
-  MESSAGE: "پیام",
+  ANNOUNCEMENT: 'اطلاعیه',
+  NOTIFICATION: 'اعلان',
+  MESSAGE: 'پیام',
 };
 
 @Injectable()
@@ -61,33 +54,33 @@ export class MessagesService {
     const body = dto.body?.trim();
 
     if (!title) {
-      throw new BadRequestException("عنوان پیام را وارد کنید");
+      throw new BadRequestException('عنوان پیام را وارد کنید');
     }
     if (title.length < 2) {
-      throw new BadRequestException("عنوان باید حداقل ۲ کاراکتر باشد");
+      throw new BadRequestException('عنوان باید حداقل ۲ کاراکتر باشد');
     }
     if (!body) {
-      throw new BadRequestException("متن پیام را وارد کنید");
+      throw new BadRequestException('متن پیام را وارد کنید');
     }
     if (body.length < 2) {
-      throw new BadRequestException("متن پیام باید حداقل ۲ کاراکتر باشد");
+      throw new BadRequestException('متن پیام باید حداقل ۲ کاراکتر باشد');
     }
-    if (!dto.target || !["ALL", "USER"].includes(dto.target)) {
-      throw new BadRequestException("مخاطب پیام را انتخاب کنید");
+    if (!dto.target || !['ALL', 'USER'].includes(dto.target)) {
+      throw new BadRequestException('مخاطب پیام را انتخاب کنید');
     }
 
     let recipients: { id: string }[];
 
-    if (dto.target === "USER") {
+    if (dto.target === 'USER') {
       if (!dto.userId) {
-        throw new BadRequestException("شناسه کاربر الزامی است");
+        throw new BadRequestException('شناسه کاربر الزامی است');
       }
       const user = await this.prisma.user.findUnique({
         where: { id: dto.userId },
         select: { id: true },
       });
       if (!user) {
-        throw new NotFoundException("کاربر یافت نشد");
+        throw new NotFoundException('کاربر یافت نشد');
       }
       recipients = [user];
     } else {
@@ -97,7 +90,7 @@ export class MessagesService {
     }
 
     if (recipients.length === 0) {
-      throw new BadRequestException("کاربری برای ارسال پیام یافت نشد");
+      throw new BadRequestException('کاربری برای ارسال پیام یافت نشد');
     }
 
     const batch = await this.prisma.$transaction(async (tx) => {
@@ -105,9 +98,9 @@ export class MessagesService {
         data: {
           title,
           body,
-          type: dto.type ?? "ANNOUNCEMENT",
+          type: dto.type ?? 'ANNOUNCEMENT',
           target: dto.target as MessageTarget,
-          targetUserId: dto.target === "USER" ? dto.userId : null,
+          targetUserId: dto.target === 'USER' ? dto.userId : null,
           sentById,
           recipientCount: recipients.length,
         },
@@ -131,29 +124,27 @@ export class MessagesService {
     if (dto.sendTelegram) {
       if (!telegramConfigured) {
         warnings.push(
-          "ربات تلگرام پیکربندی نشده (TELEGRAM_BOT_TOKEN و TELEGRAM_BOT_USERNAME در سرور).",
+          'ربات تلگرام پیکربندی نشده (TELEGRAM_BOT_TOKEN و TELEGRAM_BOT_USERNAME در سرور).',
         );
       } else {
         const recipientIds = recipients.map((user) => user.id);
         const chatIds =
-          dto.target === "USER"
+          dto.target === 'USER'
             ? await this.telegramBot.getChatIdsForUsers(recipientIds)
             : await this.telegramBot.getAllSubscriberChatIds();
 
         if (chatIds.length === 0) {
           warnings.push(
-            dto.target === "USER"
-              ? "این کاربر شناسه تلگرام ثبت نکرده است."
-              : "هیچ کاربری شناسه تلگرام ثبت نکرده است.",
+            dto.target === 'USER'
+              ? 'این کاربر شناسه تلگرام ثبت نکرده است.'
+              : 'هیچ کاربری شناسه تلگرام ثبت نکرده است.',
           );
         } else {
           const result = await this.telegram.broadcast(chatIds, title, body);
           telegramSent = result.sent;
           telegramFailed = result.failed;
           if (result.failed > 0) {
-            warnings.push(
-              `${result.failed.toLocaleString("fa-IR")} ارسال تلگرام ناموفق بود.`,
-            );
+            warnings.push(`${result.failed.toLocaleString('fa-IR')} ارسال تلگرام ناموفق بود.`);
           }
         }
       }
@@ -161,7 +152,7 @@ export class MessagesService {
 
     // Group/channel (@jeeppo news topic): only platform-wide admin broadcasts.
     // Personal notifications (e.g. listing expiry) use target=USER and must NOT hit the group.
-    if (dto.target === "ALL") {
+    if (dto.target === 'ALL') {
       this.telegramChannel.announceNews(title, body);
     }
 
@@ -171,7 +162,7 @@ export class MessagesService {
       {
         title,
         body: pushBody,
-        url: "/dashboard?tab=messages",
+        url: '/dashboard?tab=messages',
         tag: `message-${batch.id}`,
       },
     );
@@ -184,7 +175,7 @@ export class MessagesService {
       telegramSent,
       telegramFailed,
       warnings,
-      message: "پیام با موفقیت ارسال شد",
+      message: 'پیام با موفقیت ارسال شد',
     };
   }
 
@@ -194,7 +185,7 @@ export class MessagesService {
    */
   async sendNotificationToUser(userId: string, title: string, body: string) {
     const admin = await this.prisma.user.findFirst({
-      where: { role: "ADMIN" },
+      where: { role: 'ADMIN' },
       select: { id: true },
     });
     if (!admin) {
@@ -204,8 +195,8 @@ export class MessagesService {
     return this.sendMessage(admin.id, {
       title,
       body,
-      type: "NOTIFICATION",
-      target: "USER",
+      type: 'NOTIFICATION',
+      target: 'USER',
       userId,
       sendTelegram: true,
     });
@@ -213,7 +204,7 @@ export class MessagesService {
 
   async listBatches() {
     const batches = await this.prisma.messageBatch.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 50,
       include: {
         sentBy: { select: { name: true } },
@@ -228,7 +219,7 @@ export class MessagesService {
       type: batch.type,
       typeLabel: MESSAGE_TYPE_LABELS[batch.type],
       target: batch.target,
-      targetLabel: batch.target === "ALL" ? "همه کاربران" : "یک کاربر",
+      targetLabel: batch.target === 'ALL' ? 'همه کاربران' : 'یک کاربر',
       targetUser: batch.targetUser,
       recipientCount: batch.recipientCount,
       sentByName: batch.sentBy.name,
@@ -239,7 +230,7 @@ export class MessagesService {
   async getUserMessages(userId: string) {
     const messages = await this.prisma.userMessage.findMany({
       where: { userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         batch: {
           select: {
@@ -280,7 +271,7 @@ export class MessagesService {
     });
 
     if (!message) {
-      throw new NotFoundException("پیام یافت نشد");
+      throw new NotFoundException('پیام یافت نشد');
     }
 
     if (message.readAt) {

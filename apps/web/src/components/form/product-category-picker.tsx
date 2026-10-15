@@ -80,7 +80,7 @@ function CategoryTreeNode({
         type="button"
         className={cn(
           'hover:bg-muted/50 flex w-full items-center justify-between rounded-sm py-2 text-start text-sm font-medium',
-          'border-b border-black/10 dark:border-gray-600 bg-black/5 dark:bg-gray-700'
+          'border-b border-black/10 dark:border-gray-600 bg-black/5 dark:bg-gray-700',
         )}
         style={{ paddingRight: `${depth * 14 + 12}px`, paddingLeft: '12px' }}
       >

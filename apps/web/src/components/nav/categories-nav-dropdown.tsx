@@ -125,15 +125,15 @@ function LibrarySubmenuDesktop({ library }: { library: LibraryNode }) {
       <MenubarSubContent className={SUBMENU_PANEL}>
         {isFlat
           ? library.children.map((item) => (
-            <MenubarItem key={item.id} asChild className="p-0 focus:bg-transparent">
-              <MenuLinkRow className="flex justify-end pr-3" href={getLibraryNodeHref(item)}>
-                {item.name}
-              </MenuLinkRow>
-            </MenubarItem>
-          ))
+              <MenubarItem key={item.id} asChild className="p-0 focus:bg-transparent">
+                <MenuLinkRow className="flex justify-end pr-3" href={getLibraryNodeHref(item)}>
+                  {item.name}
+                </MenuLinkRow>
+              </MenubarItem>
+            ))
           : library.children.map((group) => (
-            <PartGroupSubmenuDesktop key={group.id} group={group} />
-          ))}
+              <PartGroupSubmenuDesktop key={group.id} group={group} />
+            ))}
       </MenubarSubContent>
     </MenubarSub>
   );
@@ -273,18 +273,18 @@ function MobileLibrarySection({
       >
         {isFlat
           ? library.children.map((item) => (
-            <Link
-              key={item.id}
-              href={getLibraryNodeHref(item)}
-              onClick={onNavigate}
-              className={cn(MENU_ROW, 'hover:bg-accent w-full rounded-sm')}
-            >
-              {item.name}
-            </Link>
-          ))
+              <Link
+                key={item.id}
+                href={getLibraryNodeHref(item)}
+                onClick={onNavigate}
+                className={cn(MENU_ROW, 'hover:bg-accent w-full rounded-sm')}
+              >
+                {item.name}
+              </Link>
+            ))
           : library.children.map((group) => (
-            <MobileGroupSection key={group.id} group={group} onNavigate={onNavigate} />
-          ))}
+              <MobileGroupSection key={group.id} group={group} onNavigate={onNavigate} />
+            ))}
       </CollapsibleContent>
     </Collapsible>
   );

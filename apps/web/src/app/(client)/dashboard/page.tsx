@@ -49,7 +49,7 @@ function DashboardContent() {
     return api.users
       .profile()
       .then(setProfile)
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const tabParam = searchParams.get('tab');

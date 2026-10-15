@@ -23,12 +23,12 @@ const PROFILE_SELECT = {
   shopLicenseImage: true,
   address: true,
   postalCode: true,
+  bankAccount: true,
   violationReportCount: true,
   accountKind: true,
   verifiedSeller: true,
   rating: true,
   telegramChatId: true,
-  telegramLinkedAt: true,
   boostCredits: true,
   maxActiveListings: true,
   createdAt: true,
@@ -54,13 +54,11 @@ export class UsersService {
         ensureUserReferralCode(this.prisma, userId),
       ]);
     if (!user) throw new NotFoundException('کاربر یافت نشد');
-    const { telegramChatId, ...profile } = user;
     return {
-      ...profile,
+      ...user,
       accountKindLabel: USER_ACCOUNT_KIND_LABELS[user.accountKind],
       referralCode,
       referralCount,
-      telegramLinked: Boolean(telegramChatId),
       activeListingsCount,
       totalListingsCount,
       unlimitedListings: user.role === 'ADMIN',
@@ -124,7 +122,10 @@ export class UsersService {
     });
     return Promise.all(
       products.map((product) =>
-        this.productsService.mapProduct(product, { coverImageOnly: true, listPayload: true }),
+        this.productsService.mapProduct(product, {
+          coverImageOnly: true,
+          listPayload: true,
+        }),
       ),
     );
   }
@@ -140,6 +141,8 @@ export class UsersService {
       'shopLicenseImage',
       'address',
       'postalCode',
+      'bankAccount',
+      'telegramChatId',
       'accountKind',
     ] as const;
     for (const key of keys) {
@@ -162,6 +165,8 @@ export class UsersService {
           shopLicenseImage: true,
           address: true,
           postalCode: true,
+          bankAccount: true,
+          telegramChatId: true,
           accountKind: true,
           verifiedSeller: true,
           rating: true,

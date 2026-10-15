@@ -16,7 +16,6 @@ import { MessagesService } from '../messages/messages.service';
 import { PushSubscribeDto, PushUnsubscribeDto } from '../push/dto/push-subscribe.dto';
 import { PushService } from '../push/push.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
-import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { ChangePasswordDto, UpdateProfileDto } from './dto';
 import { UsersService } from './users.service';
 
@@ -28,7 +27,6 @@ export class UsersController {
     private usersService: UsersService,
     private messagesService: MessagesService,
     private favoritesService: FavoritesService,
-    private telegramBotService: TelegramBotService,
     private pushService: PushService,
   ) {}
 
@@ -42,11 +40,6 @@ export class UsersController {
   @Get('sellers/:id')
   getPublicSeller(@Param('id') id: string) {
     return this.usersService.getPublicSeller(id);
-  }
-
-  @Get('telegram/link')
-  getTelegramLink(@Request() req: { user: { userId: string } }) {
-    return this.telegramBotService.createLinkForUser(req.user.userId);
   }
 
   @Get('push/config')

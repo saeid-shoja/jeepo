@@ -58,8 +58,3 @@ export const MOCK_SLIDES: Slide[] = [
     linkLabel: 'ثبت آگهی',
   },
 ];
-
-export async function fetchSlides(): Promise<Slide[]> {
-  // Static slides until a CMS /slides API is implemented on the backend.
-  return MOCK_SLIDES;
-}

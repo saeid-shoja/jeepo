@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -17,13 +18,20 @@ import {
   productRequiresColorChoice,
   SITE_EMAIL,
   SITE_NAME_FA,
+  SITE_TELEGRAM_SUPPORT,
 } from '@offroad/shared';
 import { getProductSalePrice, isPurchasableProduct } from '../common/purchasable';
 import type { OrderEmailPayload } from '../mail/mail.service';
 import { MailService } from '../mail/mail.service';
 import type { OrderStatus, PaymentMethod } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
-import type { CreateOrderDto, OrderItemDto, PreviewOrderDto } from './dto';
+import type {
+  CreateOrderDto,
+  OrderItemDto,
+  PreviewOrderDto,
+  SubmitPackagingEvidenceDto,
+  SubmitShippingEvidenceDto,
+} from './dto';
 
 type ResolvedLine = {
   productId: string;
@@ -35,12 +43,22 @@ type ResolvedLine = {
 };
 
 const orderInclude = {
-  user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+  user: {
+    select: { id: true, name: true, phone: true, email: true, city: true },
+  },
   items: {
     include: {
       product: {
         include: {
-          user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+              city: true,
+            },
+          },
           category: { select: { id: true, name: true, slug: true } },
         },
       },
@@ -49,6 +67,10 @@ const orderInclude = {
 } as const;
 
 const ORDER_ADMIN_EMAIL = SITE_EMAIL;
+const GUARANTEE_SELLER_RESPONSE_MS = 7 * 24 * 60 * 60 * 1000;
+const GUARANTEE_BUYER_REVIEW_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_VIDEO_BYTES = 1024 * 1024;
+const MAX_PROOF_IMAGE_BYTES = 100 * 1024;
 
 /** Remove sold client listings (تضمین جیپو) and auctions from public lists. */
 function shouldDeactivateSoldListing(product: {
@@ -182,6 +204,23 @@ export class OrdersService {
 
   async findAll() {
     return this.prisma.order.findMany({
+      where: {
+        items: {
+          none: { product: { advertiser: 'CLIENT', hasGuarantee: true } },
+        },
+      },
+      include: orderInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAllGuaranteed() {
+    return this.prisma.order.findMany({
+      where: {
+        items: {
+          some: { product: { advertiser: 'CLIENT', hasGuarantee: true } },
+        },
+      },
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
@@ -195,6 +234,411 @@ export class OrdersService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findSellerOrders(sellerId: string) {
+    return this.prisma.order.findMany({
+      where: {
+        paidAt: { not: null },
+        items: {
+          some: {
+            guaranteeStatus: { not: null },
+            product: {
+              userId: sellerId,
+              advertiser: 'CLIENT',
+              hasGuarantee: true,
+            },
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            city: true,
+          },
+        },
+        items: {
+          where: {
+            guaranteeStatus: { not: null },
+            product: {
+              userId: sellerId,
+              advertiser: 'CLIENT',
+              hasGuarantee: true,
+            },
+          },
+          include: {
+            product: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                    email: true,
+                    city: true,
+                  },
+                },
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  private async getGuaranteedItem(orderId: string, itemId: string) {
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+      include: {
+        product: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                email: true,
+                city: true,
+              },
+            },
+            category: { select: { id: true, name: true, slug: true } },
+          },
+        },
+        order: { include: orderInclude },
+      },
+    });
+    if (!item) throw new NotFoundException('قلم سفارش یافت نشد');
+    if (item.product.advertiser !== 'CLIENT' || !item.product.hasGuarantee) {
+      throw new BadRequestException('این کالا مشمول تضمین جیپو نیست');
+    }
+    return item;
+  }
+
+  private async getSellerGuaranteedItem(orderId: string, itemId: string, sellerId: string) {
+    const item = await this.getGuaranteedItem(orderId, itemId);
+    if (!item.guaranteeStatus) {
+      throw new BadRequestException('این کالا هنوز وارد فرایند تضمین نشده است');
+    }
+    if (item.product.userId !== sellerId) {
+      throw new ForbiddenException('شما فروشنده این کالا نیستید');
+    }
+    return item;
+  }
+
+  private dataUrlByteLength(value: string, kind: 'video' | 'image'): number {
+    const comma = value.indexOf(',');
+    const header = comma >= 0 ? value.slice(0, comma) : '';
+    const payload = comma >= 0 ? value.slice(comma + 1) : '';
+    const prefix = kind === 'video' ? 'data:video/' : 'data:image/';
+    if (!header.startsWith(prefix) || !header.endsWith(';base64') || !payload) {
+      throw new BadRequestException(
+        kind === 'video' ? 'فایل ویدیو معتبر نیست' : 'فایل عکس معتبر نیست',
+      );
+    }
+    return Buffer.from(payload, 'base64').byteLength;
+  }
+
+  private async updateGuaranteedItem(
+    orderId: string,
+    itemId: string,
+    from: string,
+    to: string,
+    extra: {
+      packagingVideo?: string;
+      packagingImages?: string[];
+      shippingReceipt?: string;
+      shippedAt?: Date;
+    } = {},
+  ) {
+    const updated = await this.prisma.orderItem.updateMany({
+      where: { id: itemId, orderId, guaranteeStatus: from as never },
+      data: {
+        guaranteeStatus: to as never,
+        guaranteeStatusChangedAt: new Date(),
+        ...extra,
+      },
+    });
+    if (!updated.count) throw new ConflictException('وضعیت این کالا قبلاً تغییر کرده است');
+    return this.getGuaranteedItem(orderId, itemId);
+  }
+
+  private notifyGuaranteedBuyer(
+    item: Awaited<ReturnType<OrdersService['getGuaranteedItem']>>,
+    copy: { subjectSuffix: string; heading: string; body: string },
+  ) {
+    const email = item.order.user.email;
+    if (!email) return;
+    const payload = this.buildOrderEmailPayload(item.order);
+    void this.mailService
+      .sendBuyerOrderStatusUpdate(email, item.order.user.name, payload, copy)
+      .catch((err) => this.logger.warn(`Guaranteed order email failed: ${String(err)}`));
+  }
+
+  private async notifyGuaranteedAdmins(
+    item: Awaited<ReturnType<OrdersService['getGuaranteedItem']>>,
+    status: string,
+    details: string,
+  ) {
+    const emails = await this.listAdminNotificationEmails();
+    await Promise.all(
+      emails.map((email) =>
+        this.mailService
+          .sendGuaranteedOrderAdminAlert(email, {
+            orderId: item.orderId,
+            itemId: item.id,
+            buyerId: item.order.user.id,
+            buyerName: item.order.user.name,
+            sellerId: item.product.userId ?? '—',
+            sellerName: item.product.user?.name ?? '—',
+            productTitle: item.product.title,
+            quantity: item.quantity,
+            total: item.price * item.quantity,
+            status,
+            details,
+          })
+          .catch((err) => this.logger.warn(`Guaranteed order admin email failed: ${String(err)}`)),
+      ),
+    );
+  }
+
+  async sellerConfirmItem(orderId: string, itemId: string, sellerId: string) {
+    const item = await this.getSellerGuaranteedItem(orderId, itemId, sellerId);
+    if (item.guaranteeStatus !== 'WAITING_SELLER_CONFIRMATION') {
+      throw new BadRequestException('این سفارش در انتظار تأیید فروشنده نیست');
+    }
+    const updated = await this.updateGuaranteedItem(
+      orderId,
+      itemId,
+      'WAITING_SELLER_CONFIRMATION',
+      'PACKAGING',
+    );
+    this.notifyGuaranteedBuyer(updated, {
+      subjectSuffix: 'سفارش تأیید شد',
+      heading: 'سفارش شما دریافت و تأیید شد',
+      body: 'فروشنده سفارش را دریافت کرده و در حال بسته‌بندی آن است.',
+    });
+    return updated;
+  }
+
+  async submitPackagingEvidence(
+    orderId: string,
+    itemId: string,
+    sellerId: string,
+    evidence: SubmitPackagingEvidenceDto,
+  ) {
+    const item = await this.getSellerGuaranteedItem(orderId, itemId, sellerId);
+    if (item.guaranteeStatus !== 'PACKAGING') {
+      throw new BadRequestException('این سفارش در مرحله بسته‌بندی نیست');
+    }
+    if (evidence.videoDurationSeconds > 15) {
+      throw new BadRequestException('مدت ویدیو نباید بیشتر از ۱۵ ثانیه باشد');
+    }
+    if (this.dataUrlByteLength(evidence.video, 'video') > MAX_VIDEO_BYTES) {
+      throw new BadRequestException('حجم ویدیو نباید بیشتر از ۱ مگابایت باشد');
+    }
+    if (evidence.images.length < 1 || evidence.images.length > 5) {
+      throw new BadRequestException('از ۱ تا ۵ عکس بسته‌بندی بارگذاری کنید');
+    }
+    for (const image of evidence.images) {
+      if (this.dataUrlByteLength(image, 'image') > MAX_PROOF_IMAGE_BYTES) {
+        throw new BadRequestException('حجم هر عکس نباید بیشتر از ۱۰۰ کیلوبایت باشد');
+      }
+    }
+
+    const updated = await this.updateGuaranteedItem(orderId, itemId, 'PACKAGING', 'READY_TO_SHIP', {
+      packagingVideo: evidence.video,
+      packagingImages: evidence.images,
+    });
+    this.notifyGuaranteedBuyer(updated, {
+      subjectSuffix: 'بسته‌بندی تکمیل شد',
+      heading: 'سفارش آماده ارسال است',
+      body: 'فروشنده بسته‌بندی سفارش را تکمیل کرده و آن را برای ارسال آماده می‌کند.',
+    });
+    return updated;
+  }
+
+  async sellerMarkShipped(
+    orderId: string,
+    itemId: string,
+    sellerId: string,
+    evidence: SubmitShippingEvidenceDto,
+  ) {
+    const item = await this.getSellerGuaranteedItem(orderId, itemId, sellerId);
+    if (item.guaranteeStatus !== 'READY_TO_SHIP') {
+      throw new BadRequestException('ابتدا بسته‌بندی سفارش را تکمیل کنید');
+    }
+    if (this.dataUrlByteLength(evidence.receipt, 'image') > MAX_PROOF_IMAGE_BYTES) {
+      throw new BadRequestException('حجم تصویر بارنامه نباید بیشتر از ۱۰۰ کیلوبایت باشد');
+    }
+    const now = new Date();
+    const updated = await this.updateGuaranteedItem(orderId, itemId, 'READY_TO_SHIP', 'SHIPPED', {
+      shippingReceipt: evidence.receipt,
+      shippedAt: now,
+    });
+    this.notifyGuaranteedBuyer(updated, {
+      subjectSuffix: 'سفارش ارسال شد',
+      heading: 'سفارش شما ارسال شد',
+      body: 'فروشنده سفارش را ارسال کرده است. پس از دریافت، تأیید یا گزارش مشکل تا ۷ روز در پنل شما فعال است.',
+    });
+    return updated;
+  }
+
+  private async getBuyerGuaranteedItem(orderId: string, itemId: string, buyerId: string) {
+    const item = await this.getGuaranteedItem(orderId, itemId);
+    if (item.order.userId !== buyerId) {
+      throw new ForbiddenException('این سفارش متعلق به شما نیست');
+    }
+    return item;
+  }
+
+  async buyerCancelItem(orderId: string, itemId: string, buyerId: string) {
+    const item = await this.getBuyerGuaranteedItem(orderId, itemId, buyerId);
+    const paidAt = item.order.paidAt ?? item.order.createdAt;
+    if (
+      item.guaranteeStatus !== 'WAITING_SELLER_CONFIRMATION' ||
+      Date.now() < paidAt.getTime() + GUARANTEE_SELLER_RESPONSE_MS
+    ) {
+      throw new BadRequestException('لغو سفارش پس از ۷ روز عدم تأیید فروشنده فعال می‌شود');
+    }
+    const updated = await this.updateGuaranteedItem(
+      orderId,
+      itemId,
+      'WAITING_SELLER_CONFIRMATION',
+      'REFUND_PENDING',
+    );
+    const copy = {
+      subjectSuffix: 'خرید لغو شد',
+      heading: 'خرید شما با موفقیت لغو شد',
+      body: 'خرید شما با موفقیت لغو شد و هزینه کالا به زودی به حساب شما برگشت داده می‌شود.',
+    };
+    this.notifyGuaranteedBuyer(updated, copy);
+    void this.notifyGuaranteedAdmins(
+      updated,
+      'در انتظار بازپرداخت',
+      'خریدار پس از ۷ روز عدم تأیید فروشنده سفارش را لغو کرد.',
+    );
+    return updated;
+  }
+
+  private assertBuyerReviewWindow(item: Awaited<ReturnType<OrdersService['getGuaranteedItem']>>) {
+    if (
+      item.guaranteeStatus !== 'SHIPPED' ||
+      !item.shippedAt ||
+      Date.now() > item.shippedAt.getTime() + GUARANTEE_BUYER_REVIEW_MS
+    ) {
+      throw new BadRequestException(
+        'مهلت ۷ روزه بررسی سفارش پایان یافته یا کالا هنوز ارسال نشده است',
+      );
+    }
+  }
+
+  async buyerConfirmItem(orderId: string, itemId: string, buyerId: string) {
+    const item = await this.getBuyerGuaranteedItem(orderId, itemId, buyerId);
+    this.assertBuyerReviewWindow(item);
+    const updated = await this.updateGuaranteedItem(orderId, itemId, 'SHIPPED', 'BUYER_CONFIRMED');
+    this.notifyGuaranteedBuyer(updated, {
+      subjectSuffix: 'دریافت کالا تأیید شد',
+      heading: 'شما محصول خود را با موفقیت و با تضمین جیپو دریافت کردید',
+      body: 'شما محصول خود را با موفقیت و با تضمین جیپو دریافت کردید و هزینه محصول پس از بررسی ادمین به فروشنده واریز خواهد شد.',
+    });
+    void this.notifyGuaranteedAdmins(
+      updated,
+      'نیازمند تأیید واریز',
+      'خریدار دریافت صحیح کالا را تأیید کرد.',
+    );
+    return updated;
+  }
+
+  async buyerReportItem(orderId: string, itemId: string, buyerId: string) {
+    const item = await this.getBuyerGuaranteedItem(orderId, itemId, buyerId);
+    this.assertBuyerReviewWindow(item);
+    const updated = await this.updateGuaranteedItem(orderId, itemId, 'SHIPPED', 'UNDER_REVIEW');
+    this.notifyGuaranteedBuyer(updated, {
+      subjectSuffix: 'گزارش سفارش ثبت شد',
+      heading: 'گزارش تخلف در ارسال کالا',
+      body: 'برای پیگیری مشکل، ویدیوی کالا و توضیحات خود را برای پشتیبانی جیپو در تلگرام ارسال کنید.',
+    });
+    void this.notifyGuaranteedAdmins(
+      updated,
+      'در حال بررسی',
+      'خریدار گزارش مشکل در ارسال را ثبت کرد.',
+    );
+    const supportUsername = SITE_TELEGRAM_SUPPORT.replace(/^@/, '');
+    return {
+      ...updated,
+      supportUrl: `https://t.me/${supportUsername}?text=${encodeURIComponent(`گزارش سفارش ${orderId}، قلم ${itemId}`)}`,
+    };
+  }
+
+  async adminResolveItem(
+    orderId: string,
+    itemId: string,
+    action: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'MARK_REFUNDED' | 'UNDER_REVIEW',
+  ) {
+    const item = await this.getGuaranteedItem(orderId, itemId);
+    if (!item.guaranteeStatus) {
+      throw new BadRequestException('این کالا هنوز وارد فرایند تضمین نشده است');
+    }
+    let next: string;
+    if (action === 'PAY_SELLER') {
+      if (item.guaranteeStatus !== 'BUYER_CONFIRMED') {
+        throw new BadRequestException('پرداخت به فروشنده فقط پس از تأیید دریافت خریدار ممکن است');
+      }
+      next = 'PAID_TO_SELLER';
+    } else if (action === 'APPROVE_CANCEL') {
+      if (!['REFUND_PENDING', 'UNDER_REVIEW'].includes(item.guaranteeStatus ?? '')) {
+        throw new BadRequestException('این سفارش در انتظار تأیید لغو یا بررسی نیست');
+      }
+      next = 'CANCELLED';
+    } else if (action === 'MARK_REFUNDED') {
+      if (item.guaranteeStatus !== 'CANCELLED') {
+        throw new BadRequestException('ابتدا لغو سفارش را تأیید کنید');
+      }
+      next = 'REFUNDED';
+    } else {
+      if (['PAID_TO_SELLER', 'REFUNDED', 'CANCELLED'].includes(item.guaranteeStatus ?? '')) {
+        throw new BadRequestException('وضعیت نهایی سفارش قابل بررسی مجدد نیست');
+      }
+      next = 'UNDER_REVIEW';
+    }
+    const updated = await this.updateGuaranteedItem(
+      orderId,
+      itemId,
+      item.guaranteeStatus ?? '',
+      next,
+    );
+    const copy =
+      action === 'PAY_SELLER'
+        ? {
+            subjectSuffix: 'پرداخت فروشنده تأیید شد',
+            heading: 'تأیید نهایی سفارش',
+            body: 'ادمین پرداخت مبلغ کالا به فروشنده را تأیید کرد.',
+          }
+        : action === 'APPROVE_CANCEL'
+          ? {
+              subjectSuffix: 'لغو سفارش تأیید شد',
+              heading: 'لغو خرید تأیید شد',
+              body: 'لغو خرید شما تأیید شد و بازگشت وجه به‌زودی انجام می‌شود.',
+            }
+          : action === 'MARK_REFUNDED'
+            ? {
+                subjectSuffix: 'بازپرداخت انجام شد',
+                heading: 'بازپرداخت سفارش انجام شد',
+                body: 'وجه سفارش به شما بازگردانده شد.',
+              }
+            : {
+                subjectSuffix: 'سفارش در حال بررسی',
+                heading: 'سفارش شما در حال بررسی است',
+                body: 'ادمین جیپو در حال بررسی گزارش این سفارش است.',
+              };
+    this.notifyGuaranteedBuyer(updated, copy);
+    return updated;
   }
 
   async findOne(id: string, userId: string, userRole: string) {
@@ -444,7 +888,11 @@ export class OrdersService {
         }
         await tx.orderItem.update({
           where: { id: item.id },
-          data: { price: line.price, quantity: line.quantity, color: line.color },
+          data: {
+            price: line.price,
+            quantity: line.quantity,
+            color: line.color,
+          },
         });
       }
 
@@ -499,6 +947,13 @@ export class OrdersService {
             data: { status: 'DEPRECATED', deprecatedAt: new Date() },
           });
         }
+        await tx.orderItem.update({
+          where: { id: item.id },
+          data: {
+            guaranteeStatus: product?.hasGuarantee ? 'WAITING_SELLER_CONFIRMATION' : null,
+            guaranteeStatusChangedAt: product?.hasGuarantee ? payment.paidAt : null,
+          },
+        });
       }
 
       return tx.order.update({
@@ -525,6 +980,14 @@ export class OrdersService {
       include: orderInclude,
     });
     if (!existing) throw new NotFoundException('سفارش یافت نشد');
+
+    if (
+      existing.items.some(
+        (item) => item.product.advertiser === 'CLIENT' && item.product.hasGuarantee,
+      )
+    ) {
+      throw new BadRequestException('وضعیت کالاهای تضمینی باید از مسیر جداگانه هر قلم تغییر کند');
+    }
 
     if (existing.status === status) {
       return existing;

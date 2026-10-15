@@ -14,6 +14,7 @@ import {
   GUARANTEE_MAX_LISTING_PRICE_TOMAN,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
+  isValidVehicleProductionYear,
   isVehicleSaleCategory,
   listingPaymentDueAt,
   PAYMENT_PURPOSES,
@@ -32,6 +33,7 @@ import { MailService } from '../mail/mail.service';
 import type {
   Advertiser,
   ProductSituation,
+  VehicleGearbox,
   VehiclePaintCondition,
 } from '../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -348,7 +350,12 @@ export class ProductsService {
 
   async countActiveNewClientListings(userId: string): Promise<number> {
     return this.prisma.product.count({
-      where: { userId, advertiser: 'CLIENT', status: 'ACTIVE', situation: 'NEW' },
+      where: {
+        userId,
+        advertiser: 'CLIENT',
+        status: 'ACTIVE',
+        situation: 'NEW',
+      },
     });
   }
 
@@ -358,7 +365,11 @@ export class ProductsService {
       this.countActiveNewClientListings(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true, maxActiveListings: true, maxActiveNewListings: true },
+        select: {
+          role: true,
+          maxActiveListings: true,
+          maxActiveNewListings: true,
+        },
       }),
     ]);
 
@@ -480,7 +491,15 @@ export class ProductsService {
       where: { id: productId },
       include: {
         category: true,
-        user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            city: true,
+          },
+        },
       },
     });
     if (!product?.hasGuarantee || !product.user) return;
@@ -518,14 +537,29 @@ export class ProductsService {
     data: {
       mileageKm?: number | null;
       paintCondition?: VehiclePaintCondition | null;
+      productionYear?: string | null;
+      productionYearBefore1370?: boolean | null;
+      gearbox?: VehicleGearbox | null;
     },
-  ): Promise<{ mileageKm: number | null; paintCondition: VehiclePaintCondition | null }> {
+  ): Promise<{
+    mileageKm: number | null;
+    paintCondition: VehiclePaintCondition | null;
+    productionYear: string | null;
+    productionYearBefore1370: boolean;
+    gearbox: VehicleGearbox | null;
+  }> {
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId },
       select: { slug: true },
     });
     if (!category || !isVehicleSaleCategory(category.slug)) {
-      return { mileageKm: null, paintCondition: null };
+      return {
+        mileageKm: null,
+        paintCondition: null,
+        productionYear: null,
+        productionYearBefore1370: false,
+        gearbox: null,
+      };
     }
 
     if (data.mileageKm == null || !Number.isFinite(data.mileageKm) || data.mileageKm < 0) {
@@ -534,10 +568,23 @@ export class ProductsService {
     if (!data.paintCondition) {
       throw new BadRequestException('وضعیت رنگ بدنه را انتخاب کنید');
     }
+    if (data.productionYearBefore1370) {
+      if (data.productionYear != null) {
+        throw new BadRequestException('سال تولید پیش از ۱۳۷۰ نباید سال مشخص داشته باشد');
+      }
+    } else if (!isValidVehicleProductionYear(data.productionYear)) {
+      throw new BadRequestException('سال تولید را انتخاب کنید');
+    }
+    if (!data.gearbox) {
+      throw new BadRequestException('نوع گیربکس را انتخاب کنید');
+    }
 
     return {
       mileageKm: Math.round(data.mileageKm),
       paintCondition: data.paintCondition,
+      productionYear: data.productionYearBefore1370 ? null : data.productionYear!,
+      productionYearBefore1370: data.productionYearBefore1370 ?? false,
+      gearbox: data.gearbox,
     };
   }
 
@@ -617,6 +664,9 @@ export class ProductsService {
       situation: data.situation,
       mileageKm: vehicleFields.mileageKm,
       paintCondition: vehicleFields.paintCondition,
+      productionYear: vehicleFields.productionYear,
+      productionYearBefore1370: vehicleFields.productionYearBefore1370,
+      gearbox: vehicleFields.gearbox,
       userId: userId || null,
       status: options.status,
       listingFeePaid: options.listingFeePaid,
@@ -813,7 +863,9 @@ export class ProductsService {
   async fulfillListingFeePayment(productId: string) {
     await this.purgeExpiredListingPaymentDrafts();
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
     if (!product) throw new NotFoundException('محصول یافت نشد');
     if (product.listingFeePaid) {
       return { requiresAdminApproval: false, alreadyPaid: true };
@@ -858,7 +910,9 @@ export class ProductsService {
   }
 
   async fulfillStrengthenedPayment(productId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
     if (!product) throw new NotFoundException('محصول یافت نشد');
 
     await this.prisma.product.update({
@@ -871,7 +925,9 @@ export class ProductsService {
   }
 
   async fulfillBoostPayment(productId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
     if (!product) throw new NotFoundException('محصول یافت نشد');
 
     const now = new Date();
@@ -1278,7 +1334,9 @@ export class ProductsService {
 
     if (data.carBrands !== undefined) {
       const brands = await this.categoriesService.parseCarBrandCodes(data.carBrands);
-      await this.prisma.productCarBrand.deleteMany({ where: { productId: id } });
+      await this.prisma.productCarBrand.deleteMany({
+        where: { productId: id },
+      });
       if (brands.length > 0) {
         updateData.carBrands = {
           create: brands.map((brandCode) => ({ brandCode })),
@@ -1300,9 +1358,19 @@ export class ProductsService {
         data.paintCondition !== undefined
           ? data.paintCondition
           : (product as { paintCondition?: VehiclePaintCondition | null }).paintCondition,
+      productionYear:
+        data.productionYear !== undefined ? data.productionYear : product.productionYear,
+      productionYearBefore1370:
+        data.productionYearBefore1370 !== undefined
+          ? data.productionYearBefore1370
+          : product.productionYearBefore1370,
+      gearbox: data.gearbox !== undefined ? data.gearbox : product.gearbox,
     });
     updateData.mileageKm = vehicleFields.mileageKm;
     updateData.paintCondition = vehicleFields.paintCondition;
+    updateData.productionYear = vehicleFields.productionYear;
+    updateData.productionYearBefore1370 = vehicleFields.productionYearBefore1370;
+    updateData.gearbox = vehicleFields.gearbox;
 
     if (data.isBoosted === true && !product.isBoosted) {
       const now = new Date();
@@ -1380,7 +1448,9 @@ export class ProductsService {
       throw new ForbiddenException('شما اجازه حذف این محصول را ندارید');
     }
 
-    const orderItemCount = await this.prisma.orderItem.count({ where: { productId: id } });
+    const orderItemCount = await this.prisma.orderItem.count({
+      where: { productId: id },
+    });
     if (orderItemCount > 0) {
       throw new BadRequestException(
         'این محصول در سفارش ثبت شده و قابل حذف نیست. می‌توانید وضعیت آن را به ناموجود یا غیرفعال تغییر دهید.',
@@ -1484,7 +1554,13 @@ export class ProductsService {
       include: {
         category: { select: { name: true } },
         user: {
-          select: { id: true, name: true, phone: true, email: true, city: true },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            city: true,
+          },
         },
       },
     });

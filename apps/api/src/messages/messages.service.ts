@@ -136,8 +136,8 @@ export class MessagesService {
         if (chatIds.length === 0) {
           warnings.push(
             dto.target === 'USER'
-              ? 'این کاربر ربات تلگرام را متصل نکرده است.'
-              : 'هیچ کاربری ربات تلگرام را متصل نکرده است.',
+              ? 'این کاربر شناسه تلگرام ثبت نکرده است.'
+              : 'هیچ کاربری شناسه تلگرام ثبت نکرده است.',
           );
         } else {
           const result = await this.telegram.broadcast(chatIds, title, body);
@@ -180,7 +180,7 @@ export class MessagesService {
   }
 
   /**
-   * In-app + optional private Telegram DM to the user who linked the bot.
+   * In-app + optional private Telegram DM to the user's provided chat ID.
    * Never posts to the public channel/group (that is reserved for target=ALL).
    */
   async sendNotificationToUser(userId: string, title: string, body: string) {

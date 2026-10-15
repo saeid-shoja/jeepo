@@ -17,3 +17,4 @@ export * from './referrals';
 export * from './schema-types';
 export * from './site-info';
 export * from './user-profile';
+export * from './vehicle-years';

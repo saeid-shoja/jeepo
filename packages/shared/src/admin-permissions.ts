@@ -63,6 +63,7 @@ export function hasAdminPermission(
 /** Map dashboard pathname to required permission (null = always allowed when authenticated). */
 export function adminPathPermission(pathname: string): AdminPermissionKey | null {
   if (pathname === '/dashboard' || pathname === '/dashboard/') return 'dashboard';
+  if (pathname.startsWith('/dashboard/guaranteed-orders')) return 'orders';
   for (const item of ADMIN_PERMISSIONS) {
     if (item.href !== '/dashboard' && pathname.startsWith(item.href)) {
       return item.key;

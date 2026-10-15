@@ -220,7 +220,9 @@ export class AdminService {
       this.assertSuperAdmin(actor);
     }
 
-    const existingPhone = await this.prisma.user.findUnique({ where: { phone: data.phone } });
+    const existingPhone = await this.prisma.user.findUnique({
+      where: { phone: data.phone },
+    });
     if (existingPhone) {
       throw new ConflictException('این شماره موبایل قبلاً ثبت شده است');
     }
@@ -293,7 +295,9 @@ export class AdminService {
     }
 
     if (data.phone && data.phone !== user.phone) {
-      const existing = await this.prisma.user.findUnique({ where: { phone: data.phone } });
+      const existing = await this.prisma.user.findUnique({
+        where: { phone: data.phone },
+      });
       if (existing) throw new ConflictException('این شماره موبایل قبلاً ثبت شده است');
     }
 
@@ -305,14 +309,18 @@ export class AdminService {
     }
 
     if (data.role === 'CLIENT' && user.role === 'ADMIN') {
-      const adminCount = await this.prisma.user.count({ where: { role: 'ADMIN' } });
+      const adminCount = await this.prisma.user.count({
+        where: { role: 'ADMIN' },
+      });
       if (adminCount <= 1) {
         throw new BadRequestException('حداقل یک مدیر باید در سیستم باقی بماند');
       }
     }
 
     if (user.isSuperAdmin && data.isSuperAdmin === false) {
-      const superCount = await this.prisma.user.count({ where: { isSuperAdmin: true } });
+      const superCount = await this.prisma.user.count({
+        where: { isSuperAdmin: true },
+      });
       if (superCount <= 1) {
         throw new BadRequestException('حداقل یک مدیر اصلی باید در سیستم باقی بماند');
       }
@@ -454,7 +462,6 @@ export class AdminService {
         maxActiveNewListings: true,
         emailVerified: true,
         emailVerifiedAt: true,
-        telegramLinkedAt: true,
         boostCredits: true,
         createdAt: true,
         updatedAt: true,
@@ -504,14 +511,18 @@ export class AdminService {
     }
 
     if (user.role === 'ADMIN') {
-      const adminCount = await this.prisma.user.count({ where: { role: 'ADMIN' } });
+      const adminCount = await this.prisma.user.count({
+        where: { role: 'ADMIN' },
+      });
       if (adminCount <= 1) {
         throw new BadRequestException('حداقل یک مدیر باید در سیستم باقی بماند');
       }
     }
 
     if (user.isSuperAdmin) {
-      const superCount = await this.prisma.user.count({ where: { isSuperAdmin: true } });
+      const superCount = await this.prisma.user.count({
+        where: { isSuperAdmin: true },
+      });
       if (superCount <= 1) {
         throw new BadRequestException('حداقل یک مدیر اصلی باید در سیستم باقی بماند');
       }
@@ -540,7 +551,11 @@ export class AdminService {
         where.status = 'PENDING';
         where.listingFeePaid = true;
         where.OR = [
-          { category: { slug: { in: [...ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS] } } },
+          {
+            category: {
+              slug: { in: [...ADMIN_APPROVAL_REQUIRED_CATEGORY_SLUGS] },
+            },
+          },
           { hasGuarantee: true },
         ];
         break;
@@ -588,7 +603,10 @@ export class AdminService {
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
-        include: { category: true, user: { select: { name: true, phone: true } } },
+        include: {
+          category: true,
+          user: { select: { name: true, phone: true } },
+        },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },

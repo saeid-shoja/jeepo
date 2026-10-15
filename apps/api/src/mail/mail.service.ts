@@ -327,6 +327,44 @@ export class MailService {
     await this.send(to, subject, html);
   }
 
+  async sendGuaranteedOrderAdminAlert(
+    to: string,
+    details: {
+      orderId: string;
+      itemId: string;
+      buyerId: string;
+      buyerName: string;
+      sellerId: string;
+      sellerName: string;
+      productTitle: string;
+      quantity: number;
+      total: number;
+      status: string;
+      details: string;
+    },
+  ): Promise<void> {
+    const bodyHtml = `
+      <p style="margin:0 0 16px;">${escapeHtml(details.details)}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:6px 0;color:#64748b;width:140px;">شماره سفارش</td><td dir="ltr">${escapeHtml(details.orderId)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">شناسه قلم</td><td dir="ltr">${escapeHtml(details.itemId)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">وضعیت</td><td>${escapeHtml(details.status)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">محصول</td><td>${escapeHtml(details.productTitle)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">تعداد</td><td>${details.quantity}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">مبلغ قلم</td><td>${formatPrice(details.total)} تومان</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">شناسه خریدار</td><td dir="ltr">${escapeHtml(details.buyerId)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">خریدار</td><td>${escapeHtml(details.buyerName)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">شناسه فروشنده</td><td dir="ltr">${escapeHtml(details.sellerId)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">فروشنده</td><td>${escapeHtml(details.sellerName)}</td></tr>
+      </table>
+    `;
+    await this.send(
+      to,
+      `نیازمند اقدام — سفارش تضمین ${details.orderId.slice(-8)} | ${SITE_NAME_FA}`,
+      buildEmailLayout({ title: 'سفارش تضمینی نیازمند اقدام', bodyHtml }),
+    );
+  }
+
   async sendAdminOrdersDigest(
     to: string,
     orders: Array<{

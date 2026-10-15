@@ -10,6 +10,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   MinLength,
@@ -20,6 +21,7 @@ import {
   ListingIntent,
   ProductSituation,
   ProductStatus,
+  VehicleGearbox,
   VehiclePaintCondition,
 } from '../../prisma/generated/client';
 
@@ -125,6 +127,21 @@ export class UpdateProductDto {
   paintCondition?: VehiclePaintCondition | null;
 
   @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @IsString()
+  @Matches(/^\d{4}\/\d{4}$/, { message: 'سال تولید معتبر نیست' })
+  productionYear?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  productionYearBefore1370?: boolean;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @IsEnum(VehicleGearbox, { message: 'نوع گیربکس را انتخاب کنید' })
+  gearbox?: VehicleGearbox | null;
+
+  @IsOptional()
   @IsBoolean()
   isAuction?: boolean;
 
@@ -167,7 +184,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(PRODUCT_COLOR_IDS, { each: true, message: 'رنگ انتخاب‌شده نامعتبر است' })
+  @IsIn(PRODUCT_COLOR_IDS, {
+    each: true,
+    message: 'رنگ انتخاب‌شده نامعتبر است',
+  })
   colors?: string[];
 
   /** @deprecated use colors — empty string / null clears. */

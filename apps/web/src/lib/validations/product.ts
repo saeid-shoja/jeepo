@@ -1,5 +1,6 @@
 import {
   containsLinkOrPhone,
+  isValidVehicleProductionYear,
   isVehicleSaleCategory,
   LISTING_INTENTS,
   type ListingIntent,
@@ -8,6 +9,7 @@ import {
   PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
   type ProductColorId,
   toEnglishDigits,
+  VEHICLE_GEARBOXES,
   VEHICLE_PAINT_CONDITIONS,
 } from '@offroad/shared';
 import { z } from 'zod';
@@ -30,6 +32,12 @@ const paintConditionSchema = z.enum(
   VEHICLE_PAINT_CONDITIONS.map((o) => o.value) as [
     (typeof VEHICLE_PAINT_CONDITIONS)[number]['value'],
     ...(typeof VEHICLE_PAINT_CONDITIONS)[number]['value'][],
+  ],
+);
+const gearboxSchema = z.enum(
+  VEHICLE_GEARBOXES.map((item) => item.value) as [
+    (typeof VEHICLE_GEARBOXES)[number]['value'],
+    ...(typeof VEHICLE_GEARBOXES)[number]['value'][],
   ],
 );
 
@@ -135,6 +143,9 @@ const sharedProductFieldsBase = {
   salePrice: z.number(),
   mileageKm: z.number().nullable(),
   paintCondition: z.union([paintConditionSchema, z.literal('')]),
+  productionYear: z.string().nullable(),
+  productionYearBefore1370: z.boolean(),
+  gearbox: z.union([gearboxSchema, z.literal('')]),
 };
 
 function refineVehicleSaleFields(
@@ -142,6 +153,9 @@ function refineVehicleSaleFields(
     categorySlug?: string;
     mileageKm: number | null;
     paintCondition: string;
+    productionYear: string | null;
+    productionYearBefore1370: boolean;
+    gearbox: string;
   },
   ctx: z.RefinementCtx,
 ) {
@@ -160,6 +174,20 @@ function refineVehicleSaleFields(
       path: ['paintCondition'],
     });
   }
+  if (!data.productionYearBefore1370 && !isValidVehicleProductionYear(data.productionYear)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'سال تولید را انتخاب کنید',
+      path: ['productionYear'],
+    });
+  }
+  if (!data.gearbox) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'نوع گیربکس را انتخاب کنید',
+      path: ['gearbox'],
+    });
+  }
 }
 
 function refineNewProductForm(
@@ -167,6 +195,9 @@ function refineNewProductForm(
     categorySlug?: string;
     mileageKm: number | null;
     paintCondition: string;
+    productionYear: string | null;
+    productionYearBefore1370: boolean;
+    gearbox: string;
     isAuction: boolean;
     price: number;
     salePrice: number;
@@ -291,7 +322,9 @@ export function createNewProductSchema(options: { allowZeroStock: boolean }) {
 }
 
 /** Default: client listings (stock ≥ 1). */
-export const newProductSchema = createNewProductSchema({ allowZeroStock: false });
+export const newProductSchema = createNewProductSchema({
+  allowZeroStock: false,
+});
 
 export function createEditProductSchema(options: { allowZeroStock: boolean }) {
   const { applyStrengthened: _applyStrengthened, ...editProductFields } = sharedProductFieldsBase;
@@ -326,7 +359,9 @@ export function createEditProductSchema(options: { allowZeroStock: boolean }) {
 }
 
 /** Default: client listings (stock ≥ 1). */
-export const editProductSchema = createEditProductSchema({ allowZeroStock: false });
+export const editProductSchema = createEditProductSchema({
+  allowZeroStock: false,
+});
 
 export type NewProductFormValues = z.infer<typeof newProductSchema>;
 export type EditProductFormValues = z.infer<typeof editProductSchema>;

@@ -10,6 +10,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   MinLength,
@@ -20,6 +21,7 @@ import {
   Advertiser,
   ListingIntent,
   ProductSituation,
+  VehicleGearbox,
   VehiclePaintCondition,
 } from '../../prisma/generated/client';
 
@@ -126,6 +128,19 @@ export class CreateProductDto {
   paintCondition?: VehiclePaintCondition;
 
   @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}\/\d{4}$/, { message: 'سال تولید معتبر نیست' })
+  productionYear?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  productionYearBefore1370?: boolean;
+
+  @IsOptional()
+  @IsEnum(VehicleGearbox, { message: 'نوع گیربکس را انتخاب کنید' })
+  gearbox?: VehicleGearbox;
+
+  @IsOptional()
   @IsBoolean()
   isAuction?: boolean;
 
@@ -168,7 +183,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(PRODUCT_COLOR_IDS, { each: true, message: 'رنگ انتخاب‌شده نامعتبر است' })
+  @IsIn(PRODUCT_COLOR_IDS, {
+    each: true,
+    message: 'رنگ انتخاب‌شده نامعتبر است',
+  })
   colors?: string[];
 
   /** @deprecated use colors — kept so older clients still submit a single label. */

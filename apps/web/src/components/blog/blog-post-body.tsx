@@ -2,6 +2,7 @@ import sanitizeHtml from 'sanitize-html';
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
+    // متن و ساختار
     'p',
     'h2',
     'h3',
@@ -17,12 +18,35 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     'br',
     'hr',
     'span',
+    // کد
+    'pre',
+    'code',
+    // تصویر
+    'img',
+    'figure',
+    'figcaption',
+    // ویدیو
+    'iframe',
+    'video',
+    'source',
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel'],
     span: ['style'],
+    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'class'],
+    iframe: ['src', 'width', 'height', 'allow', 'allowfullscreen', 'frameborder', 'title', 'class'],
+    video: ['src', 'controls', 'width', 'height', 'poster', 'class'],
+    source: ['src', 'type'],
+    code: ['class'],
+    pre: ['class'],
+    figure: ['class'],
   },
   allowedSchemes: ['http', 'https', 'mailto'],
+  allowedSchemesByTag: {
+    img: ['http', 'https'],
+    iframe: ['http', 'https'],
+  },
+  allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'youtu.be', 'player.vimeo.com'],
   transformTags: {
     a: (_tagName, attribs) => ({
       tagName: 'a',
@@ -30,6 +54,17 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
         ...attribs,
         rel: 'noopener noreferrer',
         target: attribs.target ?? '_blank',
+      },
+    }),
+    img: (_tagName, attribs) => ({
+      tagName: 'img',
+      attribs: {
+        src: attribs.src ?? '',
+        alt: attribs.alt ?? '',
+        loading: 'lazy',
+        ...(attribs.width ? { width: attribs.width } : {}),
+        ...(attribs.height ? { height: attribs.height } : {}),
+        class: 'rounded-lg max-w-full h-auto my-4',
       },
     }),
   },

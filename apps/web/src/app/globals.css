@@ -224,3 +224,35 @@
   margin-block: 1.5rem;
   border-color: var(--border);
 }
+
+.blog-prose img {
+  border-radius: 0.5rem;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem auto;
+  display: block;
+}
+
+.blog-prose iframe {
+  border-radius: 0.5rem;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 1rem 0;
+}
+
+.blog-prose pre {
+  background: #1e1e1e;
+  color: #eaeaea;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  direction: ltr;
+  text-align: left;
+}
+
+.blog-prose code {
+  font-family: "Fira Code", "Cascadia Code", monospace;
+}

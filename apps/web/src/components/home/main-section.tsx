@@ -9,7 +9,6 @@ import { useRestoreListScroll } from '@/lib/use-restore-list-scroll';
 import { type LibraryNode, useCategories } from '@/stores/categories-store';
 import BadgeInfo from './badge-info';
 
-const EAGER_STRIP_COUNT = 2;
 const LIBRARY_SKELETON_KEYS = ['lib-sk-1', 'lib-sk-2'] as const;
 
 type StripStatus = 'pending' | 'ready' | 'empty';
@@ -28,6 +27,8 @@ function LibraryProductRows({
   onSectionReady?: (ready: boolean) => void;
 }) {
   const [statuses, setStatuses] = useState<Record<string, StripStatus>>({});
+  const eagerCount = advertiser === 'CLIENT' ? 1 : 0;
+  const eagerLibraries = libraries.slice(0, eagerCount);
 
   useEffect(() => {
     setStatuses(Object.fromEntries(libraries.map((lib) => [lib.id, 'pending' as const])));
@@ -42,14 +43,13 @@ function LibraryProductRows({
 
   const eagerSettled =
     !categoriesLoading &&
-    libraries.length > 0 &&
-    libraries
-      .slice(0, EAGER_STRIP_COUNT)
-      .every((lib) => statuses[lib.id] === 'ready' || statuses[lib.id] === 'empty');
+    (eagerCount === 0 ||
+      (eagerLibraries.length > 0 &&
+        eagerLibraries.every(
+          (lib) => statuses[lib.id] === 'ready' || statuses[lib.id] === 'empty',
+        )));
 
-  const eagerHasItems = libraries
-    .slice(0, EAGER_STRIP_COUNT)
-    .some((lib) => statuses[lib.id] === 'ready');
+  const eagerHasItems = eagerLibraries.some((lib) => statuses[lib.id] === 'ready');
 
   useEffect(() => {
     onSectionReady?.(eagerSettled);
@@ -72,7 +72,7 @@ function LibraryProductRows({
     );
   }
 
-  if (eagerSettled && !eagerHasItems && libraries.length <= EAGER_STRIP_COUNT) {
+  if (eagerSettled && !eagerHasItems && libraries.length <= eagerCount) {
     return (
       <div className="container">
         <p className="text-muted-foreground py-8 text-center">
@@ -91,7 +91,7 @@ function LibraryProductRows({
           libraryName={lib.name}
           advertiser={advertiser}
           seeAllHref={seeAllHref(lib)}
-          eager={index < EAGER_STRIP_COUNT}
+          eager={index < eagerCount}
           onSettled={onSettled}
         />
       ))}

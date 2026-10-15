@@ -119,15 +119,6 @@ function vapidSubject(): string {
       useValue: process.env.TELEGRAM_WEBHOOK_SECRET?.trim() ?? '',
     },
     {
-      provide: 'TELEGRAM_USE_POLLING',
-      // Polling fights other instances and delays boot — production must use webhook.
-      // Opt-in only with TELEGRAM_FORCE_POLLING=true.
-      useValue:
-        process.env.TELEGRAM_FORCE_POLLING?.trim().toLowerCase() === 'true' ||
-        (process.env.NODE_ENV !== 'production' &&
-          process.env.TELEGRAM_USE_POLLING?.trim().toLowerCase() === 'true'),
-    },
-    {
       provide: 'TELEGRAM_CHANNEL_CHAT_ID',
       useValue: telegramChannelChatId(),
     },
@@ -159,7 +150,6 @@ function vapidSubject(): string {
     'TELEGRAM_BOT_TOKEN',
     'TELEGRAM_BOT_USERNAME',
     'TELEGRAM_WEBHOOK_SECRET',
-    'TELEGRAM_USE_POLLING',
     'TELEGRAM_CHANNEL_CHAT_ID',
     'TELEGRAM_CHANNEL_TOPICS',
     'VAPID_PUBLIC_KEY',

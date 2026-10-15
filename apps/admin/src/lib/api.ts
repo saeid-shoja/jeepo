@@ -9,7 +9,9 @@ function getToken(): string | null {
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
   if (token) headers.Authorization = `Bearer ${token}`;
 
   // Avoid CDN/browser reuse of a previous unfiltered admin list after search.
@@ -45,9 +47,12 @@ export const adminApi = {
   dashboard: () => request<any>('/admin/dashboard'),
   users: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return request<{ users: any[]; total: number; page: number; totalPages: number }>(
-      `/admin/users${qs}`,
-    );
+    return request<{
+      users: any[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(`/admin/users${qs}`);
   },
   createUser: (data: {
     phone: string;
@@ -86,11 +91,21 @@ export const adminApi = {
       body: JSON.stringify({ status }),
     }),
   orders: () => request<any[]>('/orders'),
+  guaranteedOrders: () => request<any[]>('/orders/guaranteed'),
   order: (id: string) => request<any>(`/orders/${id}`),
   updateOrderStatus: (id: string, status: string) =>
     request<any>(`/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }),
+  resolveGuaranteedOrderItem: (
+    orderId: string,
+    itemId: string,
+    action: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'MARK_REFUNDED' | 'UNDER_REVIEW',
+  ) =>
+    request<any>(`/orders/${orderId}/items/${itemId}/admin-action`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action }),
     }),
   setProductsGuarantee: (data: {
     enabled: boolean;
@@ -136,9 +151,11 @@ export const adminApi = {
     }),
   messages: () => request<any[]>('/admin/messages'),
   telegramStats: () =>
-    request<{ configured: boolean; subscriberCount: number; botUsername: string | null }>(
-      '/admin/telegram/stats',
-    ),
+    request<{
+      configured: boolean;
+      subscriberCount: number;
+      botUsername: string | null;
+    }>('/admin/telegram/stats'),
   categories: () => request<any>('/categories'),
   createCategory: (data: {
     name: string;

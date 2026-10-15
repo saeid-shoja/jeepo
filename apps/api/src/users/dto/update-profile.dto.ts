@@ -1,6 +1,7 @@
 import {
   IRAN_TEN_DIGIT_REGEX,
   normalizeTenDigits,
+  toEnglishDigits,
   USER_ACCOUNT_KINDS,
   USER_ADDRESS_MAX_LENGTH,
 } from '@offroad/shared';
@@ -31,6 +32,14 @@ function tenDigitsOrNull({ value }: { value: unknown }) {
   if (typeof value !== 'string') return value;
   const digits = normalizeTenDigits(value);
   return digits.length ? digits : null;
+}
+
+function bankAccountOrNull({ value }: { value: unknown }) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') return value;
+  const normalized = toEnglishDigits(value).toUpperCase().replace(/[\s-]/g, '');
+  return normalized || null;
 }
 
 /** Optional WebP data URL (or clear with null/empty). */
@@ -70,7 +79,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @ValidateIf((_, v) => v != null)
   @IsString()
-  @Matches(/^data:image\/webp[;,]/i, { message: 'عکس رضایت سلفی باید WebP باشد' })
+  @Matches(/^data:image\/webp[;,]/i, {
+    message: 'عکس رضایت سلفی باید WebP باشد',
+  })
   consentSelfieImage?: string | null;
 
   @Transform(optionalImage)
@@ -94,6 +105,19 @@ export class UpdateProfileDto {
   @ValidateIf((_, v) => v != null)
   @Matches(IRAN_TEN_DIGIT_REGEX, { message: 'کد پستی باید ۱۰ رقم باشد' })
   postalCode?: string | null;
+
+  @Transform(bankAccountOrNull)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @Matches(/^IR\d{24}$/, { message: 'شماره شبا باید با IR و ۲۴ رقم وارد شود' })
+  bankAccount?: string | null;
+
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  @MaxLength(100)
+  telegramChatId?: string | null;
 
   @IsOptional()
   @IsIn(USER_ACCOUNT_KINDS, { message: 'نوع حساب نامعتبر است' })

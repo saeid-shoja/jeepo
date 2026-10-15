@@ -4,11 +4,14 @@ import {
   formatPrice,
   formatProductLocationWithProvince,
   formatSellerRatingLabel,
+  formatVehicleProductionYear,
   getVehiclePaintConditionLabel,
   isProductColorSelectable,
   LISTING_INTENT_LABELS,
   parseProductColorIds,
+  parseVehicleProductionYear,
   timeAgo,
+  VEHICLE_GEARBOXES,
 } from '@offroad/shared';
 import {
   ArrowRight,
@@ -140,6 +143,23 @@ export function ProductDetailClient() {
         value:
           getVehiclePaintConditionLabel(product.paintCondition) ?? String(product.paintCondition),
       });
+    }
+
+    if (product.productionYearBefore1370) {
+      rows.push({ label: 'سال تولید', value: 'قبل از ۱۳۷۰ شمسی' });
+    } else if (parseVehicleProductionYear(product.productionYear)) {
+      const { solarYear, gregorianYear } = parseVehicleProductionYear(product.productionYear)!;
+      rows.push({
+        label: 'سال تولید',
+        value: formatVehicleProductionYear(solarYear, gregorianYear),
+      });
+    }
+
+    if (product.gearbox) {
+      const gearboxLabel = VEHICLE_GEARBOXES.find(
+        (option) => option.value === product.gearbox,
+      )?.label;
+      if (gearboxLabel) rows.push({ label: 'نوع گیربکس', value: gearboxLabel });
     }
 
     if ((product.city || product.neighborhood) && !isShopProduct(product)) {

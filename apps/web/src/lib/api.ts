@@ -132,14 +132,18 @@ export const api = {
   products: {
     list: (params?: Record<string, string>, init?: { signal?: AbortSignal }) => {
       const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-      return request<{ products: any[]; total: number; page: number; totalPages: number }>(
-        `/products${qs}`,
-        { signal: init?.signal },
-      );
+      return request<{
+        products: any[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>(`/products${qs}`, { signal: init?.signal });
     },
     get: (id: string) => request<any>(`/products/${id}`),
     related: (id: string, init?: { signal?: AbortSignal }) =>
-      request<{ products: any[] }>(`/products/${id}/related`, { signal: init?.signal }),
+      request<{ products: any[] }>(`/products/${id}/related`, {
+        signal: init?.signal,
+      }),
     listingQuota: () =>
       request<{
         activeCount: number;
@@ -171,7 +175,10 @@ export const api = {
         paymentDueAt: string | null;
       }>('/products/public', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) =>
-      request<any>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+      request<any>(`/products/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
     delete: (id: string) => request<any>(`/products/${id}`, { method: 'DELETE' }),
     payListingFee: (id: string) =>
       request<any>(`/products/${id}/pay-listing-fee`, { method: 'POST' }),
@@ -199,7 +206,12 @@ export const api = {
   categories: {
     list: () =>
       request<{
-        parts: Array<{ id: string; name: string; slug: string; parentId?: string | null }>;
+        parts: Array<{
+          id: string;
+          name: string;
+          slug: string;
+          parentId?: string | null;
+        }>;
         carBrands: Array<{ value: string; label: string }>;
         libraries: Array<{
           id: string;
@@ -220,6 +232,37 @@ export const api = {
 
   orders: {
     my: () => request<any[]>('/orders/my'),
+    selling: () => request<any[]>('/orders/selling'),
+    sellerConfirm: (orderId: string, itemId: string) =>
+      request<any>(`/orders/${orderId}/items/${itemId}/seller-confirm`, {
+        method: 'POST',
+      }),
+    submitPackaging: (
+      orderId: string,
+      itemId: string,
+      data: { video: string; videoDurationSeconds: number; images: string[] },
+    ) =>
+      request<any>(`/orders/${orderId}/items/${itemId}/packaging`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    markShipped: (orderId: string, itemId: string, receipt: string) =>
+      request<any>(`/orders/${orderId}/items/${itemId}/shipped`, {
+        method: 'POST',
+        body: JSON.stringify({ receipt }),
+      }),
+    buyerCancel: (orderId: string, itemId: string) =>
+      request<any>(`/orders/${orderId}/items/${itemId}/buyer-cancel`, {
+        method: 'POST',
+      }),
+    buyerConfirm: (orderId: string, itemId: string) =>
+      request<any>(`/orders/${orderId}/items/${itemId}/buyer-confirm`, {
+        method: 'POST',
+      }),
+    buyerReport: (orderId: string, itemId: string) =>
+      request<{ supportUrl: string }>(`/orders/${orderId}/items/${itemId}/buyer-report`, {
+        method: 'POST',
+      }),
     preview: (data: { items: { productId: string; quantity: number; color?: string }[] }) =>
       request<{
         items: Array<{
@@ -270,7 +313,9 @@ export const api = {
         body: JSON.stringify({ body }),
       }),
     markRead: (id: string) =>
-      request<{ updated: number }>(`/product-chats/${id}/read`, { method: 'PATCH' }),
+      request<{ updated: number }>(`/product-chats/${id}/read`, {
+        method: 'PATCH',
+      }),
   },
 
   payments: {
@@ -329,7 +374,10 @@ export const api = {
     products: () => request<any[]>('/users/products'),
     seller: (id: string) => request<any>(`/users/sellers/${id}`),
     updateProfile: (data: any) =>
-      request<any>('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+      request<any>('/users/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
     changePassword: (data: { currentPassword: string; newPassword: string }) =>
       request<{ message: string }>('/users/profile/password', {
         method: 'PATCH',
@@ -340,7 +388,9 @@ export const api = {
     markMessageRead: (id: string) =>
       request<any>(`/users/messages/${id}/read`, { method: 'PATCH' }),
     markAllMessagesRead: () =>
-      request<{ updated: number }>('/users/messages/read-all', { method: 'PATCH' }),
+      request<{ updated: number }>('/users/messages/read-all', {
+        method: 'PATCH',
+      }),
     favoriteIds: () => request<{ productIds: string[] }>('/users/favorites/ids'),
     favorites: () => request<any[]>('/users/favorites'),
     addFavorite: (productId: string) =>
@@ -351,16 +401,6 @@ export const api = {
       request<{ productId: string; favorited: boolean }>(`/users/favorites/${productId}`, {
         method: 'DELETE',
       }),
-    telegramLink: () =>
-      request<{
-        configured: boolean;
-        linked: boolean;
-        botUrl?: string;
-        botUsername?: string;
-        linkedAt?: string;
-        expiresAt?: string;
-        message?: string;
-      }>('/users/telegram/link'),
     pushConfig: () => request<{ enabled: boolean; publicKey: string | null }>('/users/push/config'),
     pushSubscribe: (data: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
       request<{ subscribed: boolean }>('/users/push/subscribe', {

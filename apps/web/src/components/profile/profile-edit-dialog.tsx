@@ -3,6 +3,7 @@
 import {
   IRAN_TEN_DIGIT_REGEX,
   normalizeTenDigits,
+  toEnglishDigits,
   USER_ACCOUNT_KIND_LABELS,
   USER_ACCOUNT_KINDS,
   type UserAccountKind,
@@ -37,6 +38,8 @@ type ProfileShape = {
   shopLicenseImage?: string | null;
   address?: string | null;
   postalCode?: string | null;
+  bankAccount?: string | null;
+  telegramChatId?: string | null;
   accountKind?: UserAccountKind | string | null;
 };
 
@@ -56,6 +59,8 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
   const [shopLicenseImage, setShopLicenseImage] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  const [bankAccount, setBankAccount] = useState('');
+  const [telegramChatId, setTelegramChatId] = useState('');
   const [accountKind, setAccountKind] = useState<UserAccountKind>('REGULAR');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -72,6 +77,8 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
     setShopLicenseImage(profile?.shopLicenseImage ?? null);
     setAddress(profile?.address ?? '');
     setPostalCode(profile?.postalCode ?? '');
+    setBankAccount(profile?.bankAccount ?? '');
+    setTelegramChatId(profile?.telegramChatId ?? '');
     setAccountKind(profile?.accountKind === 'SHOP' ? 'SHOP' : 'REGULAR');
     setCurrentPassword('');
     setNewPassword('');
@@ -93,6 +100,11 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
     const postalDigits = postalCode ? normalizeTenDigits(postalCode) : '';
     if (postalDigits && !IRAN_TEN_DIGIT_REGEX.test(postalDigits)) {
       toast.error('کد پستی باید ۱۰ رقم باشد');
+      return;
+    }
+    const normalizedBankAccount = toEnglishDigits(bankAccount).toUpperCase().replace(/[\s-]/g, '');
+    if (normalizedBankAccount && !/^IR\d{24}$/.test(normalizedBankAccount)) {
+      toast.error('شماره شبا باید با IR و ۲۴ رقم وارد شود');
       return;
     }
 
@@ -132,6 +144,8 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
         shopLicenseImage,
         address: address.trim() || null,
         postalCode: postalDigits || null,
+        bankAccount: normalizedBankAccount || null,
+        telegramChatId: telegramChatId.trim() || null,
         accountKind,
       });
       patchUser({
@@ -179,7 +193,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
                 className="text-xs"
               />
             </div>
-            <CitySelect value={city} onChange={setCity} label="شهر (اختیاری)" required={false} />
+            <CitySelect value={city} onChange={setCity} label="شهر " required={false} />
             <div className="space-y-2 border-t pt-4">
               <p className="text-sm font-medium">تغییر رمز عبور</p>
               <p className="text-muted-foreground text-xs">
@@ -215,7 +229,7 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label>نوع حساب (اختیاری)</Label>
+              <Label>نوع حساب </Label>
               <div className="flex flex-wrap gap-2">
                 {USER_ACCOUNT_KINDS.map((kind) => (
                   <Button
@@ -232,19 +246,19 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="profile-national-id">کد ملی (اختیاری)</Label>
+              <Label htmlFor="profile-national-id">کد ملی </Label>
               <DigitsInput
                 id="profile-national-id"
                 inputMode="numeric"
                 maxLength={10}
                 value={nationalId}
                 onChange={(e) => setNationalId(e.target.value)}
-                placeholder="۱۰ رقم"
+                placeholder="رقم ۱۰"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="profile-postal">کد پستی (اختیاری)</Label>
+              <Label htmlFor="profile-postal">کد پستی </Label>
               <DigitsInput
                 id="profile-postal"
                 inputMode="numeric"
@@ -256,7 +270,39 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="profile-address">آدرس دقیق (اختیاری)</Label>
+              <Label htmlFor="profile-bankAccount">شماره شبای بانکی</Label>
+              <Input
+                id="profile-bankAccount"
+                dir="ltr"
+                inputMode="text"
+                maxLength={26}
+                value={bankAccount}
+                onChange={(e) =>
+                  setBankAccount(
+                    toEnglishDigits(e.target.value).toUpperCase().replace(/[\s-]/g, ''),
+                  )
+                }
+                placeholder="IR000000000000000000000000"
+                className="text-xs"
+              />
+              <p className="text-muted-foreground text-xs">حساب باید مربوط به خود کاربر باشد.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-telegram-id">شناسه تلگرام</Label>
+              <Input
+                id="profile-telegram-id"
+                dir="ltr"
+                maxLength={100}
+                value={telegramChatId}
+                onChange={(e) => setTelegramChatId(e.target.value)}
+                placeholder="@username یا شناسه عددی"
+                className="text-xs"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="profile-address">آدرس دقیق </Label>
               <Textarea
                 id="profile-address"
                 rows={3}
@@ -268,21 +314,20 @@ export function ProfileEditDialog({ profile, onUpdated }: ProfileEditDialogProps
 
             <ProfileDocImageField
               id="profile-national-card"
-              label="عکس کارت ملی (اختیاری)"
-              hint="پس از انتخاب، تصویر به WebP تبدیل و فشرده می‌شود."
+              label="عکس کارت ملی "
               value={nationalIdCardImage}
               onChange={setNationalIdCardImage}
             />
             <ProfileDocImageField
               id="profile-consent-selfie"
-              label="عکس رضایت سلفی (اختیاری)"
-              hint="سلفی در حالی که کارت ملی و دست‌نوشته رضایت در دست دارید."
+              label="عکس رضایت سلفی "
+              hint="سلفی در حالی که کارت ملی در دست راست و دست‌نوشته رضایت همراه با متن و امضا در دست چپ دارید. متن دست نوشته: اینجانب آقا/خانم ..... با تمام قوانین خرید و فروش مربوط به تضمین فروشگاه جیپو و قوانین ثبت آگهی و نحوه پرداخت و مدیریت خرید موافق می باشم و تمام شرایط آن را می پذیرم. "
               value={consentSelfieImage}
               onChange={setConsentSelfieImage}
             />
             <ProfileDocImageField
               id="profile-shop-license"
-              label="تصویر پروانه مغازه یا فروشگاه (اختیاری)"
+              label="تصویر پروانه مغازه یا فروشگاه "
               value={shopLicenseImage}
               onChange={setShopLicenseImage}
             />

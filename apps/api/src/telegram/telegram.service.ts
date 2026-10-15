@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 const TELEGRAM_API = 'https://api.telegram.org';
@@ -33,26 +32,6 @@ export class TelegramService {
     return this.botUsername.replace(/^@/, '');
   }
 
-  /** Deep-link that auto-sends /start TOKEN when the user opens the bot. */
-  buildDeepLink(token: string): string {
-    return `https://t.me/${this.getBotUsername()}?start=${encodeURIComponent(token)}`;
-  }
-
-  /** URL-safe token for Telegram start payload (max 64 chars). */
-  generateLinkToken(): string {
-    return randomBytes(16).toString('hex');
-  }
-
-  normalizeLinkCode(raw: string | null | undefined): string | null {
-    if (!raw) return null;
-    const hex = raw.trim().toLowerCase();
-    if (/^[a-f0-9]{32}$/.test(hex)) return hex;
-    const code = raw.trim().toUpperCase().replace(/[\s-]/g, '');
-    // Legacy 6-char codes from the old copy-paste flow
-    if (/^[A-Z0-9]{6}$/.test(code)) return code;
-    return null;
-  }
-
   private async callApi<T>(method: string, body: Record<string, unknown>): Promise<T | null> {
     if (!this.botToken) {
       this.logger.warn(`Telegram skipped (${method}): TELEGRAM_BOT_TOKEN missing`);
@@ -65,7 +44,11 @@ export class TelegramService {
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { ok: boolean; description?: string; result?: T };
+      const data = (await res.json()) as {
+        ok: boolean;
+        description?: string;
+        result?: T;
+      };
       if (!data.ok) {
         this.logger.warn(
           `Telegram ${method} failed: ${data.description ?? res.status}${formatApiContext(body)}`,
@@ -79,55 +62,6 @@ export class TelegramService {
         `Telegram ${method} network error: ${error instanceof Error ? error.message : error}`,
       );
       return null;
-    }
-  }
-
-  async getWebhookInfo(): Promise<{
-    url?: string;
-    pending_update_count?: number;
-    last_error_message?: string;
-  } | null> {
-    return this.callApi('getWebhookInfo', {});
-  }
-
-  async deleteWebhook(): Promise<boolean> {
-    const result = await this.callApi('deleteWebhook', { drop_pending_updates: false });
-    return result != null;
-  }
-
-  async getUpdates(offset: number, timeoutSec = 25): Promise<TelegramUpdate[]> {
-    if (!this.botToken) return [];
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), (timeoutSec + 5) * 1000);
-
-    try {
-      const res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/getUpdates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          offset,
-          timeout: timeoutSec,
-          allowed_updates: ['message'],
-        }),
-        signal: controller.signal,
-      });
-      const data = (await res.json()) as {
-        ok: boolean;
-        description?: string;
-        result?: TelegramUpdate[];
-      };
-      if (!data.ok) {
-        this.logger.warn(`Telegram getUpdates failed: ${data.description ?? res.status}`);
-        return [];
-      }
-      return data.result ?? [];
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return [];
-      this.logger.warn(`Telegram getUpdates error: ${err instanceof Error ? err.message : err}`);
-      return [];
-    } finally {
-      clearTimeout(timer);
     }
   }
 
@@ -150,7 +84,11 @@ export class TelegramService {
     const cached = this.resolvedChatIds.get(trimmed);
     if (cached) return cached;
 
-    const chat = await this.callApi<{ id: number; is_forum?: boolean; title?: string }>('getChat', {
+    const chat = await this.callApi<{
+      id: number;
+      is_forum?: boolean;
+      title?: string;
+    }>('getChat', {
       chat_id: trimmed,
     });
     if (!chat) return trimmed;

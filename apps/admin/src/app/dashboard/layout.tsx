@@ -8,6 +8,7 @@ import {
   LogOut,
   Megaphone,
   Package,
+  ShieldCheck,
   ShoppingCart,
   Users,
 } from 'lucide-react';
@@ -24,14 +25,33 @@ const NAV_ICONS = {
   blog: FileText,
   users: Users,
   orders: ShoppingCart,
+  guaranteedOrders: ShieldCheck,
   messages: Megaphone,
 } as const;
+
+type NavEntry = {
+  key: keyof typeof NAV_ICONS;
+  label: string;
+  href: string;
+};
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { loading, error, navItems, profile, refresh } = useAdminAccess();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const displayNavItems: NavEntry[] = navItems.flatMap((item): NavEntry[] => {
+    const entry: NavEntry = { key: item.key, label: item.label, href: item.href };
+    if (item.key !== 'orders') return [entry];
+    return [
+      entry,
+      {
+        key: 'guaranteedOrders',
+        label: 'سفارش‌های تضمینی',
+        href: '/dashboard/guaranteed-orders',
+      },
+    ];
+  });
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -97,7 +117,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="mt-4 space-y-1 px-3">
-          {navItems.map((item) => {
+          {displayNavItems.map((item) => {
             const Icon = NAV_ICONS[item.key];
             const active =
               pathname === item.href ||

@@ -45,7 +45,9 @@ function LibraryProductRows({
     !categoriesLoading &&
     (eagerCount === 0 ||
       (eagerLibraries.length > 0 &&
-        eagerLibraries.every((lib) => statuses[lib.id] === 'ready' || statuses[lib.id] === 'empty')));
+        eagerLibraries.every(
+          (lib) => statuses[lib.id] === 'ready' || statuses[lib.id] === 'empty',
+        )));
 
   const eagerHasItems = eagerLibraries.some((lib) => statuses[lib.id] === 'ready');
 

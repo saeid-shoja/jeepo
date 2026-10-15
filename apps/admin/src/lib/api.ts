@@ -1,19 +1,16 @@
-import { type AdminAccessProfile, resolveApiBaseUrl } from "@offroad/shared";
+import { type AdminAccessProfile, resolveApiBaseUrl } from '@offroad/shared';
 
 const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
 }
 
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -21,18 +18,18 @@ async function request<T>(
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    cache: "no-store",
+    cache: 'no-store',
   });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: "خطا" }));
+    const error = await res.json().catch(() => ({ message: 'خطا' }));
     const message = Array.isArray(error.message)
       ? error.message[0]
       : error.message || `HTTP ${res.status}`;
 
     if (res.status === 401 && token) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-      throw new Error("نشست شما منقضی شده است. دوباره وارد شوید");
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      throw new Error('نشست شما منقضی شده است. دوباره وارد شوید');
     }
 
     throw new Error(message);
@@ -42,14 +39,14 @@ async function request<T>(
 
 export const adminApi = {
   login: (identifier: string, password: string) =>
-    request<{ token: string; user: any }>("/auth/login", {
-      method: "POST",
+    request<{ token: string; user: any }>('/auth/login', {
+      method: 'POST',
       body: JSON.stringify({ identifier, password }),
     }),
-  me: () => request<AdminAccessProfile>("/admin/me"),
-  dashboard: () => request<any>("/admin/dashboard"),
+  me: () => request<AdminAccessProfile>('/admin/me'),
+  dashboard: () => request<any>('/admin/dashboard'),
   users: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params).toString()}` : "";
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<{
       users: any[];
       total: number;
@@ -69,46 +66,45 @@ export const adminApi = {
     isSuperAdmin?: boolean;
     adminPermissions?: string[];
   }) =>
-    request<any>("/admin/users", {
-      method: "POST",
+    request<any>('/admin/users', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
   updateUser: (id: string, data: Record<string, unknown>) =>
     request<any>(`/admin/users/${id}`, {
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify(data),
     }),
   getUser: (id: string) => request<any>(`/admin/users/${id}`),
-  deleteUser: (id: string) =>
-    request<any>(`/admin/users/${id}`, { method: "DELETE" }),
+  deleteUser: (id: string) => request<any>(`/admin/users/${id}`, { method: 'DELETE' }),
   userProducts: (userId: string, params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params).toString()}` : "";
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<any>(`/admin/users/${userId}/products${qs}`);
   },
   products: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params).toString()}` : "";
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<any>(`/admin/products${qs}`);
   },
   updateProductStatus: (id: string, status: string) =>
     request<any>(`/admin/products/${id}/status`, {
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
-  orders: () => request<any[]>("/orders"),
-  guaranteedOrders: () => request<any[]>("/orders/guaranteed"),
+  orders: () => request<any[]>('/orders'),
+  guaranteedOrders: () => request<any[]>('/orders/guaranteed'),
   order: (id: string) => request<any>(`/orders/${id}`),
   updateOrderStatus: (id: string, status: string) =>
     request<any>(`/orders/${id}/status`, {
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
   resolveGuaranteedOrderItem: (
     orderId: string,
     itemId: string,
-    action: "PAY_SELLER" | "APPROVE_CANCEL" | "MARK_REFUNDED" | "UNDER_REVIEW",
+    action: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'MARK_REFUNDED' | 'UNDER_REVIEW',
   ) =>
     request<any>(`/orders/${orderId}/items/${itemId}/admin-action`, {
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify({ action }),
     }),
   setProductsGuarantee: (data: {
@@ -117,8 +113,8 @@ export const adminApi = {
     categoryId?: string;
     userId?: string;
   }) =>
-    request<{ updated: number }>("/admin/products/guarantee", {
-      method: "POST",
+    request<{ updated: number }>('/admin/products/guarantee', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
   announceBestPrice: (productIds: string[]) =>
@@ -128,8 +124,8 @@ export const adminApi = {
       skipped: number;
       failedProducts: Array<{ id: string; title: string }>;
       skippedIds: string[];
-    }>("/admin/products/announce-best-price", {
-      method: "POST",
+    }>('/admin/products/announce-best-price', {
+      method: 'POST',
       body: JSON.stringify({ productIds }),
     }),
   sendMessage: (data: {
@@ -149,18 +145,18 @@ export const adminApi = {
       telegramFailed?: number;
       warnings?: string[];
       message: string;
-    }>("/admin/messages", {
-      method: "POST",
+    }>('/admin/messages', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
-  messages: () => request<any[]>("/admin/messages"),
+  messages: () => request<any[]>('/admin/messages'),
   telegramStats: () =>
     request<{
       configured: boolean;
       subscriberCount: number;
       botUsername: string | null;
-    }>("/admin/telegram/stats"),
-  categories: () => request<any>("/categories"),
+    }>('/admin/telegram/stats'),
+  categories: () => request<any>('/categories'),
   createCategory: (data: {
     name: string;
     slug: string;
@@ -168,8 +164,8 @@ export const adminApi = {
     libraryId?: string;
     sortOrder?: number;
   }) =>
-    request<any>("/categories", {
-      method: "POST",
+    request<any>('/categories', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
   updateCategory: (
@@ -183,42 +179,32 @@ export const adminApi = {
     },
   ) =>
     request<any>(`/categories/${id}`, {
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify(data),
     }),
-  deleteCategory: (id: string) =>
-    request<any>(`/categories/${id}`, { method: "DELETE" }),
-  createLibrary: (data: {
-    name: string;
-    slug: string;
-    kind: string;
-    sortOrder?: number;
-  }) =>
-    request<any>("/libraries", {
-      method: "POST",
+  deleteCategory: (id: string) => request<any>(`/categories/${id}`, { method: 'DELETE' }),
+  createLibrary: (data: { name: string; slug: string; kind: string; sortOrder?: number }) =>
+    request<any>('/libraries', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateLibrary: (
-    id: string,
-    data: { name?: string; slug?: string; sortOrder?: number },
-  ) =>
+  updateLibrary: (id: string, data: { name?: string; slug?: string; sortOrder?: number }) =>
     request<any>(`/libraries/${id}`, {
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify(data),
     }),
-  deleteLibrary: (id: string) =>
-    request<any>(`/libraries/${id}`, { method: "DELETE" }),
+  deleteLibrary: (id: string) => request<any>(`/libraries/${id}`, { method: 'DELETE' }),
   blogPosts: (params?: Record<string, string>) => {
-    const qs = params ? `?${new URLSearchParams(params).toString()}` : "";
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
     return request<{
-      posts: import("@offroad/shared").BlogPostAdmin[];
+      posts: import('@offroad/shared').BlogPostAdmin[];
       total: number;
       page: number;
       totalPages: number;
     }>(`/admin/blog/posts${qs}`);
   },
   getBlogPost: (id: string) =>
-    request<import("@offroad/shared").BlogPostAdmin>(`/admin/blog/posts/${id}`),
+    request<import('@offroad/shared').BlogPostAdmin>(`/admin/blog/posts/${id}`),
   createBlogPost: (data: {
     title: string;
     slug: string;
@@ -227,10 +213,10 @@ export const adminApi = {
     bodyJson?: Record<string, unknown>;
     coverImage: string;
     tags?: string[];
-    status?: "DRAFT" | "PUBLISHED";
+    status?: 'DRAFT' | 'PUBLISHED';
   }) =>
-    request<import("@offroad/shared").BlogPostAdmin>("/admin/blog/posts", {
-      method: "POST",
+    request<import('@offroad/shared').BlogPostAdmin>('/admin/blog/posts', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
   updateBlogPost: (
@@ -243,24 +229,18 @@ export const adminApi = {
       bodyJson?: Record<string, unknown> | null;
       coverImage?: string;
       tags?: string[];
-      status?: "DRAFT" | "PUBLISHED";
+      status?: 'DRAFT' | 'PUBLISHED';
     },
   ) =>
-    request<import("@offroad/shared").BlogPostAdmin>(
-      `/admin/blog/posts/${id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      },
-    ),
-  updateBlogPostStatus: (id: string, status: "DRAFT" | "PUBLISHED") =>
-    request<import("@offroad/shared").BlogPostAdmin>(
-      `/admin/blog/posts/${id}/status`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      },
-    ),
+    request<import('@offroad/shared').BlogPostAdmin>(`/admin/blog/posts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  updateBlogPostStatus: (id: string, status: 'DRAFT' | 'PUBLISHED') =>
+    request<import('@offroad/shared').BlogPostAdmin>(`/admin/blog/posts/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   deleteBlogPost: (id: string) =>
-    request<{ deleted: true }>(`/admin/blog/posts/${id}`, { method: "DELETE" }),
+    request<{ deleted: true }>(`/admin/blog/posts/${id}`, { method: 'DELETE' }),
 };

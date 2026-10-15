@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -17,11 +16,9 @@ import {
 import { MOCK_SLIDES, type Slide } from '@/lib/get-landing-slides';
 import { cn } from '@/lib/utils';
 
-const MOBILE_HERO_HEIGHT =
-  'h-[min(55svh,calc(100svh-8rem))] min-h-[16rem]';
+const MOBILE_HERO_HEIGHT = 'h-[min(55svh,calc(100svh-8rem))] min-h-[16rem]';
 
-const DESKTOP_HERO_HEIGHT =
-  'lg:h-[min(38svh,calc(50svh-4rem))] lg:min-h-[13rem]';
+const DESKTOP_HERO_HEIGHT = 'lg:h-[min(38svh,calc(50svh-4rem))] lg:min-h-[13rem]';
 
 function SlideDots({
   slides,
@@ -33,10 +30,7 @@ function SlideDots({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div
-      className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2 sm:bottom-6 lg:bottom-3"
-      aria-label="انتخاب اسلاید"
-    >
+    <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2 sm:bottom-6 lg:bottom-3">
       {slides.map((slide, index) => (
         <button
           key={slide.id}
@@ -46,9 +40,7 @@ function SlideDots({
           onClick={() => onSelect(index)}
           className={cn(
             'h-2 rounded-full transition-[width,background-color] duration-200',
-            current === index
-              ? 'w-6 bg-primary'
-              : 'w-2 bg-white/60 hover:bg-white',
+            current === index ? 'w-6 bg-primary' : 'w-2 bg-white/60 hover:bg-white',
           )}
         />
       ))}
@@ -56,13 +48,7 @@ function SlideDots({
   );
 }
 
-function HeroSlide({
-  slide,
-  index,
-}: {
-  slide: Slide;
-  index: number;
-}) {
+function HeroSlide({ slide, index }: { slide: Slide; index: number }) {
   const imageOnRight = index % 2 === 0;
 
   return (
@@ -76,19 +62,19 @@ function HeroSlide({
       )}
     >
       {/* Main image */}
-     <Image
-  src={slide.imageUrl}
-  alt={slide.title}
-  fill
-  priority={index === 0}
-  sizes="(min-width: 1024px) 60vw, 100vw"
-  className={cn(
-    'object-cover',
-    imageOnRight
-      ? 'lg:right-auto! lg:!left-0! lg:w-[60%]!'
-      : 'lg:right-auto! lg:right-0! lg:w-[60%]!',
-  )}
-/>
+      <Image
+        src={slide.imageUrl}
+        alt={slide.title}
+        fill
+        priority={index === 0}
+        sizes="(min-width: 1024px) 60vw, 100vw"
+        className={cn(
+          'object-cover',
+          imageOnRight
+            ? 'lg:right-auto! lg:!left-0! lg:w-[60%]!'
+            : 'lg:right-auto! lg:right-0! lg:w-[60%]!',
+        )}
+      />
 
       {/* Mobile overlay */}
       <div
@@ -113,15 +99,17 @@ function HeroSlide({
       <div
         className={cn(
           'absolute inset-0 z-10 flex flex-col justify-end p-4 pb-14 sm:p-6 sm:pb-16',
-          'lg:inset-y-0 lg:flex lg:w-full lg:justify-center lg:p-8'
+          'lg:inset-y-0 lg:flex lg:w-full lg:justify-center lg:p-8',
         )}
       >
-        <div className={cn("w-full lg:w-1/2 lg:absolute"
-          ,
-          imageOnRight
-            ? 'lg:right-0 lg:items-center lg:text-center'
-            : 'lg:left-0 lg:items-center lg:text-center',
-        )}>
+        <div
+          className={cn(
+            'w-full lg:w-1/2 lg:absolute',
+            imageOnRight
+              ? 'lg:right-0 lg:items-center lg:text-center'
+              : 'lg:left-0 lg:items-center lg:text-center',
+          )}
+        >
           <h2 className="text-xl font-bold leading-snug text-white sm:text-2xl lg:text-foreground lg:text-3xl">
             {slide.title}
           </h2>
@@ -134,14 +122,8 @@ function HeroSlide({
 
           {slide.link && (
             <div className="mt-4 sm:mt-6">
-              <Button
-                asChild
-                size="lg"
-                className="w-full max-w-xs rounded-md sm:w-auto"
-              >
-                <Link href={slide.link}>
-                  {slide.linkLabel ?? 'مشاهده بیشتر'}
-                </Link>
+              <Button asChild size="lg" className="w-full max-w-xs rounded-md sm:w-auto">
+                <Link href={slide.link}>{slide.linkLabel ?? 'مشاهده بیشتر'}</Link>
               </Button>
             </div>
           )}
@@ -186,7 +168,7 @@ export function HeroSlider() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [api, slides.length]);
+  }, [api]);
 
   if (slides.length === 0) return null;
 
@@ -202,19 +184,11 @@ export function HeroSlider() {
           align: 'start',
           duration: 25,
         }}
-        className={cn(
-          'w-full',
-          MOBILE_HERO_HEIGHT,
-          'lg:h-auto',
-          DESKTOP_HERO_HEIGHT,
-        )}
+        className={cn('w-full', MOBILE_HERO_HEIGHT, 'lg:h-auto', DESKTOP_HERO_HEIGHT)}
       >
         <CarouselContent className="ms-0 h-full lg:h-auto">
           {slides.map((slide, index) => (
-            <CarouselItem
-              key={slide.id}
-              className="h-full min-w-0 ps-0 lg:h-auto"
-            >
+            <CarouselItem key={slide.id} className="h-full min-w-0 ps-0 lg:h-auto">
               <HeroSlide slide={slide} index={index} />
             </CarouselItem>
           ))}

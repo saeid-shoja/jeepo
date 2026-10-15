@@ -22,7 +22,7 @@ import { type LibraryNode, useCategories } from '@/stores/categories-store';
 /** Shared row size for parent + submenu panels */
 export const LIBRARY_MENU_WIDTH = 'w-66';
 const MENU_ROW =
-  'flex h-10 w-60 items-center justify-between gap-2 px-2 text-sm outline-none max-w-full';
+  'flex h-10 w-64 items-center justify-between gap-2 px-2 text-sm outline-none max-w-full border-b border-black/10 dark:border-gray-600';
 const SUBMENU_PANEL = cn(
   LIBRARY_MENU_WIDTH,
   'min-w-64 max-h-[50vh] home-strip-scrollbar overflow-y-auto overscroll-contain p-1 shadow-lg',
@@ -54,7 +54,7 @@ function MenuLinkRow({
       href={href}
       className={cn(
         MENU_ROW,
-        'hover:bg-accent focus:bg-accent cursor-pointer rounded-sm transition-colors',
+        'hover:bg-accent focus:bg-accent cursor-pointer rounded-sm transition-color',
         className,
       )}
     >
@@ -125,15 +125,15 @@ function LibrarySubmenuDesktop({ library }: { library: LibraryNode }) {
       <MenubarSubContent className={SUBMENU_PANEL}>
         {isFlat
           ? library.children.map((item) => (
-              <MenubarItem key={item.id} asChild className="p-0 focus:bg-transparent">
-                <MenuLinkRow className="flex justify-end pr-3" href={getLibraryNodeHref(item)}>
-                  {item.name}
-                </MenuLinkRow>
-              </MenubarItem>
-            ))
+            <MenubarItem key={item.id} asChild className="p-0 focus:bg-transparent">
+              <MenuLinkRow className="flex justify-end pr-3" href={getLibraryNodeHref(item)}>
+                {item.name}
+              </MenuLinkRow>
+            </MenubarItem>
+          ))
           : library.children.map((group) => (
-              <PartGroupSubmenuDesktop key={group.id} group={group} />
-            ))}
+            <PartGroupSubmenuDesktop key={group.id} group={group} />
+          ))}
       </MenubarSubContent>
     </MenubarSub>
   );
@@ -150,7 +150,7 @@ export function CategoriesNavDropdown({ className, triggerClassName }: Categorie
             'text-muted-foreground hover:text-primary data-[state=open]:text-primary h-auto gap-2 px-2 py-1.5 text-sm font-normal',
             MENU_ROW_RTL,
             triggerClassName,
-            'w-32',
+            'w-32 border-none',
           )}
         >
           <span className="text-end">دسته بندی</span>
@@ -217,7 +217,7 @@ function MobileGroupSection({
         <ChevronDown className="size-4 opacity-70 transition-transform" />
         <span className="flex-1 truncate text-start">{group.name}</span>
       </CollapsibleTrigger>
-      <CollapsibleContent className="border-border/60 mr-2 space-y-0.5 border-r-2 pr-2">
+      <CollapsibleContent className="border-border/60 space-y-0.5 border-r-2 pr-2">
         {group.children.map((sub) => (
           <Link
             key={sub.id}
@@ -267,24 +267,24 @@ function MobileLibrarySection({
       </CollapsibleTrigger>
       <CollapsibleContent
         className={cn(
-          'border-border/60 mr-2 space-y-0.5 border-r-2 pr-2',
+          'border-border/60 space-y-0.5 border-r-2 pr-2',
           isFlat && 'max-h-[50vh] overflow-y-auto overscroll-contain',
         )}
       >
         {isFlat
           ? library.children.map((item) => (
-              <Link
-                key={item.id}
-                href={getLibraryNodeHref(item)}
-                onClick={onNavigate}
-                className={cn(MENU_ROW, 'hover:bg-accent w-full rounded-sm')}
-              >
-                {item.name}
-              </Link>
-            ))
+            <Link
+              key={item.id}
+              href={getLibraryNodeHref(item)}
+              onClick={onNavigate}
+              className={cn(MENU_ROW, 'hover:bg-accent w-full rounded-sm')}
+            >
+              {item.name}
+            </Link>
+          ))
           : library.children.map((group) => (
-              <MobileGroupSection key={group.id} group={group} onNavigate={onNavigate} />
-            ))}
+            <MobileGroupSection key={group.id} group={group} onNavigate={onNavigate} />
+          ))}
       </CollapsibleContent>
     </Collapsible>
   );

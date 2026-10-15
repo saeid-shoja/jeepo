@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   canOfferGuaranteeForListingPrice,
   EXTRA_LISTING_FEE,
@@ -14,6 +14,7 @@ import {
   GUARANTEE_MAX_LISTING_PRICE_TOMAN,
   getPaymentPurposeAmount,
   isAdminApprovalRequiredCategory,
+  isValidVehicleProductionYear,
   isVehicleSaleCategory,
   listingPaymentDueAt,
   PAYMENT_PURPOSES,
@@ -23,33 +24,41 @@ import {
   resolveUserNewListingLimit,
   serializeProductColorIds,
   strengthenedEndsAt,
-} from '@offroad/shared';
-import { CategoriesService } from '../categories/categories.service';
-import { getAuctionCurrentPrice, isAuctionActive } from '../common/auction';
-import { isPurchasableProduct } from '../common/purchasable';
-import { TtlCache } from '../common/ttl-cache';
-import { MailService } from '../mail/mail.service';
+} from "@offroad/shared";
+import { CategoriesService } from "../categories/categories.service";
+import { getAuctionCurrentPrice, isAuctionActive } from "../common/auction";
+import { isPurchasableProduct } from "../common/purchasable";
+import { TtlCache } from "../common/ttl-cache";
+import { MailService } from "../mail/mail.service";
 import type {
   Advertiser,
   ProductSituation,
+  VehicleGearbox,
   VehiclePaintCondition,
-} from '../prisma/generated/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { TelegramChannelService } from '../telegram/telegram-channel.service';
-import type { CreateProductDto, ReportProductDto, UpdateProductDto } from './dto';
-import { computeActiveUntil, computeDeletionAt } from './product-lifecycle.constants';
+} from "../prisma/generated/client";
+import { PrismaService } from "../prisma/prisma.service";
+import { TelegramChannelService } from "../telegram/telegram-channel.service";
+import type {
+  CreateProductDto,
+  ReportProductDto,
+  UpdateProductDto,
+} from "./dto";
+import {
+  computeActiveUntil,
+  computeDeletionAt,
+} from "./product-lifecycle.constants";
 
 const PRODUCT_LIST_CACHE_TTL_MS = 15_000;
 const LIBRARY_CATEGORY_IDS_CACHE_TTL_MS = 60_000;
 
 /** Prefer first cover without retaining the full gallery in memory after map. */
 function parseCoverImagesOnly(imagesJson: string): string[] {
-  if (!imagesJson || imagesJson === '[]') return [];
+  if (!imagesJson || imagesJson === "[]") return [];
   try {
     const parsed = JSON.parse(imagesJson) as unknown;
     if (!Array.isArray(parsed) || parsed.length === 0) return [];
     const first = parsed[0];
-    return typeof first === 'string' && first ? [first] : [];
+    return typeof first === "string" && first ? [first] : [];
   } catch {
     return [];
   }
@@ -57,18 +66,24 @@ function parseCoverImagesOnly(imagesJson: string): string[] {
 
 function firstCoverFromImages(images?: string[] | null): string | null {
   const first = images?.[0];
-  return typeof first === 'string' && first.length > 0 ? first : null;
+  return typeof first === "string" && first.length > 0 ? first : null;
 }
 
-function storedProductColors(colors?: string[], color?: string | null): string | null {
+function storedProductColors(
+  colors?: string[],
+  color?: string | null,
+): string | null {
   if (colors !== undefined) return serializeProductColorIds(colors);
-  if (color == null || color === '') return null;
+  if (color == null || color === "") return null;
   return serializeProductColorIds(parseProductColorIds(color));
 }
 
-function resolveListImages(product: { coverImage?: string | null; images?: string }): string[] {
+function resolveListImages(product: {
+  coverImage?: string | null;
+  images?: string;
+}): string[] {
   if (product.coverImage) return [product.coverImage];
-  return parseCoverImagesOnly(product.images || '[]');
+  return parseCoverImagesOnly(product.images || "[]");
 }
 
 /** Card / strip queries: skip description, phone, and the full gallery JSON. */
@@ -126,7 +141,7 @@ export class ProductsService {
     private categoriesService: CategoriesService,
     private mailService: MailService,
     private telegramChannel: TelegramChannelService,
-    @Inject('WEB_URL') private readonly webUrl: string,
+    @Inject("WEB_URL") private readonly webUrl: string,
   ) {}
 
   private readonly listCache = new TtlCache<{
@@ -146,9 +161,9 @@ export class ProductsService {
   private postedSince(postedWithin: string): Date | null {
     const now = Date.now();
     const hours: Record<string, number> = {
-      '24h': 24,
-      '7d': 24 * 7,
-      '30d': 24 * 30,
+      "24h": 24,
+      "7d": 24 * 7,
+      "30d": 24 * 30,
     };
     const h = hours[postedWithin];
     if (!h) return null;
@@ -193,7 +208,8 @@ export class ProductsService {
     },
   ) {
     const strengthenedActive =
-      product.strengthenedUntil != null && product.strengthenedUntil.getTime() > Date.now();
+      product.strengthenedUntil != null &&
+      product.strengthenedUntil.getTime() > Date.now();
     const needsBrands = (product.carBrands?.length ?? 0) > 0;
     const brandLabels =
       options?.brandLabels ??
@@ -206,18 +222,20 @@ export class ProductsService {
     const currentPrice = isAuction
       ? getAuctionCurrentPrice(startPrice, product.auctionCurrentPrice)
       : product.price;
-    const salePrice = (product as { salePrice?: number | null }).salePrice ?? null;
-    const hasDiscount = salePrice != null && salePrice > 0 && salePrice < product.price;
+    const salePrice =
+      (product as { salePrice?: number | null }).salePrice ?? null;
+    const hasDiscount =
+      salePrice != null && salePrice > 0 && salePrice < product.price;
     const effectivePrice = hasDiscount ? salePrice : currentPrice;
     const auctionActive =
       isAuction &&
       product.auctionEndsAt != null &&
       isAuctionActive(product.auctionEndsAt) &&
-      product.status === 'ACTIVE';
+      product.status === "ACTIVE";
 
     const images = options?.coverImageOnly
       ? resolveListImages(product)
-      : (JSON.parse(product.images || '[]') as string[]);
+      : (JSON.parse(product.images || "[]") as string[]);
 
     const mapped: Record<string, unknown> = {
       ...product,
@@ -227,18 +245,19 @@ export class ProductsService {
         label: brandLabels.get(brand) ?? brand,
       })),
       situation:
-        product.advertiser === 'SHOP'
+        product.advertiser === "SHOP"
           ? ((product as { stockQuantity?: number }).stockQuantity ?? 1) < 1
-            ? 'OUT_OF_STOCK'
-            : 'IN_STOCK'
+            ? "OUT_OF_STOCK"
+            : "IN_STOCK"
           : (product.situation ?? null),
       /** @deprecated use advertiser — kept for existing web clients */
       type: product.advertiser,
       purchasable: isPurchasableProduct({
         advertiser: product.advertiser,
         hasGuarantee: product.hasGuarantee,
-        status: product.status as 'ACTIVE' | 'DEPRECATED' | 'PENDING',
-        stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
+        status: product.status as "ACTIVE" | "DEPRECATED" | "PENDING",
+        stockQuantity:
+          (product as { stockQuantity?: number }).stockQuantity ?? 1,
         isAuction,
         buyNowPrice: product.buyNowPrice,
         auctionEndsAt: product.auctionEndsAt,
@@ -252,7 +271,9 @@ export class ProductsService {
       auctionEndsAt: product.auctionEndsAt,
       activeUntil: product.activeUntil,
       deprecatedAt: product.deprecatedAt,
-      deletionAt: product.deprecatedAt ? computeDeletionAt(product.deprecatedAt) : null,
+      deletionAt: product.deprecatedAt
+        ? computeDeletionAt(product.deprecatedAt)
+        : null,
       listedAt: product.listedAt,
       strengthenedUntil: product.strengthenedUntil,
       isStrengthenedActive: strengthenedActive,
@@ -260,23 +281,28 @@ export class ProductsService {
       bidCount: product._count?.auctionBids ?? 0,
       displayPrice: isAuction ? currentPrice : effectivePrice,
       hideSellerPhone: isAuction,
-      listingFeePaid: (product as { listingFeePaid?: boolean }).listingFeePaid ?? true,
+      listingFeePaid:
+        (product as { listingFeePaid?: boolean }).listingFeePaid ?? true,
       listingPaymentDueAt:
-        (product as { listingPaymentDueAt?: Date | null }).listingPaymentDueAt ?? null,
+        (product as { listingPaymentDueAt?: Date | null })
+          .listingPaymentDueAt ?? null,
       awaitingListingPayment:
-        product.status === 'PENDING' &&
+        product.status === "PENDING" &&
         (product as { listingFeePaid?: boolean }).listingFeePaid === false,
       awaitingAdminApproval:
-        product.status === 'PENDING' &&
+        product.status === "PENDING" &&
         (product as { listingFeePaid?: boolean }).listingFeePaid !== false &&
         (Boolean((product as { hasGuarantee?: boolean }).hasGuarantee) ||
           (product.category?.slug != null &&
             isAdminApprovalRequiredCategory(product.category.slug))),
       stockQuantity: (product as { stockQuantity?: number }).stockQuantity ?? 1,
-      listingIntent: (product as { listingIntent?: string }).listingIntent ?? 'SELLER',
+      listingIntent:
+        (product as { listingIntent?: string }).listingIntent ?? "SELLER",
     };
 
-    const colorIds = parseProductColorIds((product as { color?: string | null }).color);
+    const colorIds = parseProductColorIds(
+      (product as { color?: string | null }).color,
+    );
     mapped.colors = colorIds;
     mapped.color = colorIds.length ? formatProductColorLabels(colorIds) : null;
 
@@ -284,7 +310,11 @@ export class ProductsService {
       mapped.price = currentPrice;
     }
 
-    if (product.advertiser === 'CLIENT' && !product.isAuction && !options?.viewerUserId) {
+    if (
+      product.advertiser === "CLIENT" &&
+      !product.isAuction &&
+      !options?.viewerUserId
+    ) {
       mapped.phone = null;
     }
 
@@ -323,15 +353,15 @@ export class ProductsService {
     userId: string,
   ) {
     if (product.userId !== userId) {
-      throw new ForbiddenException('شما اجازه تغییر این آگهی را ندارید');
+      throw new ForbiddenException("شما اجازه تغییر این آگهی را ندارید");
     }
   }
 
   async purgeExpiredListingPaymentDrafts(): Promise<number> {
     const result = await this.prisma.product.deleteMany({
       where: {
-        advertiser: 'CLIENT',
-        status: 'PENDING',
+        advertiser: "CLIENT",
+        status: "PENDING",
         listingFeePaid: false,
         listingPaymentDueAt: { lte: new Date() },
         orderItems: { none: {} },
@@ -342,13 +372,18 @@ export class ProductsService {
 
   async countActiveClientListings(userId: string): Promise<number> {
     return this.prisma.product.count({
-      where: { userId, advertiser: 'CLIENT', status: 'ACTIVE' },
+      where: { userId, advertiser: "CLIENT", status: "ACTIVE" },
     });
   }
 
   async countActiveNewClientListings(userId: string): Promise<number> {
     return this.prisma.product.count({
-      where: { userId, advertiser: 'CLIENT', status: 'ACTIVE', situation: 'NEW' },
+      where: {
+        userId,
+        advertiser: "CLIENT",
+        status: "ACTIVE",
+        situation: "NEW",
+      },
     });
   }
 
@@ -358,16 +393,20 @@ export class ProductsService {
       this.countActiveNewClientListings(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true, maxActiveListings: true, maxActiveNewListings: true },
+        select: {
+          role: true,
+          maxActiveListings: true,
+          maxActiveNewListings: true,
+        },
       }),
     ]);
 
     /** Admins have no free-listing or NEW-listing caps. */
-    if (user?.role === 'ADMIN') {
+    if (user?.role === "ADMIN") {
       return {
         /** Include admin-created SHOP listings in the admin's own active count. */
         activeCount: await this.prisma.product.count({
-          where: { userId, status: 'ACTIVE' },
+          where: { userId, status: "ACTIVE" },
         }),
         activeNewCount,
         freeLimit: null,
@@ -392,13 +431,13 @@ export class ProductsService {
 
   /** Hard-block when user already has max ACTIVE listings with situation=NEW. */
   async assertNewListingQuota(userId: string, situation?: string | null) {
-    if (situation !== 'NEW') return;
+    if (situation !== "NEW") return;
     const state = await this.getListingQuotaState(userId);
     if (state.unlimitedListings) return;
     const { activeNewCount, newLimit } = state;
     if (activeNewCount >= newLimit!) {
       throw new BadRequestException(
-        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit!.toLocaleString('fa-IR')} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
+        `سقف آگهی‌های فعال با وضعیت «نو» برای شما ${newLimit!.toLocaleString("fa-IR")} عدد است. برای ثبت آگهی نو، ابتدا یکی از آگهی‌های نو فعال را ببندید یا وضعیت آن را تغییر دهید.`,
       );
     }
   }
@@ -460,17 +499,22 @@ export class ProductsService {
     isAuction?: boolean;
   }): Promise<boolean> {
     if (!opts.isAuction && opts.hasGuarantee) return true;
-    return this.categoriesService.categoryRequiresAdminApproval(opts.categoryId);
+    return this.categoriesService.categoryRequiresAdminApproval(
+      opts.categoryId,
+    );
   }
 
-  private async assertGuaranteePriceAllowed(categoryId: string, price: number): Promise<void> {
+  private async assertGuaranteePriceAllowed(
+    categoryId: string,
+    price: number,
+  ): Promise<void> {
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId },
       select: { slug: true },
     });
     if (!category || !canOfferGuaranteeForListingPrice(price, category.slug)) {
       throw new BadRequestException(
-        `تضمین جیپو برای آگهی‌های بالاتر از ${(GUARANTEE_MAX_LISTING_PRICE_TOMAN / 1_000_000).toLocaleString('fa-IR')} میلیون تومان فقط در دسته «چهارچرخ و موتورسیکلت» امکان‌پذیر است.`,
+        `تضمین جیپو برای آگهی‌های بالاتر از ${(GUARANTEE_MAX_LISTING_PRICE_TOMAN / 1_000_000).toLocaleString("fa-IR")} میلیون تومان فقط در دسته «چهارچرخ و موتورسیکلت» امکان‌پذیر است.`,
       );
     }
   }
@@ -480,12 +524,20 @@ export class ProductsService {
       where: { id: productId },
       include: {
         category: true,
-        user: { select: { id: true, name: true, phone: true, email: true, city: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            city: true,
+          },
+        },
       },
     });
     if (!product?.hasGuarantee || !product.user) return;
 
-    const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${product.id}`;
+    const productUrl = `${this.webUrl.replace(/\/$/, "")}/product/${product.id}`;
     await this.mailService
       .sendGuaranteeListingPending({
         product: {
@@ -518,26 +570,62 @@ export class ProductsService {
     data: {
       mileageKm?: number | null;
       paintCondition?: VehiclePaintCondition | null;
+      productionYear?: string | null;
+      productionYearBefore1370?: boolean | null;
+      gearbox?: VehicleGearbox | null;
     },
-  ): Promise<{ mileageKm: number | null; paintCondition: VehiclePaintCondition | null }> {
+  ): Promise<{
+    mileageKm: number | null;
+    paintCondition: VehiclePaintCondition | null;
+    productionYear: string | null;
+    productionYearBefore1370: boolean;
+    gearbox: VehicleGearbox | null;
+  }> {
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId },
       select: { slug: true },
     });
     if (!category || !isVehicleSaleCategory(category.slug)) {
-      return { mileageKm: null, paintCondition: null };
+      return {
+        mileageKm: null,
+        paintCondition: null,
+        productionYear: null,
+        productionYearBefore1370: false,
+        gearbox: null,
+      };
     }
 
-    if (data.mileageKm == null || !Number.isFinite(data.mileageKm) || data.mileageKm < 0) {
-      throw new BadRequestException('میزان کارکرد (کیلومتر) را وارد کنید');
+    if (
+      data.mileageKm == null ||
+      !Number.isFinite(data.mileageKm) ||
+      data.mileageKm < 0
+    ) {
+      throw new BadRequestException("میزان کارکرد (کیلومتر) را وارد کنید");
     }
     if (!data.paintCondition) {
-      throw new BadRequestException('وضعیت رنگ بدنه را انتخاب کنید');
+      throw new BadRequestException("وضعیت رنگ بدنه را انتخاب کنید");
+    }
+    if (data.productionYearBefore1370) {
+      if (data.productionYear != null) {
+        throw new BadRequestException(
+          "سال تولید پیش از ۱۳۷۰ نباید سال مشخص داشته باشد",
+        );
+      }
+    } else if (!isValidVehicleProductionYear(data.productionYear)) {
+      throw new BadRequestException("سال تولید را انتخاب کنید");
+    }
+    if (!data.gearbox) {
+      throw new BadRequestException("نوع گیربکس را انتخاب کنید");
     }
 
     return {
       mileageKm: Math.round(data.mileageKm),
       paintCondition: data.paintCondition,
+      productionYear: data.productionYearBefore1370
+        ? null
+        : data.productionYear!,
+      productionYearBefore1370: data.productionYearBefore1370 ?? false,
+      gearbox: data.gearbox,
     };
   }
 
@@ -553,20 +641,25 @@ export class ProductsService {
     if (params.stockQuantity == null) return;
     const qty = Number(params.stockQuantity);
     if (!Number.isFinite(qty) || !Number.isInteger(qty)) {
-      throw new BadRequestException('موجودی باید عدد صحیح باشد');
+      throw new BadRequestException("موجودی باید عدد صحیح باشد");
     }
     if (qty < 0) {
-      throw new BadRequestException('موجودی نمی‌تواند منفی باشد');
+      throw new BadRequestException("موجودی نمی‌تواند منفی باشد");
     }
-    if (params.advertiser === 'CLIENT' && qty < 1) {
-      throw new BadRequestException('تعداد موجودی آگهی باید حداقل ۱ باشد');
+    if (params.advertiser === "CLIENT" && qty < 1) {
+      throw new BadRequestException("تعداد موجودی آگهی باید حداقل ۱ باشد");
     }
   }
 
-  private normalizeSalePrice(listPrice: number, salePrice?: number | null): number | null {
+  private normalizeSalePrice(
+    listPrice: number,
+    salePrice?: number | null,
+  ): number | null {
     if (salePrice == null || salePrice <= 0) return null;
     if (salePrice >= listPrice) {
-      throw new BadRequestException('قیمت با تخفیف باید کمتر از قیمت اصلی باشد');
+      throw new BadRequestException(
+        "قیمت با تخفیف باید کمتر از قیمت اصلی باشد",
+      );
     }
     return salePrice;
   }
@@ -575,26 +668,37 @@ export class ProductsService {
     data: CreateProductDto,
     userId: string,
     options: {
-      status: 'ACTIVE' | 'PENDING';
+      status: "ACTIVE" | "PENDING";
       listingFeePaid: boolean;
       listingPaymentDueAt: Date | null;
     },
   ) {
-    const brands = await this.categoriesService.parseCarBrandCodes(data.carBrands);
+    const brands = await this.categoriesService.parseCarBrandCodes(
+      data.carBrands,
+    );
     const auctionData = this.buildAuctionCreateData(data);
-    const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
+    const listingPrice = data.isAuction
+      ? (data.auctionStartPrice ?? data.price)
+      : data.price;
     const now = new Date();
-    const isClient = (data.advertiser ?? 'CLIENT') === 'CLIENT';
-    const advertiser = (data.advertiser ?? 'CLIENT') as Advertiser;
+    const isClient = (data.advertiser ?? "CLIENT") === "CLIENT";
+    const advertiser = (data.advertiser ?? "CLIENT") as Advertiser;
     this.assertStockQuantity({
       advertiser,
       stockQuantity: data.stockQuantity,
       isAuction: data.isAuction,
     });
     const newPrice =
-      data.isAuction || data.newPrice == null || data.newPrice <= 0 ? null : data.newPrice;
-    const salePrice = data.isAuction ? null : this.normalizeSalePrice(listingPrice, data.salePrice);
-    const vehicleFields = await this.resolveVehicleSaleFields(data.categoryId, data);
+      data.isAuction || data.newPrice == null || data.newPrice <= 0
+        ? null
+        : data.newPrice;
+    const salePrice = data.isAuction
+      ? null
+      : this.normalizeSalePrice(listingPrice, data.salePrice);
+    const vehicleFields = await this.resolveVehicleSaleFields(
+      data.categoryId,
+      data,
+    );
 
     return {
       title: data.title,
@@ -611,37 +715,55 @@ export class ProductsService {
       city: data.city,
       neighborhood: data.neighborhood?.trim() || null,
       phone: data.isAuction ? undefined : data.phone,
-      advertiser: data.advertiser ?? 'CLIENT',
+      advertiser: data.advertiser ?? "CLIENT",
       listingIntent:
-        (data.advertiser ?? 'CLIENT') === 'SHOP' ? 'SELLER' : (data.listingIntent ?? 'SELLER'),
+        (data.advertiser ?? "CLIENT") === "SHOP"
+          ? "SELLER"
+          : (data.listingIntent ?? "SELLER"),
       situation: data.situation,
       mileageKm: vehicleFields.mileageKm,
       paintCondition: vehicleFields.paintCondition,
+      productionYear: vehicleFields.productionYear,
+      productionYearBefore1370: vehicleFields.productionYearBefore1370,
+      gearbox: vehicleFields.gearbox,
       userId: userId || null,
       status: options.status,
       listingFeePaid: options.listingFeePaid,
       listingPaymentDueAt: options.listingPaymentDueAt,
       stockQuantity: data.isAuction ? 1 : (data.stockQuantity ?? 1),
       color: storedProductColors(data.colors, data.color),
-      activeUntil: isClient && options.status === 'ACTIVE' ? computeActiveUntil(now) : null,
-      listedAt: data.isBoosted || options.status === 'ACTIVE' ? now : undefined,
+      activeUntil:
+        isClient && options.status === "ACTIVE"
+          ? computeActiveUntil(now)
+          : null,
+      listedAt: data.isBoosted || options.status === "ACTIVE" ? now : undefined,
       ...auctionData,
-      carBrands: brands.length ? { create: brands.map((brandCode) => ({ brandCode })) } : undefined,
+      carBrands: brands.length
+        ? { create: brands.map((brandCode) => ({ brandCode })) }
+        : undefined,
     };
   }
 
-  async createPublicListing(data: CreateProductDto, userId: string, role?: string) {
+  async createPublicListing(
+    data: CreateProductDto,
+    userId: string,
+    role?: string,
+  ) {
     void this.purgeExpiredListingPaymentDrafts();
     await this.categoriesService.assertLeafCategory(data.categoryId);
 
     /** Admin-created listings belong to the shop catalog, not the user marketplace. */
-    if (role === 'ADMIN') {
+    if (role === "ADMIN") {
       const product = await this.prisma.product.create({
-        data: await this.buildCreateData({ ...data, advertiser: 'SHOP' }, userId, {
-          status: 'ACTIVE',
-          listingFeePaid: true,
-          listingPaymentDueAt: null,
-        }),
+        data: await this.buildCreateData(
+          { ...data, advertiser: "SHOP" },
+          userId,
+          {
+            status: "ACTIVE",
+            listingFeePaid: true,
+            listingPaymentDueAt: null,
+          },
+        ),
         include: productIncludeDetail,
       });
 
@@ -664,17 +786,26 @@ export class ProductsService {
     // Guarantee listings require a complete seller profile and admin approval before going live.
     const wantsGuarantee = Boolean(data.hasGuarantee) && !data.isAuction;
     if (wantsGuarantee) {
-      if (data.listingIntent === 'BUYER') {
-        throw new BadRequestException('آگهی خریدار نمی‌تواند با تضمین جیپو ثبت شود.');
+      if (data.listingIntent === "BUYER") {
+        throw new BadRequestException(
+          "آگهی خریدار نمی‌تواند با تضمین جیپو ثبت شود.",
+        );
       }
-      const listingPrice = data.isAuction ? (data.auctionStartPrice ?? data.price) : data.price;
+      const listingPrice = data.isAuction
+        ? (data.auctionStartPrice ?? data.price)
+        : data.price;
       await this.assertGuaranteePriceAllowed(data.categoryId, listingPrice);
     }
     const clientData = { ...data, hasGuarantee: wantsGuarantee };
 
     await this.assertNewListingQuota(userId, clientData.situation);
-    const { requiresListingFee, freeLimit, activeCount, activeNewCount, newLimit } =
-      await this.getListingQuotaState(userId);
+    const {
+      requiresListingFee,
+      freeLimit,
+      activeCount,
+      activeNewCount,
+      newLimit,
+    } = await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.listingNeedsAdminApproval({
       categoryId: clientData.categoryId,
       hasGuarantee: clientData.hasGuarantee,
@@ -684,30 +815,30 @@ export class ProductsService {
     const createOptions = needsAdminApproval
       ? requiresListingFee
         ? {
-            status: 'PENDING' as const,
+            status: "PENDING" as const,
             listingFeePaid: false,
             listingPaymentDueAt: listingPaymentDueAt(),
           }
         : {
-            status: 'PENDING' as const,
+            status: "PENDING" as const,
             listingFeePaid: true,
             listingPaymentDueAt: null,
           }
       : requiresListingFee
         ? {
-            status: 'PENDING' as const,
+            status: "PENDING" as const,
             listingFeePaid: false,
             listingPaymentDueAt: listingPaymentDueAt(),
           }
         : {
-            status: 'ACTIVE' as const,
+            status: "ACTIVE" as const,
             listingFeePaid: true,
             listingPaymentDueAt: null,
           };
 
     const product = await this.prisma.product.create({
       data: await this.buildCreateData(
-        { ...clientData, advertiser: 'CLIENT' },
+        { ...clientData, advertiser: "CLIENT" },
         userId,
         createOptions,
       ),
@@ -717,11 +848,11 @@ export class ProductsService {
     const mapped = await this.mapProduct(product);
     this.invalidateListCache();
 
-    if (createOptions.status === 'ACTIVE') {
+    if (createOptions.status === "ACTIVE") {
       this.telegramChannel.announceProductActive(product.id);
     } else if (
       clientData.hasGuarantee &&
-      createOptions.status === 'PENDING' &&
+      createOptions.status === "PENDING" &&
       createOptions.listingFeePaid
     ) {
       void this.notifyAdminGuaranteeListing(product.id);
@@ -741,9 +872,13 @@ export class ProductsService {
   }
 
   async payListingFee(productId: string, userId: string) {
-    await this.assertPaymentPurposeAllowed(productId, userId, PAYMENT_PURPOSES.LISTING_FEE);
+    await this.assertPaymentPurposeAllowed(
+      productId,
+      userId,
+      PAYMENT_PURPOSES.LISTING_FEE,
+    );
     throw new BadRequestException(
-      'برای پرداخت هزینه ثبت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+      "برای پرداخت هزینه ثبت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید",
     );
   }
 
@@ -763,44 +898,55 @@ export class ProductsService {
         images: true,
       },
     });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
     this.assertListingOwner(product, userId);
     return product;
   }
 
-  async assertPaymentPurposeAllowed(productId: string, userId: string, purpose: PaymentPurpose) {
+  async assertPaymentPurposeAllowed(
+    productId: string,
+    userId: string,
+    purpose: PaymentPurpose,
+  ) {
     const product = await this.getPaymentProductContext(productId, userId);
 
     switch (purpose) {
       case PAYMENT_PURPOSES.LISTING_FEE:
         if (product.listingFeePaid) {
-          throw new BadRequestException('هزینه ثبت این آگهی قبلاً پرداخت شده است');
+          throw new BadRequestException(
+            "هزینه ثبت این آگهی قبلاً پرداخت شده است",
+          );
         }
-        if (product.status !== 'PENDING') {
-          throw new BadRequestException('این آگهی در انتظار پرداخت نیست');
+        if (product.status !== "PENDING") {
+          throw new BadRequestException("این آگهی در انتظار پرداخت نیست");
         }
-        if (product.listingPaymentDueAt && product.listingPaymentDueAt.getTime() <= Date.now()) {
-          throw new BadRequestException('مهلت پرداخت این آگهی به پایان رسیده است');
+        if (
+          product.listingPaymentDueAt &&
+          product.listingPaymentDueAt.getTime() <= Date.now()
+        ) {
+          throw new BadRequestException(
+            "مهلت پرداخت این آگهی به پایان رسیده است",
+          );
         }
         break;
       case PAYMENT_PURPOSES.LISTING_STRENGTHENED:
-        if (product.status !== 'ACTIVE') {
-          throw new BadRequestException('فقط آگهی‌های فعال قابل تقویت هستند');
+        if (product.status !== "ACTIVE") {
+          throw new BadRequestException("فقط آگهی‌های فعال قابل تقویت هستند");
         }
         if (product.isAuction) {
-          throw new BadRequestException('مزایده‌ها قابل تقویت نیستند');
+          throw new BadRequestException("مزایده‌ها قابل تقویت نیستند");
         }
         break;
       case PAYMENT_PURPOSES.LISTING_BOOST:
-        if (product.status !== 'ACTIVE') {
-          throw new BadRequestException('فقط آگهی‌های فعال قابل پله‌شدن هستند');
+        if (product.status !== "ACTIVE") {
+          throw new BadRequestException("فقط آگهی‌های فعال قابل پله‌شدن هستند");
         }
         if (product.isAuction) {
-          throw new BadRequestException('مزایده‌ها قابل پله‌شدن نیستند');
+          throw new BadRequestException("مزایده‌ها قابل پله‌شدن نیستند");
         }
         break;
       default:
-        throw new BadRequestException('نوع پرداخت نامعتبر است');
+        throw new BadRequestException("نوع پرداخت نامعتبر است");
     }
 
     return product;
@@ -813,8 +959,10 @@ export class ProductsService {
   async fulfillListingFeePayment(productId: string) {
     await this.purgeExpiredListingPaymentDrafts();
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) throw new NotFoundException("محصول یافت نشد");
     if (product.listingFeePaid) {
       return { requiresAdminApproval: false, alreadyPaid: true };
     }
@@ -836,10 +984,10 @@ export class ProductsService {
         ? {
             listingFeePaid: true,
             listingPaymentDueAt: null,
-            status: 'PENDING',
+            status: "PENDING",
           }
         : {
-            status: 'ACTIVE',
+            status: "ACTIVE",
             listingFeePaid: true,
             listingPaymentDueAt: null,
             activeUntil: computeActiveUntil(now),
@@ -858,8 +1006,10 @@ export class ProductsService {
   }
 
   async fulfillStrengthenedPayment(productId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) throw new NotFoundException("محصول یافت نشد");
 
     await this.prisma.product.update({
       where: { id: productId },
@@ -871,8 +1021,10 @@ export class ProductsService {
   }
 
   async fulfillBoostPayment(productId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) throw new NotFoundException("محصول یافت نشد");
 
     const now = new Date();
     await this.prisma.product.update({
@@ -880,7 +1032,8 @@ export class ProductsService {
       data: {
         isBoosted: true,
         listedAt: now,
-        activeUntil: product.advertiser === 'CLIENT' ? computeActiveUntil(now) : null,
+        activeUntil:
+          product.advertiser === "CLIENT" ? computeActiveUntil(now) : null,
       },
     });
 
@@ -889,7 +1042,9 @@ export class ProductsService {
   }
 
   /** Include root category and all nested descendants (any depth). */
-  private async collectCategoryAndDescendantIds(rootId: string): Promise<string[]> {
+  private async collectCategoryAndDescendantIds(
+    rootId: string,
+  ): Promise<string[]> {
     const ids = [rootId];
     let frontier = [rootId];
     while (frontier.length) {
@@ -904,7 +1059,9 @@ export class ProductsService {
   }
 
   /** Categories in a library, including descendants that may not have libraryId set. */
-  private async collectLibraryCategoryIds(libraryId: string): Promise<string[]> {
+  private async collectLibraryCategoryIds(
+    libraryId: string,
+  ): Promise<string[]> {
     const cached = this.libraryCategoryIdsCache.get(libraryId);
     if (cached) return cached;
 
@@ -958,22 +1115,27 @@ export class ProductsService {
     const limit = params.limit || 30;
     const skip = (page - 1) * limit;
 
-    const where: any = { status: 'ACTIVE' };
+    const where: any = { status: "ACTIVE" };
 
     if (params.advertiser) where.advertiser = params.advertiser;
-    if (params.advertiser === 'CLIENT' && params.auction !== true) {
+    if (params.advertiser === "CLIENT" && params.auction !== true) {
       where.isAuction = false;
     }
     if (params.libraryId) {
-      const categoryIds = await this.collectLibraryCategoryIds(params.libraryId);
+      const categoryIds = await this.collectLibraryCategoryIds(
+        params.libraryId,
+      );
       if (categoryIds.length === 0) {
         return { products: [], total: 0, page, totalPages: 0 };
       }
       where.categoryId = { in: categoryIds };
     }
     if (params.categoryId) {
-      const categoryIds = await this.collectCategoryAndDescendantIds(params.categoryId);
-      where.categoryId = categoryIds.length > 1 ? { in: categoryIds } : params.categoryId;
+      const categoryIds = await this.collectCategoryAndDescendantIds(
+        params.categoryId,
+      );
+      where.categoryId =
+        categoryIds.length > 1 ? { in: categoryIds } : params.categoryId;
     }
     if (params.cities?.length) {
       where.city = { in: params.cities };
@@ -981,15 +1143,17 @@ export class ProductsService {
       where.city = params.city;
     }
     if (params.carBrand) {
-      const brands = await this.categoriesService.parseCarBrandCodes([params.carBrand]);
+      const brands = await this.categoriesService.parseCarBrandCodes([
+        params.carBrand,
+      ]);
       if (brands.length) {
         where.carBrands = { some: { brandCode: brands[0] } };
       }
     }
     if (params.search) {
       where.OR = [
-        { title: { contains: params.search, mode: 'insensitive' } },
-        { description: { contains: params.search, mode: 'insensitive' } },
+        { title: { contains: params.search, mode: "insensitive" } },
+        { description: { contains: params.search, mode: "insensitive" } },
       ];
     }
     if (params.minPrice != null || params.maxPrice != null) {
@@ -1001,17 +1165,17 @@ export class ProductsService {
       const since = this.postedSince(params.postedWithin);
       if (since) where.listedAt = { gte: since };
     }
-    if (params.situation === 'NEW') {
-      if (params.advertiser === 'CLIENT') {
-        where.situation = 'NEW';
-      } else if (params.advertiser !== 'SHOP') {
+    if (params.situation === "NEW") {
+      if (params.advertiser === "CLIENT") {
+        where.situation = "NEW";
+      } else if (params.advertiser !== "SHOP") {
         where.AND = [
           ...(Array.isArray(where.AND) ? where.AND : []),
-          { OR: [{ situation: 'NEW' }, { advertiser: 'SHOP' }] },
+          { OR: [{ situation: "NEW" }, { advertiser: "SHOP" }] },
         ];
       }
-    } else if (params.situation === 'USED') {
-      where.situation = 'USED';
+    } else if (params.situation === "USED") {
+      where.situation = "USED";
     }
     if (params.hasGuarantee === true) {
       where.hasGuarantee = true;
@@ -1025,7 +1189,7 @@ export class ProductsService {
 
     if (params.auctionActive === true) {
       where.isAuction = true;
-      where.status = 'ACTIVE';
+      where.status = "ACTIVE";
       where.auctionEndsAt = { gt: new Date() };
     }
 
@@ -1033,8 +1197,8 @@ export class ProductsService {
     void this.maybeExpireStrengthenedProducts();
 
     const orderBy: any = [
-      { strengthenedUntil: { sort: 'desc', nulls: 'last' } },
-      { listedAt: 'desc' },
+      { strengthenedUntil: { sort: "desc", nulls: "last" } },
+      { listedAt: "desc" },
     ];
 
     const [products, total, brandLabels] = await Promise.all([
@@ -1073,7 +1237,7 @@ export class ProductsService {
       where: { id },
       include: productIncludeDetail,
     });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
     return this.mapProduct(product, { viewerUserId });
   }
 
@@ -1083,10 +1247,10 @@ export class ProductsService {
       where: { id },
       select: { id: true, categoryId: true, advertiser: true },
     });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
 
     const relatedWhere = {
-      status: 'ACTIVE' as const,
+      status: "ACTIVE" as const,
       advertiser: product.advertiser,
       categoryId: product.categoryId,
       id: { not: product.id },
@@ -1096,14 +1260,14 @@ export class ProductsService {
     const relatedRows = await this.prisma.product.findMany({
       where: relatedWhere,
       select: productListSelect,
-      orderBy: { listedAt: 'desc' },
+      orderBy: { listedAt: "desc" },
       take: 15,
     });
 
     const otherGroups = await this.prisma.product.groupBy({
-      by: ['categoryId'],
+      by: ["categoryId"],
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         advertiser: product.advertiser,
         categoryId: { not: product.categoryId },
         id: { not: product.id },
@@ -1116,7 +1280,7 @@ export class ProductsService {
       const pick = otherGroups[Math.floor(Math.random() * otherGroups.length)]!;
       const pool = await this.prisma.product.findMany({
         where: {
-          status: 'ACTIVE',
+          status: "ACTIVE",
           advertiser: product.advertiser,
           categoryId: pick.categoryId,
           id: { not: product.id },
@@ -1150,7 +1314,7 @@ export class ProductsService {
     const endsAt = data.auctionEndsAt ? new Date(data.auctionEndsAt) : null;
 
     if (!endsAt || endsAt.getTime() <= Date.now()) {
-      throw new BadRequestException('زمان پایان مزایده باید در آینده باشد');
+      throw new BadRequestException("زمان پایان مزایده باید در آینده باشد");
     }
 
     if (
@@ -1158,7 +1322,9 @@ export class ProductsService {
       data.realPriceMax != null &&
       data.realPriceMin > data.realPriceMax
     ) {
-      throw new BadRequestException('حداقل قیمت واقعی نمی‌تواند بیشتر از حداکثر باشد');
+      throw new BadRequestException(
+        "حداقل قیمت واقعی نمی‌تواند بیشتر از حداکثر باشد",
+      );
     }
 
     return {
@@ -1176,10 +1342,11 @@ export class ProductsService {
 
   async create(data: CreateProductDto, userId?: string, role?: string) {
     await this.categoriesService.assertLeafCategory(data.categoryId);
-    const advertiser = role === 'ADMIN' ? 'SHOP' : (data.advertiser ?? 'CLIENT');
+    const advertiser =
+      role === "ADMIN" ? "SHOP" : (data.advertiser ?? "CLIENT");
     const product = await this.prisma.product.create({
-      data: await this.buildCreateData({ ...data, advertiser }, userId || '', {
-        status: 'ACTIVE',
+      data: await this.buildCreateData({ ...data, advertiser }, userId || "", {
+        status: "ACTIVE",
         listingFeePaid: true,
         listingPaymentDueAt: null,
       }),
@@ -1190,12 +1357,17 @@ export class ProductsService {
     return this.mapProduct(product);
   }
 
-  async update(id: string, data: UpdateProductDto, userId?: string, userRole?: string) {
+  async update(
+    id: string,
+    data: UpdateProductDto,
+    userId?: string,
+    userRole?: string,
+  ) {
     const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
 
-    if (product.userId !== userId && userRole !== 'ADMIN') {
-      throw new ForbiddenException('شما اجازه ویرایش این محصول را ندارید');
+    if (product.userId !== userId && userRole !== "ADMIN") {
+      throw new ForbiddenException("شما اجازه ویرایش این محصول را ندارید");
     }
 
     this.assertStockQuantity({
@@ -1205,23 +1377,23 @@ export class ProductsService {
     });
 
     if (
-      product.advertiser === 'CLIENT' &&
+      product.advertiser === "CLIENT" &&
       product.userId &&
-      product.status === 'ACTIVE' &&
-      data.situation === 'NEW' &&
-      product.situation !== 'NEW'
+      product.status === "ACTIVE" &&
+      data.situation === "NEW" &&
+      product.situation !== "NEW"
     ) {
-      await this.assertNewListingQuota(product.userId, 'NEW');
+      await this.assertNewListingQuota(product.userId, "NEW");
     }
 
     const updateData: any = { ...data };
     delete updateData.carBrands;
     delete updateData.colors;
     // Guarantee badge is admin-only — clients cannot set or clear it via product update.
-    if (userRole !== 'ADMIN') {
+    if (userRole !== "ADMIN") {
       delete updateData.hasGuarantee;
     }
-    if (product.advertiser === 'SHOP') {
+    if (product.advertiser === "SHOP") {
       delete updateData.listingIntent;
     }
     if (updateData.type != null && updateData.advertiser == null) {
@@ -1237,7 +1409,8 @@ export class ProductsService {
     } else if (data.color !== undefined) {
       updateData.color = storedProductColors(undefined, data.color);
     }
-    if (data.auctionEndsAt) updateData.auctionEndsAt = new Date(data.auctionEndsAt);
+    if (data.auctionEndsAt)
+      updateData.auctionEndsAt = new Date(data.auctionEndsAt);
     if (data.auctionStartPrice != null && product.isAuction) {
       updateData.auctionStartPrice = data.auctionStartPrice;
     }
@@ -1247,7 +1420,9 @@ export class ProductsService {
 
     if (data.newPrice !== undefined) {
       updateData.newPrice =
-        data.newPrice == null || Number(data.newPrice) <= 0 ? null : Number(data.newPrice);
+        data.newPrice == null || Number(data.newPrice) <= 0
+          ? null
+          : Number(data.newPrice);
     }
 
     if (data.salePrice !== undefined) {
@@ -1256,7 +1431,10 @@ export class ProductsService {
         data.salePrice == null || Number(data.salePrice) <= 0
           ? null
           : this.normalizeSalePrice(listPrice, Number(data.salePrice));
-    } else if (data.price != null && (product as { salePrice?: number | null }).salePrice != null) {
+    } else if (
+      data.price != null &&
+      (product as { salePrice?: number | null }).salePrice != null
+    ) {
       const existingSale = (product as { salePrice?: number | null }).salePrice;
       if (existingSale != null && existingSale >= Number(data.price)) {
         updateData.salePrice = null;
@@ -1264,11 +1442,11 @@ export class ProductsService {
     }
 
     const enablingGuarantee =
-      userRole === 'ADMIN' &&
-      product.advertiser === 'CLIENT' &&
+      userRole === "ADMIN" &&
+      product.advertiser === "CLIENT" &&
       data.hasGuarantee === true &&
       !product.hasGuarantee &&
-      product.status === 'ACTIVE' &&
+      product.status === "ACTIVE" &&
       !product.isAuction;
 
     if (enablingGuarantee) {
@@ -1277,8 +1455,12 @@ export class ProductsService {
     }
 
     if (data.carBrands !== undefined) {
-      const brands = await this.categoriesService.parseCarBrandCodes(data.carBrands);
-      await this.prisma.productCarBrand.deleteMany({ where: { productId: id } });
+      const brands = await this.categoriesService.parseCarBrandCodes(
+        data.carBrands,
+      );
+      await this.prisma.productCarBrand.deleteMany({
+        where: { productId: id },
+      });
       if (brands.length > 0) {
         updateData.carBrands = {
           create: brands.map((brandCode) => ({ brandCode })),
@@ -1291,23 +1473,40 @@ export class ProductsService {
     }
 
     const categoryIdForVehicle = data.categoryId ?? product.categoryId;
-    const vehicleFields = await this.resolveVehicleSaleFields(categoryIdForVehicle, {
-      mileageKm:
-        data.mileageKm !== undefined
-          ? data.mileageKm
-          : (product as { mileageKm?: number | null }).mileageKm,
-      paintCondition:
-        data.paintCondition !== undefined
-          ? data.paintCondition
-          : (product as { paintCondition?: VehiclePaintCondition | null }).paintCondition,
-    });
+    const vehicleFields = await this.resolveVehicleSaleFields(
+      categoryIdForVehicle,
+      {
+        mileageKm:
+          data.mileageKm !== undefined
+            ? data.mileageKm
+            : (product as { mileageKm?: number | null }).mileageKm,
+        paintCondition:
+          data.paintCondition !== undefined
+            ? data.paintCondition
+            : (product as { paintCondition?: VehiclePaintCondition | null })
+                .paintCondition,
+        productionYear:
+          data.productionYear !== undefined
+            ? data.productionYear
+            : product.productionYear,
+        productionYearBefore1370:
+          data.productionYearBefore1370 !== undefined
+            ? data.productionYearBefore1370
+            : product.productionYearBefore1370,
+        gearbox: data.gearbox !== undefined ? data.gearbox : product.gearbox,
+      },
+    );
     updateData.mileageKm = vehicleFields.mileageKm;
     updateData.paintCondition = vehicleFields.paintCondition;
+    updateData.productionYear = vehicleFields.productionYear;
+    updateData.productionYearBefore1370 =
+      vehicleFields.productionYearBefore1370;
+    updateData.gearbox = vehicleFields.gearbox;
 
     if (data.isBoosted === true && !product.isBoosted) {
       const now = new Date();
       updateData.listedAt = now;
-      if (product.advertiser === 'CLIENT') {
+      if (product.advertiser === "CLIENT") {
         updateData.activeUntil = computeActiveUntil(now);
       } else {
         updateData.activeUntil = null;
@@ -1325,21 +1524,33 @@ export class ProductsService {
   }
 
   async applyStrengthened(id: string, userId: string) {
-    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_STRENGTHENED);
+    await this.assertPaymentPurposeAllowed(
+      id,
+      userId,
+      PAYMENT_PURPOSES.LISTING_STRENGTHENED,
+    );
     throw new BadRequestException(
-      'برای پرداخت تقویت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+      "برای پرداخت تقویت آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید",
     );
   }
 
   async applyBoost(id: string, userId: string) {
-    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_BOOST);
+    await this.assertPaymentPurposeAllowed(
+      id,
+      userId,
+      PAYMENT_PURPOSES.LISTING_BOOST,
+    );
     throw new BadRequestException(
-      'برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید',
+      "برای پرداخت پله‌شدن آگهی از صفحه پرداخت و درگاه زیبال استفاده کنید",
     );
   }
 
   async applyBoostWithCredit(id: string, userId: string) {
-    await this.assertPaymentPurposeAllowed(id, userId, PAYMENT_PURPOSES.LISTING_BOOST);
+    await this.assertPaymentPurposeAllowed(
+      id,
+      userId,
+      PAYMENT_PURPOSES.LISTING_BOOST,
+    );
 
     await this.prisma.$transaction(async (tx) => {
       const updatedUser = await tx.user.updateMany({
@@ -1347,11 +1558,11 @@ export class ProductsService {
         data: { boostCredits: { decrement: 1 } },
       });
       if (updatedUser.count === 0) {
-        throw new BadRequestException('امتیاز پله‌شدن رایگان ندارید');
+        throw new BadRequestException("امتیاز پله‌شدن رایگان ندارید");
       }
 
       const product = await tx.product.findUnique({ where: { id } });
-      if (!product) throw new NotFoundException('محصول یافت نشد');
+      if (!product) throw new NotFoundException("محصول یافت نشد");
 
       const now = new Date();
       await tx.product.update({
@@ -1359,7 +1570,8 @@ export class ProductsService {
         data: {
           isBoosted: true,
           listedAt: now,
-          activeUntil: product.advertiser === 'CLIENT' ? computeActiveUntil(now) : null,
+          activeUntil:
+            product.advertiser === "CLIENT" ? computeActiveUntil(now) : null,
         },
       });
     });
@@ -1368,22 +1580,24 @@ export class ProductsService {
     this.invalidateListCache();
 
     const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
     return this.mapProduct(product);
   }
 
   async remove(id: string, userId?: string, userRole?: string) {
     const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
 
-    if (product.userId !== userId && userRole !== 'ADMIN') {
-      throw new ForbiddenException('شما اجازه حذف این محصول را ندارید');
+    if (product.userId !== userId && userRole !== "ADMIN") {
+      throw new ForbiddenException("شما اجازه حذف این محصول را ندارید");
     }
 
-    const orderItemCount = await this.prisma.orderItem.count({ where: { productId: id } });
+    const orderItemCount = await this.prisma.orderItem.count({
+      where: { productId: id },
+    });
     if (orderItemCount > 0) {
       throw new BadRequestException(
-        'این محصول در سفارش ثبت شده و قابل حذف نیست. می‌توانید وضعیت آن را به ناموجود یا غیرفعال تغییر دهید.',
+        "این محصول در سفارش ثبت شده و قابل حذف نیست. می‌توانید وضعیت آن را به ناموجود یا غیرفعال تغییر دهید.",
       );
     }
 
@@ -1396,17 +1610,20 @@ export class ProductsService {
     await this.purgeExpiredListingPaymentDrafts();
 
     const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product) throw new NotFoundException('محصول یافت نشد');
+    if (!product) throw new NotFoundException("محصول یافت نشد");
 
-    if (product.advertiser !== 'CLIENT' || product.userId !== userId) {
-      throw new ForbiddenException('شما اجازه فعال‌سازی این آگهی را ندارید');
+    if (product.advertiser !== "CLIENT" || product.userId !== userId) {
+      throw new ForbiddenException("شما اجازه فعال‌سازی این آگهی را ندارید");
     }
 
-    if (product.status !== 'DEPRECATED') {
-      throw new BadRequestException('فقط آگهی‌های منقضی‌شده قابل فعال‌سازی مجدد هستند');
+    if (product.status !== "DEPRECATED") {
+      throw new BadRequestException(
+        "فقط آگهی‌های منقضی‌شده قابل فعال‌سازی مجدد هستند",
+      );
     }
 
-    const { requiresListingFee, freeLimit, activeCount } = await this.getListingQuotaState(userId);
+    const { requiresListingFee, freeLimit, activeCount } =
+      await this.getListingQuotaState(userId);
     const needsAdminApproval = await this.listingNeedsAdminApproval({
       categoryId: product.categoryId,
       hasGuarantee: product.hasGuarantee,
@@ -1422,7 +1639,7 @@ export class ProductsService {
       const pending = await this.prisma.product.update({
         where: { id },
         data: {
-          status: 'PENDING',
+          status: "PENDING",
           listingFeePaid: false,
           listingPaymentDueAt: listingPaymentDueAt(),
           deprecatedAt: null,
@@ -1446,13 +1663,13 @@ export class ProductsService {
       where: { id },
       data: needsAdminApproval
         ? {
-            status: 'PENDING',
+            status: "PENDING",
             listingFeePaid: true,
             listingPaymentDueAt: null,
             deprecatedAt: null,
           }
         : {
-            status: 'ACTIVE',
+            status: "ACTIVE",
             listingFeePaid: true,
             listingPaymentDueAt: null,
             activeUntil: computeActiveUntil(now),
@@ -1478,31 +1695,41 @@ export class ProductsService {
     };
   }
 
-  async reportProduct(productId: string, reporterId: string, data: ReportProductDto) {
+  async reportProduct(
+    productId: string,
+    reporterId: string,
+    data: ReportProductDto,
+  ) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
         category: { select: { name: true } },
         user: {
-          select: { id: true, name: true, phone: true, email: true, city: true },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            city: true,
+          },
         },
       },
     });
 
-    if (!product) throw new NotFoundException('آگهی یافت نشد');
+    if (!product) throw new NotFoundException("آگهی یافت نشد");
     if (product.userId === reporterId) {
-      throw new BadRequestException('نمی‌توانید آگهی خود را گزارش کنید');
+      throw new BadRequestException("نمی‌توانید آگهی خود را گزارش کنید");
     }
 
     const reporter = await this.prisma.user.findUnique({
       where: { id: reporterId },
       select: { id: true, name: true, phone: true, email: true },
     });
-    if (!reporter) throw new NotFoundException('کاربر یافت نشد');
+    if (!reporter) throw new NotFoundException("کاربر یافت نشد");
 
     const title = data.title.trim();
     const description = data.description.trim();
-    const productUrl = `${this.webUrl.replace(/\/$/, '')}/product/${product.id}`;
+    const productUrl = `${this.webUrl.replace(/\/$/, "")}/product/${product.id}`;
 
     await this.mailService.sendProductReport({
       reportTitle: title,
@@ -1533,7 +1760,7 @@ export class ProductsService {
       },
     });
 
-    return { message: 'گزارش شما ثبت شد و برای بررسی ارسال شد' };
+    return { message: "گزارش شما ثبت شد و برای بررسی ارسال شد" };
   }
 }
 

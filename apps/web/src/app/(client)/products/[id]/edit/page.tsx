@@ -90,6 +90,9 @@ export default function EditProductPage() {
       listingIntent: 'SELLER',
       mileageKm: null,
       paintCondition: '',
+      productionYear: null,
+      productionYearBefore1370: false,
+      gearbox: '',
     },
   });
 
@@ -99,6 +102,9 @@ export default function EditProductPage() {
   const categorySlug = watch('categorySlug');
   const mileageKm = watch('mileageKm');
   const paintCondition = watch('paintCondition');
+  const productionYear = watch('productionYear');
+  const productionYearBefore1370 = watch('productionYearBefore1370');
+  const gearbox = watch('gearbox');
 
   const showVehicleFields = useMemo(
     () => Boolean(categorySlug && isVehicleSaleCategory(categorySlug)),
@@ -118,6 +124,9 @@ export default function EditProductPage() {
     if (!isVehicleSaleCategory(slug)) {
       setValue('mileageKm', null);
       setValue('paintCondition', '');
+      setValue('productionYear', null);
+      setValue('productionYearBefore1370', false);
+      setValue('gearbox', '');
     }
   }, [categoryId, parts, setValue]);
 
@@ -151,6 +160,9 @@ export default function EditProductPage() {
             : parseProductColorIds(product.color),
           mileageKm: product.mileageKm ?? null,
           paintCondition: product.paintCondition ?? '',
+          productionYear: product.productionYear ?? null,
+          productionYearBefore1370: product.productionYearBefore1370 ?? false,
+          gearbox: product.gearbox ?? '',
           listingIntent: product.listingIntent === 'BUYER' ? 'BUYER' : 'SELLER',
         });
       })
@@ -178,6 +190,9 @@ export default function EditProductPage() {
         colors: data.colors,
         mileageKm: showVehicleFields ? data.mileageKm : null,
         paintCondition: showVehicleFields && data.paintCondition ? data.paintCondition : null,
+        productionYear: showVehicleFields ? data.productionYear : null,
+        productionYearBefore1370: showVehicleFields ? data.productionYearBefore1370 : false,
+        gearbox: showVehicleFields && data.gearbox ? data.gearbox : null,
         /* Shop catalog listings (registered by admins) keep their stored situation/
            newPrice/guarantee — those fields are managed in the admin panel. */
         ...(isShop
@@ -229,12 +244,24 @@ export default function EditProductPage() {
               <VehicleSaleFields
                 mileageKm={mileageKm}
                 paintCondition={paintCondition as VehiclePaintCondition | ''}
+                productionYear={productionYear}
+                productionYearBefore1370={productionYearBefore1370}
+                gearbox={gearbox}
                 onMileageChange={(v) => setValue('mileageKm', v, { shouldValidate: true })}
                 onPaintConditionChange={(v) =>
                   setValue('paintCondition', v, { shouldValidate: true })
                 }
+                onProductionYearChange={(v) =>
+                  setValue('productionYear', v, { shouldValidate: true })
+                }
+                onProductionYearBefore1370Change={(v) =>
+                  setValue('productionYearBefore1370', v, { shouldValidate: true })
+                }
+                onGearboxChange={(v) => setValue('gearbox', v, { shouldValidate: true })}
                 mileageError={errors.mileageKm?.message}
                 paintError={errors.paintCondition?.message}
+                productionYearError={errors.productionYear?.message}
+                gearboxError={errors.gearbox?.message}
               />
             )}
 

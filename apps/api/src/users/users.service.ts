@@ -1,15 +1,22 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   findProvinceNameByCity,
   resolveUserListingLimit,
   shouldShowPublicListingCount,
   USER_ACCOUNT_KIND_LABELS,
-} from '@offroad/shared';
-import * as bcrypt from 'bcryptjs';
-import { ensureUserReferralCode } from '../common/referrals';
-import { PrismaService } from '../prisma/prisma.service';
-import { ProductsService, productListSelect } from '../products/products.service';
-import type { ChangePasswordDto, UpdateProfileDto } from './dto';
+} from "@offroad/shared";
+import * as bcrypt from "bcryptjs";
+import { ensureUserReferralCode } from "../common/referrals";
+import { PrismaService } from "../prisma/prisma.service";
+import {
+  ProductsService,
+  productListSelect,
+} from "../products/products.service";
+import type { ChangePasswordDto, UpdateProfileDto } from "./dto";
 
 const PROFILE_SELECT = {
   id: true,
@@ -23,12 +30,12 @@ const PROFILE_SELECT = {
   shopLicenseImage: true,
   address: true,
   postalCode: true,
+  bankAccount: true,
   violationReportCount: true,
   accountKind: true,
   verifiedSeller: true,
   rating: true,
   telegramChatId: true,
-  telegramLinkedAt: true,
   boostCredits: true,
   maxActiveListings: true,
   createdAt: true,
@@ -42,28 +49,31 @@ export class UsersService {
   ) {}
 
   async getProfile(userId: string) {
-    const [user, activeListingsCount, totalListingsCount, referralCount, referralCode] =
-      await Promise.all([
-        this.prisma.user.findUnique({
-          where: { id: userId },
-          select: PROFILE_SELECT,
-        }),
-        this.prisma.product.count({ where: { userId, status: 'ACTIVE' } }),
-        this.prisma.product.count({ where: { userId } }),
-        this.prisma.user.count({ where: { referredById: userId } }),
-        ensureUserReferralCode(this.prisma, userId),
-      ]);
-    if (!user) throw new NotFoundException('کاربر یافت نشد');
-    const { telegramChatId, ...profile } = user;
+    const [
+      user,
+      activeListingsCount,
+      totalListingsCount,
+      referralCount,
+      referralCode,
+    ] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: PROFILE_SELECT,
+      }),
+      this.prisma.product.count({ where: { userId, status: "ACTIVE" } }),
+      this.prisma.product.count({ where: { userId } }),
+      this.prisma.user.count({ where: { referredById: userId } }),
+      ensureUserReferralCode(this.prisma, userId),
+    ]);
+    if (!user) throw new NotFoundException("کاربر یافت نشد");
     return {
-      ...profile,
+      ...user,
       accountKindLabel: USER_ACCOUNT_KIND_LABELS[user.accountKind],
       referralCode,
       referralCount,
-      telegramLinked: Boolean(telegramChatId),
       activeListingsCount,
       totalListingsCount,
-      unlimitedListings: user.role === 'ADMIN',
+      unlimitedListings: user.role === "ADMIN",
     };
   }
 
@@ -86,12 +96,12 @@ export class UsersService {
         role: true,
       },
     });
-    if (!user || user.role === 'ADMIN') {
-      throw new NotFoundException('فروشنده یافت نشد');
+    if (!user || user.role === "ADMIN") {
+      throw new NotFoundException("فروشنده یافت نشد");
     }
 
     const activeListingsCount = await this.prisma.product.count({
-      where: { userId, status: 'ACTIVE', advertiser: 'CLIENT' },
+      where: { userId, status: "ACTIVE", advertiser: "CLIENT" },
     });
 
     const listingCeiling = resolveUserListingLimit(user.maxActiveListings);
@@ -120,11 +130,14 @@ export class UsersService {
     const products = await this.prisma.product.findMany({
       where: { userId },
       select: productListSelect,
-      orderBy: [{ listedAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ listedAt: "desc" }, { createdAt: "desc" }],
     });
     return Promise.all(
       products.map((product) =>
-        this.productsService.mapProduct(product, { coverImageOnly: true, listPayload: true }),
+        this.productsService.mapProduct(product, {
+          coverImageOnly: true,
+          listPayload: true,
+        }),
       ),
     );
   }
@@ -132,15 +145,17 @@ export class UsersService {
   async updateProfile(userId: string, data: UpdateProfileDto) {
     const updateData: Record<string, unknown> = {};
     const keys = [
-      'name',
-      'city',
-      'nationalId',
-      'nationalIdCardImage',
-      'consentSelfieImage',
-      'shopLicenseImage',
-      'address',
-      'postalCode',
-      'accountKind',
+      "name",
+      "city",
+      "nationalId",
+      "nationalIdCardImage",
+      "consentSelfieImage",
+      "shopLicenseImage",
+      "address",
+      "postalCode",
+      "bankAccount",
+      "telegramChatId",
+      "accountKind",
     ] as const;
     for (const key of keys) {
       if (data[key] !== undefined) updateData[key] = data[key];
@@ -162,6 +177,8 @@ export class UsersService {
           shopLicenseImage: true,
           address: true,
           postalCode: true,
+          bankAccount: true,
+          telegramChatId: true,
           accountKind: true,
           verifiedSeller: true,
           rating: true,
@@ -169,7 +186,7 @@ export class UsersService {
         },
       });
     } catch {
-      throw new BadRequestException('به‌روزرسانی پروفایل ناموفق بود');
+      throw new BadRequestException("به‌روزرسانی پروفایل ناموفق بود");
     }
   }
 
@@ -178,15 +195,17 @@ export class UsersService {
       where: { id: userId },
       select: { id: true, password: true },
     });
-    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    if (!user) throw new NotFoundException("کاربر یافت نشد");
 
     const valid = await bcrypt.compare(data.currentPassword, user.password);
     if (!valid) {
-      throw new BadRequestException('رمز عبور فعلی اشتباه است');
+      throw new BadRequestException("رمز عبور فعلی اشتباه است");
     }
 
     if (data.currentPassword === data.newPassword) {
-      throw new BadRequestException('رمز عبور جدید باید با رمز فعلی متفاوت باشد');
+      throw new BadRequestException(
+        "رمز عبور جدید باید با رمز فعلی متفاوت باشد",
+      );
     }
 
     const hashedPassword = await bcrypt.hash(data.newPassword, 12);
@@ -195,6 +214,6 @@ export class UsersService {
       data: { password: hashedPassword },
     });
 
-    return { message: 'رمز عبور با موفقیت تغییر کرد' };
+    return { message: "رمز عبور با موفقیت تغییر کرد" };
   }
 }

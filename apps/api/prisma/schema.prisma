@@ -53,6 +53,11 @@ enum VehiclePaintCondition {
   ACCIDENT
 }
 
+enum VehicleGearbox {
+  MANUAL
+  AUTOMATIC
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -124,6 +129,8 @@ model User {
   address                    String?
   /// Iranian postal code (۱۰ رقم).
   postalCode                 String?
+  /// Iranian bank account IBAN.
+  bankAccount                       String?
   /// Admin-editable count of reported violations.
   violationReportCount       Int       @default(0)
   /// Shop account vs regular user.
@@ -133,9 +140,6 @@ model User {
   /// Seller rating 0–5; null = no rating shown.
   rating                     Float?
   telegramChatId             String?   @unique
-  telegramLinkedAt           DateTime?
-  telegramLinkToken          String?
-  telegramLinkExpiresAt      DateTime?
   emailVerified              Boolean   @default(false)
   emailVerifiedAt            DateTime?
   emailVerificationCode      String?
@@ -265,6 +269,9 @@ model Product {
   situation          ProductSituation?
   mileageKm          Int?
   paintCondition     VehiclePaintCondition?
+  productionYear     String?
+  productionYearBefore1370 Boolean @default(false)
+  gearbox            VehicleGearbox?
   city               String?
   neighborhood       String?
   phone              String?

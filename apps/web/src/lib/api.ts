@@ -1,16 +1,19 @@
-import { resolveApiBaseUrl } from '@offroad/shared';
+import { resolveApiBaseUrl } from "@offroad/shared";
 
 const API_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
 
@@ -20,13 +23,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   try {
     res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') throw err;
-    if (err instanceof Error && err.name === 'AbortError') throw err;
-    throw new Error('اتصال با سرور برقرار نشد.');
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    if (err instanceof Error && err.name === "AbortError") throw err;
+    throw new Error("اتصال با سرور برقرار نشد.");
   }
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'خطا در ارتباط با سرور' }));
+    const error = await res
+      .json()
+      .catch(() => ({ message: "خطا در ارتباط با سرور" }));
     const message = Array.isArray(error.message)
       ? error.message[0]
       : error.message || `HTTP ${res.status}`;
@@ -51,7 +56,7 @@ export type ProductConversationSummary = {
   productId: string;
   buyerId: string;
   sellerId: string;
-  role: 'buyer' | 'seller';
+  role: "buyer" | "seller";
   lastMessageAt: string;
   createdAt: string;
   unreadCount: number;
@@ -92,54 +97,67 @@ export const api = {
         email: string;
         maskedEmail: string;
         message: string;
-      }>('/auth/register', {
-        method: 'POST',
+      }>("/auth/register", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
     verifyEmail: (data: { email: string; code: string }) =>
-      request<{ token: string; user: any }>('/auth/verify-email', {
-        method: 'POST',
+      request<{ token: string; user: any }>("/auth/verify-email", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
     resendVerification: (data: { email: string }) =>
-      request<{ message: string; maskedEmail?: string }>('/auth/resend-verification', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      request<{ message: string; maskedEmail?: string }>(
+        "/auth/resend-verification",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        },
+      ),
     login: (data: { identifier: string; password: string }) =>
-      request<{ token: string; user: any }>('/auth/login', {
-        method: 'POST',
+      request<{ token: string; user: any }>("/auth/login", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
     requestLoginCode: (data: { email: string }) =>
-      request<{ message: string; maskedEmail: string }>('/auth/login/request-code', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      request<{ message: string; maskedEmail: string }>(
+        "/auth/login/request-code",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        },
+      ),
     verifyLoginCode: (data: { email: string; code: string }) =>
-      request<{ token: string; user: any }>('/auth/login/verify-code', {
-        method: 'POST',
+      request<{ token: string; user: any }>("/auth/login/verify-code", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
     forgotPassword: (data: { email: string }) =>
-      request<{ message: string }>('/auth/forgot-password', {
-        method: 'POST',
+      request<{ message: string }>("/auth/forgot-password", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
-    profile: () => request<any>('/auth/profile'),
+    profile: () => request<any>("/auth/profile"),
   },
 
   products: {
-    list: (params?: Record<string, string>, init?: { signal?: AbortSignal }) => {
-      const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-      return request<{ products: any[]; total: number; page: number; totalPages: number }>(
-        `/products${qs}`,
-        { signal: init?.signal },
-      );
+    list: (
+      params?: Record<string, string>,
+      init?: { signal?: AbortSignal },
+    ) => {
+      const qs = params ? `?${new URLSearchParams(params).toString()}` : "";
+      return request<{
+        products: any[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>(`/products${qs}`, { signal: init?.signal });
     },
     get: (id: string) => request<any>(`/products/${id}`),
     related: (id: string, init?: { signal?: AbortSignal }) =>
-      request<{ products: any[] }>(`/products/${id}/related`, { signal: init?.signal }),
+      request<{ products: any[] }>(`/products/${id}/related`, {
+        signal: init?.signal,
+      }),
     listingQuota: () =>
       request<{
         activeCount: number;
@@ -157,9 +175,9 @@ export const api = {
         remainingNew: number | null;
         atNewLimit: boolean;
         unlimitedListings?: boolean;
-      }>('/products/listing-quota'),
+      }>("/products/listing-quota"),
     create: (data: any) =>
-      request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
+      request<any>("/products", { method: "POST", body: JSON.stringify(data) }),
     createPublic: (data: any) =>
       request<{
         product: any;
@@ -169,12 +187,16 @@ export const api = {
         freeLimit?: number;
         listingFee: number;
         paymentDueAt: string | null;
-      }>('/products/public', { method: 'POST', body: JSON.stringify(data) }),
+      }>("/products/public", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: any) =>
-      request<any>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    delete: (id: string) => request<any>(`/products/${id}`, { method: 'DELETE' }),
+      request<any>(`/products/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<any>(`/products/${id}`, { method: "DELETE" }),
     payListingFee: (id: string) =>
-      request<any>(`/products/${id}/pay-listing-fee`, { method: 'POST' }),
+      request<any>(`/products/${id}/pay-listing-fee`, { method: "POST" }),
     reactivate: (id: string) =>
       request<{
         product: any;
@@ -183,15 +205,16 @@ export const api = {
         freeLimit?: number;
         listingFee: number;
         paymentDueAt: string | null;
-      }>(`/products/${id}/reactivate`, { method: 'POST' }),
+      }>(`/products/${id}/reactivate`, { method: "POST" }),
     applyStrengthened: (id: string) =>
-      request<any>(`/products/${id}/apply-strengthened`, { method: 'POST' }),
-    applyBoost: (id: string) => request<any>(`/products/${id}/apply-boost`, { method: 'POST' }),
+      request<any>(`/products/${id}/apply-strengthened`, { method: "POST" }),
+    applyBoost: (id: string) =>
+      request<any>(`/products/${id}/apply-boost`, { method: "POST" }),
     applyBoostCredit: (id: string) =>
-      request<any>(`/products/${id}/apply-boost-credit`, { method: 'POST' }),
+      request<any>(`/products/${id}/apply-boost-credit`, { method: "POST" }),
     report: (id: string, data: { title: string; description: string }) =>
       request<{ message: string }>(`/products/${id}/report`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify(data),
       }),
   },
@@ -199,28 +222,35 @@ export const api = {
   categories: {
     list: () =>
       request<{
-        parts: Array<{ id: string; name: string; slug: string; parentId?: string | null }>;
+        parts: Array<{
+          id: string;
+          name: string;
+          slug: string;
+          parentId?: string | null;
+        }>;
         carBrands: Array<{ value: string; label: string }>;
         libraries: Array<{
           id: string;
           name: string;
           slug: string;
-          kind: 'PART' | 'CAR_BRAND';
+          kind: "PART" | "CAR_BRAND";
           children: Array<{
             id: string;
             name: string;
             slug: string;
-            kind: 'PART' | 'CAR_BRAND';
+            kind: "PART" | "CAR_BRAND";
             children: unknown[];
           }>;
         }>;
-      }>('/categories'),
-    seed: () => request<any>('/categories/seed', { method: 'POST' }),
+      }>("/categories"),
+    seed: () => request<any>("/categories/seed", { method: "POST" }),
   },
 
   orders: {
-    my: () => request<any[]>('/orders/my'),
-    preview: (data: { items: { productId: string; quantity: number; color?: string }[] }) =>
+    my: () => request<any[]>("/orders/my"),
+    preview: (data: {
+      items: { productId: string; quantity: number; color?: string }[];
+    }) =>
       request<{
         items: Array<{
           productId: string;
@@ -235,46 +265,54 @@ export const api = {
         subtotal: number;
         total: number;
         itemCount: number;
-      }>('/orders/preview', { method: 'POST', body: JSON.stringify(data) }),
+      }>("/orders/preview", { method: "POST", body: JSON.stringify(data) }),
     create: (data: {
       items: { productId: string; quantity: number; color?: string }[];
       address: string;
       phone?: string;
       note?: string;
-      paymentMethod: 'ONLINE';
+      paymentMethod: "ONLINE";
     }) =>
-      request<{ id: string; paymentUrl: string }>('/orders', {
-        method: 'POST',
+      request<{ id: string; paymentUrl: string }>("/orders", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
     get: (id: string) => request<any>(`/orders/${id}`),
   },
 
   productChats: {
-    list: () => request<ProductConversationSummary[]>('/product-chats'),
-    unreadCount: () => request<{ count: number }>('/product-chats/unread-count'),
+    list: () => request<ProductConversationSummary[]>("/product-chats"),
+    unreadCount: () =>
+      request<{ count: number }>("/product-chats/unread-count"),
     start: (productId: string) => {
       const id = productId?.trim();
       if (!id) {
-        return Promise.reject(new Error('شناسه آگهی نامعتبر است'));
+        return Promise.reject(new Error("شناسه آگهی نامعتبر است"));
       }
-      return request<ProductConversationSummary>('/product-chats', {
-        method: 'POST',
+      return request<ProductConversationSummary>("/product-chats", {
+        method: "POST",
         body: JSON.stringify({ productId: id }),
       });
     },
-    get: (id: string) => request<ProductConversationDetail>(`/product-chats/${id}`),
+    get: (id: string) =>
+      request<ProductConversationDetail>(`/product-chats/${id}`),
     send: (id: string, body: string) =>
       request<ProductChatMessage>(`/product-chats/${id}/messages`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ body }),
       }),
     markRead: (id: string) =>
-      request<{ updated: number }>(`/product-chats/${id}/read`, { method: 'PATCH' }),
+      request<{ updated: number }>(`/product-chats/${id}/read`, {
+        method: "PATCH",
+      }),
   },
 
   payments: {
-    prepare: (data: { productId: string; purpose: string; nextPurpose?: string }) =>
+    prepare: (data: {
+      productId: string;
+      purpose: string;
+      nextPurpose?: string;
+    }) =>
       request<{
         product: {
           id: string;
@@ -289,7 +327,7 @@ export const api = {
         amount: number;
         nextPurpose: string | null;
         gateways: Array<{ id: string; label: string; enabled: boolean }>;
-      }>('/payments/prepare', { method: 'POST', body: JSON.stringify(data) }),
+      }>("/payments/prepare", { method: "POST", body: JSON.stringify(data) }),
     initiate: (data: {
       productId: string;
       purpose: string;
@@ -303,7 +341,7 @@ export const api = {
         amount: number;
         purpose: string;
         productId: string;
-      }>('/payments/initiate', { method: 'POST', body: JSON.stringify(data) }),
+      }>("/payments/initiate", { method: "POST", body: JSON.stringify(data) }),
     getSession: (id: string) =>
       request<{
         id: string;
@@ -325,57 +363,67 @@ export const api = {
   },
 
   users: {
-    profile: () => request<any>('/users/profile'),
-    products: () => request<any[]>('/users/products'),
+    profile: () => request<any>("/users/profile"),
+    products: () => request<any[]>("/users/products"),
     seller: (id: string) => request<any>(`/users/sellers/${id}`),
     updateProfile: (data: any) =>
-      request<any>('/users/profile', { method: 'PATCH', body: JSON.stringify(data) }),
-    changePassword: (data: { currentPassword: string; newPassword: string }) =>
-      request<{ message: string }>('/users/profile/password', {
-        method: 'PATCH',
+      request<any>("/users/profile", {
+        method: "PATCH",
         body: JSON.stringify(data),
       }),
-    messages: () => request<any[]>('/users/messages'),
-    messagesUnreadCount: () => request<{ count: number }>('/users/messages/unread-count'),
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      request<{ message: string }>("/users/profile/password", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    messages: () => request<any[]>("/users/messages"),
+    messagesUnreadCount: () =>
+      request<{ count: number }>("/users/messages/unread-count"),
     markMessageRead: (id: string) =>
-      request<any>(`/users/messages/${id}/read`, { method: 'PATCH' }),
+      request<any>(`/users/messages/${id}/read`, { method: "PATCH" }),
     markAllMessagesRead: () =>
-      request<{ updated: number }>('/users/messages/read-all', { method: 'PATCH' }),
-    favoriteIds: () => request<{ productIds: string[] }>('/users/favorites/ids'),
-    favorites: () => request<any[]>('/users/favorites'),
+      request<{ updated: number }>("/users/messages/read-all", {
+        method: "PATCH",
+      }),
+    favoriteIds: () =>
+      request<{ productIds: string[] }>("/users/favorites/ids"),
+    favorites: () => request<any[]>("/users/favorites"),
     addFavorite: (productId: string) =>
-      request<{ productId: string; favorited: boolean }>(`/users/favorites/${productId}`, {
-        method: 'POST',
-      }),
+      request<{ productId: string; favorited: boolean }>(
+        `/users/favorites/${productId}`,
+        {
+          method: "POST",
+        },
+      ),
     removeFavorite: (productId: string) =>
-      request<{ productId: string; favorited: boolean }>(`/users/favorites/${productId}`, {
-        method: 'DELETE',
-      }),
-    telegramLink: () =>
-      request<{
-        configured: boolean;
-        linked: boolean;
-        botUrl?: string;
-        botUsername?: string;
-        linkedAt?: string;
-        expiresAt?: string;
-        message?: string;
-      }>('/users/telegram/link'),
-    pushConfig: () => request<{ enabled: boolean; publicKey: string | null }>('/users/push/config'),
-    pushSubscribe: (data: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
-      request<{ subscribed: boolean }>('/users/push/subscribe', {
-        method: 'POST',
+      request<{ productId: string; favorited: boolean }>(
+        `/users/favorites/${productId}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    pushConfig: () =>
+      request<{ enabled: boolean; publicKey: string | null }>(
+        "/users/push/config",
+      ),
+    pushSubscribe: (data: {
+      endpoint: string;
+      keys: { p256dh: string; auth: string };
+    }) =>
+      request<{ subscribed: boolean }>("/users/push/subscribe", {
+        method: "POST",
         body: JSON.stringify(data),
       }),
     pushUnsubscribe: (data: { endpoint: string }) =>
-      request<{ unsubscribed: boolean }>('/users/push/subscribe', {
-        method: 'DELETE',
+      request<{ unsubscribed: boolean }>("/users/push/subscribe", {
+        method: "DELETE",
         body: JSON.stringify(data),
       }),
   },
 
   auctions: {
-    summary: (productId: string) => request<any>(`/auctions/${productId}/summary`),
+    summary: (productId: string) =>
+      request<any>(`/auctions/${productId}/summary`),
     placeBid: (
       productId: string,
       data: {
@@ -387,7 +435,7 @@ export const api = {
       },
     ) =>
       request<any>(`/auctions/${productId}/bids`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify(data),
       }),
   },

@@ -1,5 +1,8 @@
-import { PRODUCT_COLOR_IDS, PRODUCT_NEIGHBORHOOD_MAX_LENGTH } from '@offroad/shared';
-import { Transform, Type } from 'class-transformer';
+import {
+  PRODUCT_COLOR_IDS,
+  PRODUCT_NEIGHBORHOOD_MAX_LENGTH,
+} from "@offroad/shared";
+import { Transform, Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -10,50 +13,52 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   MinLength,
   ValidateIf,
-} from 'class-validator';
-import { NoContactInText } from '../../common/no-contact-in-text.validator';
+} from "class-validator";
+import { NoContactInText } from "../../common/no-contact-in-text.validator";
 import {
   ListingIntent,
   ProductSituation,
   ProductStatus,
+  VehicleGearbox,
   VehiclePaintCondition,
-} from '../../prisma/generated/client';
+} from "../../prisma/generated/client";
 
 export class UpdateProductDto {
   @IsOptional()
   @IsString()
-  @MinLength(3, { message: 'عنوان باید حداقل ۳ کاراکتر باشد' })
+  @MinLength(3, { message: "عنوان باید حداقل ۳ کاراکتر باشد" })
   @NoContactInText()
   title?: string;
 
   @IsOptional()
   @IsString()
-  @MinLength(10, { message: 'توضیحات باید حداقل ۱۰ کاراکتر باشد' })
+  @MinLength(10, { message: "توضیحات باید حداقل ۱۰ کاراکتر باشد" })
   @NoContactInText()
   description?: string;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0, { message: 'قیمت نمی‌تواند منفی باشد' })
+  @Min(0, { message: "قیمت نمی‌تواند منفی باشد" })
   price?: number;
 
   @IsOptional()
   @ValidateIf((_, value) => value != null)
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: 'قیمت با تخفیف باید بیشتر از صفر باشد' })
+  @Min(1, { message: "قیمت با تخفیف باید بیشتر از صفر باشد" })
   salePrice?: number | null;
 
   @IsOptional()
   @ValidateIf((_, value) => value != null)
   @Type(() => Number)
   @IsNumber()
-  @Min(1, { message: 'قیمت نو محصول باید بیشتر از صفر باشد' })
+  @Min(1, { message: "قیمت نو محصول باید بیشتر از صفر باشد" })
   newPrice?: number | null;
 
   @IsOptional()
@@ -90,7 +95,7 @@ export class UpdateProductDto {
   @Transform(({ value }) => {
     if (value === undefined) return undefined;
     if (value === null) return null;
-    if (typeof value !== 'string') return value;
+    if (typeof value !== "string") return value;
     const trimmed = value.trim();
     return trimmed.length ? trimmed : null;
   })
@@ -115,14 +120,29 @@ export class UpdateProductDto {
   @IsOptional()
   @ValidateIf((_, value) => value != null)
   @Type(() => Number)
-  @IsInt({ message: 'میزان کارکرد باید عدد صحیح باشد' })
-  @Min(0, { message: 'میزان کارکرد نمی‌تواند منفی باشد' })
+  @IsInt({ message: "میزان کارکرد باید عدد صحیح باشد" })
+  @Min(0, { message: "میزان کارکرد نمی‌تواند منفی باشد" })
   mileageKm?: number | null;
 
   @IsOptional()
   @ValidateIf((_, value) => value != null)
-  @IsEnum(VehiclePaintCondition, { message: 'وضعیت رنگ را انتخاب کنید' })
+  @IsEnum(VehiclePaintCondition, { message: "وضعیت رنگ را انتخاب کنید" })
   paintCondition?: VehiclePaintCondition | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @IsString()
+  @Matches(/^\d{4}\/\d{4}$/, { message: "سال تولید معتبر نیست" })
+  productionYear?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  productionYearBefore1370?: boolean;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value != null)
+  @IsEnum(VehicleGearbox, { message: "نوع گیربکس را انتخاب کنید" })
+  gearbox?: VehicleGearbox | null;
 
   @IsOptional()
   @IsBoolean()
@@ -159,22 +179,25 @@ export class UpdateProductDto {
   /** Shop may use 0 (out of stock); client listings require ≥ 1 (enforced in service). */
   @IsOptional()
   @Type(() => Number)
-  @IsInt({ message: 'موجودی باید عدد صحیح باشد' })
-  @Min(0, { message: 'موجودی نمی‌تواند منفی باشد' })
+  @IsInt({ message: "موجودی باید عدد صحیح باشد" })
+  @Min(0, { message: "موجودی نمی‌تواند منفی باشد" })
   stockQuantity?: number;
 
   /** Selected listing colors (canonical ids). Empty array clears. */
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(PRODUCT_COLOR_IDS, { each: true, message: 'رنگ انتخاب‌شده نامعتبر است' })
+  @IsIn(PRODUCT_COLOR_IDS, {
+    each: true,
+    message: "رنگ انتخاب‌شده نامعتبر است",
+  })
   colors?: string[];
 
   /** @deprecated use colors — empty string / null clears. */
   @IsOptional()
   @Transform(({ value }) => {
     if (value === null) return null;
-    if (typeof value !== 'string') return value;
+    if (typeof value !== "string") return value;
     const trimmed = value.trim();
     return trimmed.length ? trimmed : null;
   })

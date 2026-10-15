@@ -81,6 +81,9 @@ const EMPTY_FORM_VALUES: NewProductFormValues = {
   listingIntent: 'SELLER',
   mileageKm: null,
   paintCondition: '',
+  productionYear: null,
+  productionYearBefore1370: false,
+  gearbox: '',
 };
 
 function firstErrorMessage(error: unknown): string | undefined {
@@ -144,6 +147,9 @@ export default function NewProductPage() {
   const categorySlug = watch('categorySlug');
   const mileageKm = watch('mileageKm');
   const paintCondition = watch('paintCondition');
+  const productionYear = watch('productionYear');
+  const productionYearBefore1370 = watch('productionYearBefore1370');
+  const gearbox = watch('gearbox');
 
   const showVehicleFields = useMemo(
     () => Boolean(categorySlug && isVehicleSaleCategory(categorySlug)),
@@ -169,6 +175,9 @@ export default function NewProductPage() {
     if (!isVehicleSaleCategory(slug)) {
       setValue('mileageKm', null);
       setValue('paintCondition', '');
+      setValue('productionYear', null);
+      setValue('productionYearBefore1370', false);
+      setValue('gearbox', '');
     }
   }, [categoryId, parts, setValue]);
 
@@ -279,10 +288,13 @@ export default function NewProductPage() {
         stockQuantity: data.isAuction ? 1 : data.stockQuantity,
         colors: data.isAuction ? undefined : data.colors,
         isAuction: data.isAuction,
-        ...(showVehicleFields && data.mileageKm != null && data.paintCondition
+        ...(showVehicleFields && data.mileageKm != null && data.paintCondition && data.gearbox
           ? {
               mileageKm: data.mileageKm,
               paintCondition: data.paintCondition,
+              productionYear: data.productionYear,
+              productionYearBefore1370: data.productionYearBefore1370,
+              gearbox: data.gearbox,
             }
           : {}),
         ...(data.isAuction
@@ -413,12 +425,24 @@ export default function NewProductPage() {
               <VehicleSaleFields
                 mileageKm={mileageKm}
                 paintCondition={paintCondition as VehiclePaintCondition | ''}
+                productionYear={productionYear}
+                productionYearBefore1370={productionYearBefore1370}
+                gearbox={gearbox}
                 onMileageChange={(v) => setValue('mileageKm', v, { shouldValidate: true })}
                 onPaintConditionChange={(v) =>
                   setValue('paintCondition', v, { shouldValidate: true })
                 }
+                onProductionYearChange={(v) =>
+                  setValue('productionYear', v, { shouldValidate: true })
+                }
+                onProductionYearBefore1370Change={(v) =>
+                  setValue('productionYearBefore1370', v, { shouldValidate: true })
+                }
+                onGearboxChange={(v) => setValue('gearbox', v, { shouldValidate: true })}
                 mileageError={errors.mileageKm?.message}
                 paintError={errors.paintCondition?.message}
+                productionYearError={errors.productionYear?.message}
+                gearboxError={errors.gearbox?.message}
               />
             )}
 

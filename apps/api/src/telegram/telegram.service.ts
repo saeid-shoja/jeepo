@@ -1,7 +1,6 @@
-import { randomBytes } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from "@nestjs/common";
 
-const TELEGRAM_API = 'https://api.telegram.org';
+const TELEGRAM_API = "https://api.telegram.org";
 
 export type TelegramMessage = {
   message_id: number;
@@ -21,8 +20,8 @@ export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
   constructor(
-    @Inject('TELEGRAM_BOT_TOKEN') private readonly botToken: string,
-    @Inject('TELEGRAM_BOT_USERNAME') private readonly botUsername: string,
+    @Inject("TELEGRAM_BOT_TOKEN") private readonly botToken: string,
+    @Inject("TELEGRAM_BOT_USERNAME") private readonly botUsername: string,
   ) {}
 
   isConfigured(): boolean {
@@ -30,42 +29,31 @@ export class TelegramService {
   }
 
   getBotUsername(): string {
-    return this.botUsername.replace(/^@/, '');
+    return this.botUsername.replace(/^@/, "");
   }
 
-  /** Deep-link that auto-sends /start TOKEN when the user opens the bot. */
-  buildDeepLink(token: string): string {
-    return `https://t.me/${this.getBotUsername()}?start=${encodeURIComponent(token)}`;
-  }
-
-  /** URL-safe token for Telegram start payload (max 64 chars). */
-  generateLinkToken(): string {
-    return randomBytes(16).toString('hex');
-  }
-
-  normalizeLinkCode(raw: string | null | undefined): string | null {
-    if (!raw) return null;
-    const hex = raw.trim().toLowerCase();
-    if (/^[a-f0-9]{32}$/.test(hex)) return hex;
-    const code = raw.trim().toUpperCase().replace(/[\s-]/g, '');
-    // Legacy 6-char codes from the old copy-paste flow
-    if (/^[A-Z0-9]{6}$/.test(code)) return code;
-    return null;
-  }
-
-  private async callApi<T>(method: string, body: Record<string, unknown>): Promise<T | null> {
+  private async callApi<T>(
+    method: string,
+    body: Record<string, unknown>,
+  ): Promise<T | null> {
     if (!this.botToken) {
-      this.logger.warn(`Telegram skipped (${method}): TELEGRAM_BOT_TOKEN missing`);
+      this.logger.warn(
+        `Telegram skipped (${method}): TELEGRAM_BOT_TOKEN missing`,
+      );
       return null;
     }
     try {
       const res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/${method}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { ok: boolean; description?: string; result?: T };
+      const data = (await res.json()) as {
+        ok: boolean;
+        description?: string;
+        result?: T;
+      };
       if (!data.ok) {
         this.logger.warn(
           `Telegram ${method} failed: ${data.description ?? res.status}${formatApiContext(body)}`,
@@ -82,61 +70,12 @@ export class TelegramService {
     }
   }
 
-  async getWebhookInfo(): Promise<{
-    url?: string;
-    pending_update_count?: number;
-    last_error_message?: string;
-  } | null> {
-    return this.callApi('getWebhookInfo', {});
-  }
-
-  async deleteWebhook(): Promise<boolean> {
-    const result = await this.callApi('deleteWebhook', { drop_pending_updates: false });
-    return result != null;
-  }
-
-  async getUpdates(offset: number, timeoutSec = 25): Promise<TelegramUpdate[]> {
-    if (!this.botToken) return [];
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), (timeoutSec + 5) * 1000);
-
-    try {
-      const res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/getUpdates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          offset,
-          timeout: timeoutSec,
-          allowed_updates: ['message'],
-        }),
-        signal: controller.signal,
-      });
-      const data = (await res.json()) as {
-        ok: boolean;
-        description?: string;
-        result?: TelegramUpdate[];
-      };
-      if (!data.ok) {
-        this.logger.warn(`Telegram getUpdates failed: ${data.description ?? res.status}`);
-        return [];
-      }
-      return data.result ?? [];
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return [];
-      this.logger.warn(`Telegram getUpdates error: ${err instanceof Error ? err.message : err}`);
-      return [];
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
   async sendMessage(chatId: string, text: string): Promise<boolean> {
     const resolvedChatId = await this.resolveChatId(chatId);
-    const result = await this.callApi('sendMessage', {
+    const result = await this.callApi("sendMessage", {
       chat_id: resolvedChatId,
       text,
-      parse_mode: 'HTML',
+      parse_mode: "HTML",
       disable_web_page_preview: true,
     });
     return result != null;
@@ -150,7 +89,11 @@ export class TelegramService {
     const cached = this.resolvedChatIds.get(trimmed);
     if (cached) return cached;
 
-    const chat = await this.callApi<{ id: number; is_forum?: boolean; title?: string }>('getChat', {
+    const chat = await this.callApi<{
+      id: number;
+      is_forum?: boolean;
+      title?: string;
+    }>("getChat", {
       chat_id: trimmed,
     });
     if (!chat) return trimmed;
@@ -158,7 +101,7 @@ export class TelegramService {
     const numericId = String(chat.id);
     this.resolvedChatIds.set(trimmed, numericId);
     this.logger.log(
-      `Telegram chat resolved: ${trimmed} → ${numericId}${chat.is_forum ? ' (forum)' : ''}`,
+      `Telegram chat resolved: ${trimmed} → ${numericId}${chat.is_forum ? " (forum)" : ""}`,
     );
     return numericId;
   }
@@ -175,20 +118,20 @@ export class TelegramService {
     const preview = options?.disableWebPagePreview ?? true;
 
     // t.me/jeeppo/{id} → message_id for reply; Telegram routes to the correct forum topic.
-    const withReply = await this.callApi('sendMessage', {
+    const withReply = await this.callApi("sendMessage", {
       chat_id: resolvedChatId,
       text,
-      parse_mode: 'HTML',
+      parse_mode: "HTML",
       disable_web_page_preview: preview,
       reply_parameters: { message_id: topicAnchorMessageId },
     });
     if (withReply) return true;
 
-    const withThread = await this.callApi('sendMessage', {
+    const withThread = await this.callApi("sendMessage", {
       chat_id: resolvedChatId,
       message_thread_id: topicAnchorMessageId,
       text,
-      parse_mode: 'HTML',
+      parse_mode: "HTML",
       disable_web_page_preview: preview,
     });
     return withThread != null;
@@ -201,29 +144,31 @@ export class TelegramService {
     caption: string,
   ): Promise<boolean> {
     if (!this.botToken) {
-      this.logger.warn('Telegram skipped (sendPhoto): TELEGRAM_BOT_TOKEN missing');
+      this.logger.warn(
+        "Telegram skipped (sendPhoto): TELEGRAM_BOT_TOKEN missing",
+      );
       return false;
     }
 
     const resolvedChatId = await this.resolveChatId(chatId);
     const replyParams = JSON.stringify({ message_id: topicAnchorMessageId });
 
-    if (photo.startsWith('http://') || photo.startsWith('https://')) {
-      const withReply = await this.callApi('sendPhoto', {
+    if (photo.startsWith("http://") || photo.startsWith("https://")) {
+      const withReply = await this.callApi("sendPhoto", {
         chat_id: resolvedChatId,
         photo,
         caption,
-        parse_mode: 'HTML',
+        parse_mode: "HTML",
         reply_parameters: { message_id: topicAnchorMessageId },
       });
       if (withReply) return true;
 
-      const withThread = await this.callApi('sendPhoto', {
+      const withThread = await this.callApi("sendPhoto", {
         chat_id: resolvedChatId,
         message_thread_id: topicAnchorMessageId,
         photo,
         caption,
-        parse_mode: 'HTML',
+        parse_mode: "HTML",
       });
       return withThread != null;
     }
@@ -234,43 +179,51 @@ export class TelegramService {
     }
 
     const form = new FormData();
-    form.append('chat_id', resolvedChatId);
-    form.append('caption', caption);
-    form.append('parse_mode', 'HTML');
-    form.append('reply_parameters', replyParams);
-    form.append('photo', new Blob([new Uint8Array(image)], { type: 'image/jpeg' }), 'photo.jpg');
+    form.append("chat_id", resolvedChatId);
+    form.append("caption", caption);
+    form.append("parse_mode", "HTML");
+    form.append("reply_parameters", replyParams);
+    form.append(
+      "photo",
+      new Blob([new Uint8Array(image)], { type: "image/jpeg" }),
+      "photo.jpg",
+    );
 
     try {
       let res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/sendPhoto`, {
-        method: 'POST',
+        method: "POST",
         body: form,
       });
       let data = (await res.json()) as { ok: boolean; description?: string };
       if (data.ok) return true;
 
       const formThread = new FormData();
-      formThread.append('chat_id', resolvedChatId);
-      formThread.append('message_thread_id', String(topicAnchorMessageId));
-      formThread.append('caption', caption);
-      formThread.append('parse_mode', 'HTML');
+      formThread.append("chat_id", resolvedChatId);
+      formThread.append("message_thread_id", String(topicAnchorMessageId));
+      formThread.append("caption", caption);
+      formThread.append("parse_mode", "HTML");
       formThread.append(
-        'photo',
-        new Blob([new Uint8Array(image)], { type: 'image/jpeg' }),
-        'photo.jpg',
+        "photo",
+        new Blob([new Uint8Array(image)], { type: "image/jpeg" }),
+        "photo.jpg",
       );
 
       res = await fetch(`${TELEGRAM_API}/bot${this.botToken}/sendPhoto`, {
-        method: 'POST',
+        method: "POST",
         body: formThread,
       });
       data = (await res.json()) as { ok: boolean; description?: string };
       if (!data.ok) {
-        this.logger.warn(`Telegram sendPhoto failed: ${data.description ?? res.status}`);
+        this.logger.warn(
+          `Telegram sendPhoto failed: ${data.description ?? res.status}`,
+        );
         return false;
       }
       return true;
     } catch (err) {
-      this.logger.warn(`Telegram sendPhoto error: ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(
+        `Telegram sendPhoto error: ${err instanceof Error ? err.message : err}`,
+      );
       return false;
     }
   }
@@ -305,21 +258,24 @@ export class TelegramService {
 }
 
 function escapeTelegramHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function parseImageBuffer(photo: string): Buffer | null {
   const dataUrlMatch = /^data:image\/[\w+.-]+;base64,(.+)$/i.exec(photo.trim());
   if (dataUrlMatch) {
     try {
-      return Buffer.from(dataUrlMatch[1], 'base64');
+      return Buffer.from(dataUrlMatch[1], "base64");
     } catch {
       return null;
     }
   }
   if (/^[A-Za-z0-9+/=]+$/.test(photo.trim()) && photo.length > 100) {
     try {
-      return Buffer.from(photo.trim(), 'base64');
+      return Buffer.from(photo.trim(), "base64");
     } catch {
       return null;
     }
@@ -336,11 +292,15 @@ function sleep(ms: number): Promise<void> {
 function formatApiContext(body: Record<string, unknown>): string {
   const chatId = body.chat_id;
   const threadId = body.message_thread_id;
-  const replyParams = body.reply_parameters as { message_id?: number } | undefined;
-  if (chatId == null && threadId == null && replyParams?.message_id == null) return '';
+  const replyParams = body.reply_parameters as
+    | { message_id?: number }
+    | undefined;
+  if (chatId == null && threadId == null && replyParams?.message_id == null)
+    return "";
   const parts: string[] = [];
   if (chatId != null) parts.push(`chat_id=${chatId}`);
-  if (replyParams?.message_id != null) parts.push(`reply_to=${replyParams.message_id}`);
+  if (replyParams?.message_id != null)
+    parts.push(`reply_to=${replyParams.message_id}`);
   if (threadId != null) parts.push(`message_thread_id=${threadId}`);
-  return ` (${parts.join(', ')})`;
+  return ` (${parts.join(", ")})`;
 }

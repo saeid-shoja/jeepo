@@ -67,6 +67,20 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum GuaranteedOrderItemStatus {
+  WAITING_SELLER_CONFIRMATION
+  PACKAGING
+  READY_TO_SHIP
+  SHIPPED
+  BUYER_CONFIRMED
+  BUYER_CANCELLED
+  REFUND_PENDING
+  UNDER_REVIEW
+  REFUNDED
+  PAID_TO_SELLER
+  CANCELLED
+}
+
 enum PaymentMethod {
   ONLINE
 }
@@ -365,15 +379,23 @@ model PaymentSession {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int     @default(1)
-  price     Float
+  id                       String                       @id @default(cuid())
+  orderId                  String
+  order                    Order                        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId                String
+  product                  Product                      @relation(fields: [productId], references: [id])
+  quantity                 Int                          @default(1)
+  price                    Float
   /** Selected product color id when the buyer picked a variant. */
-  color     String?
+  color                    String?
+  guaranteeStatus          GuaranteedOrderItemStatus?
+  packagingVideo           String?                      @db.Text
+  packagingImages          String[]                     @default([])
+  shippingReceipt          String?                      @db.Text
+  guaranteeStatusChangedAt DateTime?
+  shippedAt                DateTime?
+
+  @@index([guaranteeStatus])
 }
 
 model Favorite {

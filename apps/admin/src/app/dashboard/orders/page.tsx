@@ -103,7 +103,7 @@ export default function AdminOrdersPage() {
   const filtered = useMemo(() => {
     if (filter === 'all') return orders;
     if (filter === 'open') {
-      return orders.filter((o) => ['CONFIRMED', 'PACKAGING', 'SHIPPED'].includes(o.status));
+      return orders.filter((order) => ['CONFIRMED', 'PACKAGING', 'SHIPPED'].includes(order.status));
     }
     return orders.filter((o) => o.status === filter);
   }, [orders, filter]);

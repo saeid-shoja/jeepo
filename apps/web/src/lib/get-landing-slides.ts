@@ -1,4 +1,4 @@
-import { SITE_NAME_FA } from '@offroad/shared';
+import { SITE_NAME_FA } from "@offroad/shared";
 
 export type Slide = {
   id: string;
@@ -12,30 +12,30 @@ export type Slide = {
 // Mock data until backend /slides endpoint is ready
 export const MOCK_SLIDES: Slide[] = [
   {
-    id: '1',
-    imageUrl: '/images/hero/s1.webp',
+    id: "1",
+    imageUrl: "/images/hero/s1.webp",
     title: `${SITE_NAME_FA} | فروشگاه تخصصی لوازم آفرود`,
     description:
-      'خرید و فروش لوازم و تجهیزات آفرود با ضمانت اصالت کالا. وقتی جیپو هست دیگه تجهیزات ماشینت رو مفتی روی ماشین نمیدی',
-    link: '/products',
+      "خرید و فروش لوازم و تجهیزات آفرود با ضمانت اصالت کالا. وقتی جیپو هست دیگه تجهیزات ماشینت رو مفتی روی ماشین نمیدی",
+    link: "/products",
     linkLabel: `فروشگاه ${SITE_NAME_FA}`,
   },
   {
-    id: '2',
-    imageUrl: '/images/hero/s2.webp',
-    title: 'دسته بندی های مختلف تجهیزات آفرودی دست دوم',
+    id: "2",
+    imageUrl: "/images/hero/s2.webp",
+    title: "دسته بندی های مختلف تجهیزات آفرودی دست دوم",
     description:
-      'لاستیک، لیفت کیت، تجهیزات بدنه و قطعات اورجینال  با قیمت های متنوع رو تو دسته بندی های مشخص پیدا کن',
-    link: '/categories',
-    linkLabel: 'دسته‌بندی‌ها',
+      "لاستیک، لیفت کیت، تجهیزات بدنه و قطعات اورجینال  با قیمت های متنوع رو تو دسته بندی های مشخص پیدا کن",
+    link: "/categories",
+    linkLabel: "دسته‌بندی‌ها",
   },
   {
-    id: '3',
-    imageUrl: '/images/hero/s3.webp',
-    title: 'تجهیزات آفرودی دست دومت رو با ثبت آگهی بفروش',
+    id: "3",
+    imageUrl: "/images/hero/s3.webp",
+    title: "تجهیزات آفرودی دست دومت رو با ثبت آگهی بفروش",
     description: `در ${SITE_NAME_FA}، محصول دست‌دوم خود را بفروشید`,
-    link: '/products/new',
-    linkLabel: 'ثبت آگهی',
+    link: "/products/new",
+    linkLabel: "ثبت آگهی",
   },
   /* مزایده — موقتاً غیرفعال
   {
@@ -49,17 +49,12 @@ export const MOCK_SLIDES: Slide[] = [
   },
   */
   {
-    id: '5',
-    imageUrl: '/images/hero/s5.webp',
-    title: 'تجهیزاتت رو با تضمین جیپو بفروش',
+    id: "5",
+    imageUrl: "/images/hero/s5.webp",
+    title: "تجهیزاتت رو با تضمین جیپو بفروش",
     description:
-      'با فعال کردن حالت تضمین جیپو ما واسطه معامله شما و خریدار میشیم تا معامله با خیال راحت تر از راه دور انجام بشه',
-    link: '/products/new',
-    linkLabel: 'ثبت آگهی',
+      "با فعال کردن حالت تضمین جیپو ما واسطه معامله شما و خریدار میشیم تا معامله با خیال راحت تر از راه دور انجام بشه",
+    link: "/products/new",
+    linkLabel: "ثبت آگهی",
   },
 ];
-
-export async function fetchSlides(): Promise<Slide[]> {
-  // Static slides until a CMS /slides API is implemented on the backend.
-  return MOCK_SLIDES;
-}

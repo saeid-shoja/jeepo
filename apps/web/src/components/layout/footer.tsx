@@ -12,16 +12,17 @@ import { EnamadTrustSeal } from '@/components/layout/enamad-trust-seal';
 import { SiteLogo } from '@/components/layout/site-logo';
 import { PwaInstallButton } from '@/components/pwa/pwa-install-button';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const shopLinks = [
   { href: '/', label: 'صفحه اصلی' },
   { href: '/products?advertiserType=SHOP', label: 'فروشگاه' },
   // { href: '/products?advertiserType=AUCTION', label: 'مزایده‌ها' }, // موقتاً غیرفعال
   { href: '/categories', label: 'دسته‌بندی‌ها' },
+  { href: '/products/new', label: 'ثبت آگهی' },
 ];
 
 const accountLinks = [
-  { href: '/products/new', label: 'ثبت آگهی' },
   { href: '/login', label: 'ورود' },
   { href: '/register', label: 'ثبت‌نام' },
   { href: '/dashboard', label: 'پنل کاربری' },
@@ -49,7 +50,8 @@ function FooterColumn({
           <li key={link.href + link.label}>
             <Link
               href={link.href}
-              className="text-muted-foreground hover:text-primary text-sm transition-colors"
+              className={cn("hover:text-primary text-sm transition-colors",
+                link.href === "/products/new" || link.href === "/login" ? "text-primary" : "text-muted-foreground")}
             >
               {link.label}
             </Link>

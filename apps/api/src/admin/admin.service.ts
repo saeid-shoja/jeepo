@@ -559,6 +559,11 @@ export class AdminService {
           { hasGuarantee: true },
         ];
         break;
+      case 'guarantee':
+        where.hasGuarantee = true;
+        where.advertiser = 'CLIENT';
+        where.isAuction = false;
+        break;
       case 'auction':
         where.isAuction = true;
         break;

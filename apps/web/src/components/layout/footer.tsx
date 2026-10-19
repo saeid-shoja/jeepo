@@ -50,8 +50,12 @@ function FooterColumn({
           <li key={link.href + link.label}>
             <Link
               href={link.href}
-              className={cn("hover:text-primary text-sm transition-colors",
-                link.href === "/products/new" || link.href === "/login" ? "text-primary" : "text-muted-foreground")}
+              className={cn(
+                'hover:text-primary text-sm transition-colors',
+                link.href === '/products/new' || link.href === '/login'
+                  ? 'text-primary'
+                  : 'text-muted-foreground',
+              )}
             >
               {link.label}
             </Link>

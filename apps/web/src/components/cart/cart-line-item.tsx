@@ -49,9 +49,9 @@ export function CartLineItem({ item }: { item: CartItem }) {
               {item.title}
             </Link>
             {item.color ? (
-              <span className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
+              <span className="text-foreground mt-1 flex items-center gap-1.5 text-sm font-bold">
                 <span
-                  className="size-3.5 shrink-0 rounded-full border border-black/15"
+                  className="size-4 shrink-0 rounded-full border border-black/15"
                   style={
                     colorSwatch
                       ? getProductColorSwatchStyle(colorSwatch)

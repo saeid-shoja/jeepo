@@ -1,6 +1,11 @@
 'use client';
 
-import { productRequiresColorChoice, resolveProductDiscount } from '@offroad/shared';
+import {
+  getProductColorLabel,
+  parseProductColorIds,
+  productRequiresColorChoice,
+  resolveProductDiscount,
+} from '@offroad/shared';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -17,7 +22,7 @@ type AddToCartButtonProps = {
     salePrice?: number | null;
     images?: string[];
     stockQuantity?: number;
-    colors?: string[];
+    colors?: string[] | null;
     color?: string | null;
     advertiser?: string;
     type?: string;
@@ -57,10 +62,35 @@ export function AddToCartButton({
     e.stopPropagation();
 
     const qty = Math.min(quantity, stockCap);
-    if ((requireColor || productRequiresColorChoice(product)) && !color) {
-      toast.error('لطفاً یک رنگ انتخاب کنید');
+
+    const colorIds = Array.isArray(product.colors)
+      ? product.colors.filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
+      : parseProductColorIds(product.color);
+
+    const singleColorId = colorIds.length === 1 ? colorIds[0] : null;
+    const effectiveColor = color ?? singleColorId;
+
+    const needsColorChoice =
+      (requireColor || productRequiresColorChoice(product)) && colorIds.length > 0;
+
+    if (colorIds.length >= 2 && !effectiveColor) {
+      toast.warning('لطفاً رنگ محصول را انتخاب کنید');
+      if (typeof window !== 'undefined') {
+        window.location.href = `/product/${product.id}`;
+      }
       return;
     }
+
+    if (needsColorChoice && colorIds.length === 1 && !effectiveColor) {
+      toast.warning('لطفاً رنگ محصول را انتخاب کنید');
+      return;
+    }
+
+    if (needsColorChoice && colorIds.length > 1 && !effectiveColor) {
+      toast.warning('لطفاً رنگ محصول را انتخاب کنید');
+      return;
+    }
+
     const { effectivePrice } = resolveProductDiscount(product.price, product.salePrice);
     addItem({
       productId: product.id,
@@ -69,9 +99,16 @@ export function AddToCartButton({
       image: product.images?.[0] ?? null,
       quantity: qty,
       maxQuantity: stockCap,
-      color: color ?? null,
+      color: effectiveColor ?? null,
     });
-    toast.success('به سبد خرید اضافه شد');
+
+    if (effectiveColor) {
+      toast.success(
+        `محصول «${product.title}» با رنگ ${getProductColorLabel(effectiveColor)} به سبد خرید اضافه شد`,
+      );
+    } else {
+      toast.success('به سبد خرید اضافه شد');
+    }
   };
 
   return (

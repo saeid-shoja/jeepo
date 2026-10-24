@@ -112,14 +112,14 @@ export function ProductChatsPanel({
       if (!selectedId) return;
       void loadThread(selectedId);
       void loadConversations();
-    }, 15_000);
+    }, 45_000);
     return () => clearInterval(interval);
   }, [selectedId, loadThread, loadConversations]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when message list or thread changes
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [thread?.messages.length, selectedId]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // }, [thread?.messages.length, selectedId]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);

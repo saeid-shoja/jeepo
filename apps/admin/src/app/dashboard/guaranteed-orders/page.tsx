@@ -20,7 +20,7 @@ type GuaranteedItem = {
     id: string;
     title: string;
     userId?: string | null;
-    user?: { id?: string; name?: string; phone?: string | null } | null;
+    user?: { id?: string; name?: string; phone?: string | null; email: string | null } | null;
   } | null;
 };
 
@@ -220,17 +220,20 @@ export default function GuaranteedOrdersPage() {
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <div className="space-y-1">
                     <p>خریدار: {order.user?.name ?? '—'}</p>
-                    <p className="text-xs text-gray-500" dir="ltr">
+                    <p className="text-xs text-gray-500">
                       شناسه: {order.user?.id ?? '—'}
                     </p>
-                    <p className="text-xs text-gray-500" dir="ltr">
+                    <p className="text-xs text-gray-500">
                       {order.user?.phone ?? '—'} · {order.user?.email ?? '—'}
                     </p>
                   </div>
                   <div className="space-y-1">
                     <p>فروشنده: {item.product?.user?.name ?? '—'}</p>
-                    <p className="text-xs text-gray-500" dir="ltr">
+                    <p className="text-xs text-gray-500">
                       شناسه: {item.product?.userId ?? '—'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {item.product?.user?.phone ?? '—'} · {item.product?.user?.email ?? '—'}
                     </p>
                     <p>مبلغ این قلم: {formatPrice(item.price * item.quantity)} تومان</p>
                   </div>

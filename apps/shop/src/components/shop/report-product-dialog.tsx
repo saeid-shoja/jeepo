@@ -105,7 +105,8 @@ export function ReportProductDialog({
               گزارش تخلف آگهی
             </DialogTitle>
             <DialogDescription className="text-start pt-2">
-              گزارش شما همراه با اطلاعات آگهی «{productTitle}» برای تیم پشتیبانی ارسال می‌شود.
+              گزارش شما همراه با اطلاعات آگهی «{productTitle}» برای تیم پشتیبانی ایمیل می‌شود و در
+              پنل مدیریت بررسی می‌گردد.
             </DialogDescription>
           </DialogHeader>
 

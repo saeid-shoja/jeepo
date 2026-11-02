@@ -59,13 +59,19 @@ export function ProductChatsPanel({
       try {
         const detail = await api.productChats.get(conversationId);
         setThread(detail);
-        setConversations((prev) =>
-          prev.map((item) =>
-            item.id === conversationId
-              ? { ...item, unreadCount: 0, lastMessage: detail.lastMessage }
-              : item,
-          ),
-        );
+        setConversations((prev) => {
+          const existing = prev.find((item) => item.id === conversationId);
+
+          if (existing) {
+            return prev.map((item) =>
+              item.id === conversationId
+                ? { ...item, unreadCount: 0, lastMessage: detail.lastMessage }
+                : item,
+            );
+          }
+
+          return [{ ...detail, unreadCount: 0 }, ...prev];
+        });
         await refreshUnread();
       } catch {
         setThread(null);
@@ -82,7 +88,10 @@ export function ProductChatsPanel({
     if (productId) {
       try {
         const started = await api.productChats.start(productId);
-        await loadConversations();
+        setConversations((prev) => {
+          const exists = prev.some((item) => item.id === started.id);
+          return exists ? prev : [started, ...prev];
+        });
         setSelectedId(started.id);
         return;
       } catch (err: unknown) {
@@ -116,7 +125,7 @@ export function ProductChatsPanel({
     return () => clearInterval(interval);
   }, [selectedId, loadThread, loadConversations]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when message list or thread changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on message count changes only
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [thread?.messages.length, selectedId]);
@@ -173,7 +182,23 @@ export function ProductChatsPanel({
     }
   };
 
-  const selectedSummary = conversations.find((c) => c.id === selectedId) ?? null;
+  const selectedSummary =
+    conversations.find((c) => c.id === selectedId) ??
+    (thread && selectedId === thread.id
+      ? {
+          id: thread.id,
+          productId: thread.productId,
+          buyerId: thread.buyerId,
+          sellerId: thread.sellerId,
+          role: thread.role,
+          lastMessageAt: thread.lastMessageAt,
+          createdAt: thread.createdAt,
+          unreadCount: 0,
+          otherParty: thread.otherParty,
+          product: thread.product,
+          lastMessage: thread.lastMessage,
+        }
+      : null);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-6">

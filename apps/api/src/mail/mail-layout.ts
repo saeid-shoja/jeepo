@@ -1,4 +1,4 @@
-import { SITE_EMAIL, SITE_NAME_FA, SITE_URL } from '@offroad/shared';
+import { SITE_NAME_FA, SITE_URL } from '@offroad/shared';
 
 const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
 const LOGO_URL = `${SITE_URL.replace(/\/$/, '')}/logo.png`;
@@ -27,20 +27,32 @@ export function buildEmailLayout(options: EmailLayoutOptions): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @media only screen and (max-width: 620px) {
+      .email-container { width:100% !important; padding:12px 8px !important; }
+      .email-card-cell { padding:20px 14px 8px !important; }
+      .email-footer-cell { padding:18px 14px !important; }
+      .email-content table { width:100% !important; max-width:100% !important; table-layout:fixed !important; }
+      .email-content td, .email-content th { padding:6px 4px !important; white-space:normal !important; overflow-wrap:anywhere !important; word-break:break-word !important; }
+      .email-title { font-size:24px !important; }
+      .email-heading { font-size:18px !important; }
+      .email-logo { width:72px !important; height:72px !important; }
+    }
+  </style>
   ${previewText ? `<title>${escapeHtml(previewText)}</title>` : ''}
 </head>
 <body style="margin:0;padding:0;background:#eef2f7;${RTL_TEXT}">
-  <div style="max-width:600px;margin:0 auto;padding:24px 12px;direction:rtl;text-align:right;">
+  <div class="email-container" style="width:100%;max-width:600px;box-sizing:border-box;margin:0 auto;padding:24px 12px;direction:rtl;text-align:right;">
     <table width="100%" cellpadding="0" cellspacing="0" dir="rtl" style="background:#ffffff;border-radius:16px;box-shadow:0 12px 40px rgba(15,23,42,0.12);overflow:hidden;direction:rtl;">
       <tr>
-        <td style="padding:28px 28px 8px;direction:rtl;text-align:right;">
-          <h1 style="margin:0 0 6px;font-size:32px;color:#d62828;font-weight:bold;${RTL_TEXT}">${escapeHtml(SITE_NAME_FA)}</h1>
-          <h1 style="margin:0 0 20px;font-size:20px;color:#1e3a5f;line-height:1.6;border-bottom:3px solid #d62828;padding-bottom:12px;${RTL_TEXT}">${escapeHtml(title)}</h1>
-          <div style="font-size:15px;line-height:1.95;color:#334155;${RTL_TEXT}">${bodyHtml}</div>
+        <td class="email-card-cell" style="padding:28px 28px 8px;direction:rtl;text-align:right;">
+          <h1 class="email-title" style="margin:0 0 6px;font-size:32px;color:#d62828;font-weight:bold;${RTL_TEXT}">${escapeHtml(SITE_NAME_FA)}</h1>
+          <h1 class="email-heading" style="margin:0 0 20px;font-size:20px;color:#1e3a5f;line-height:1.6;border-bottom:3px solid #d62828;padding-bottom:12px;${RTL_TEXT}">${escapeHtml(title)}</h1>
+          <div class="email-content" style="font-size:15px;line-height:1.95;color:#334155;overflow-wrap:anywhere;word-break:break-word;${RTL_TEXT}">${bodyHtml}</div>
         </td>
       </tr>
       <tr>
-        <td style="padding:20px 28px 24px;background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);direction:rtl;text-align:right;">
+        <td class="email-footer-cell" style="padding:20px 28px 24px;background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);direction:rtl;text-align:right;">
           <p style="margin:0 0 10px;font-size:13px;color:#64748b;${RTL_TEXT}">با تشکر از انتخاب شما</p>
           <p style="margin:0 0 16px;font-size:16px;color:#94a3b8;line-height:1.8;${RTL_TEXT}">
             تیم ${escapeHtml(SITE_NAME_FA)}<br />
@@ -48,7 +60,7 @@ export function buildEmailLayout(options: EmailLayoutOptions): string {
           <table width="100%" cellpadding="0" cellspacing="0" dir="rtl">
             <tr width="100%">
               <td width="100%" style="text-align:center;vertical-align:middle;">
-                <img src="${LOGO_URL}" alt="${escapeHtml(SITE_NAME_FA)}" width="100" height="100" style="display:inline-block;border-radius:8px;background:#ffffff;padding:3px;box-shadow:0 2px 8px rgba(15,23,42,0.12);vertical-align:middle;" />
+                <img class="email-logo" src="${LOGO_URL}" alt="${escapeHtml(SITE_NAME_FA)}" width="100" height="100" style="display:inline-block;border-radius:8px;background:#ffffff;padding:3px;box-shadow:0 2px 8px rgba(15,23,42,0.12);vertical-align:middle;" />
                 <p style="display:inline-block;margin-right:10px;font-size:12px;color:#94a3b8;vertical-align:middle;${RTL_TEXT}">${escapeHtml(SITE_HOST)}</p>
               </td>
             </tr>

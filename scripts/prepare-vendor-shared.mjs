@@ -18,7 +18,7 @@ function ensureSharedDist() {
     return;
   }
 
-  execSync('npx --yes typescript@5.7.2 tsc -p packages/shared/tsconfig.json', {
+  execSync('npx --yes --package typescript@5.7.2 tsc -p packages/shared/tsconfig.json', {
     cwd: root,
     stdio: 'inherit',
   });

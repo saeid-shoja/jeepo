@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Vercel install helper — avoids bundled pnpm + Node 22 ERR_INVALID_THIS on registry fetch.
 # Also prepares the vendored @offroad/shared package before install so file:./vendor/offroad-shared
-# resolves correctly on freshly cloned Vercel checkouts.
+# resolves correctly on fresh Vercel checkouts.
 set -euo pipefail
 export HUSKY=0
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0

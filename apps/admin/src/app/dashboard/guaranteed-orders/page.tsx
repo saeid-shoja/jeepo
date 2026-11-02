@@ -229,7 +229,8 @@ export default function GuaranteedOrdersPage() {
                     <p>فروشنده: {item.product?.user?.name ?? '—'}</p>
                     <p className="text-xs text-gray-500">شناسه: {item.product?.userId ?? '—'}</p>
                     <p className="text-xs text-gray-500">
-                      {item.product?.user?.phone ?? '—'} · {item.product?.user?.email ?? '—'}
+                      شماره تماس: {item.product?.user?.phone ?? '—'}
+                      ایمیل:‌{item.product?.user?.email ?? '—'}
                     </p>
                     <p>مبلغ این قلم: {formatPrice(item.price * item.quantity)} تومان</p>
                   </div>

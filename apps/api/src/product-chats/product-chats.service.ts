@@ -217,8 +217,16 @@ export class ProductChatsService {
       },
     });
 
+    const emptyConversationGraceMs = 10 * 60 * 1000;
+    const visibleConversations = conversations.filter((conversation) => {
+      if (conversation.messages.length > 0) return true;
+
+      const createdAt = new Date(conversation.createdAt).getTime();
+      return Date.now() - createdAt < emptyConversationGraceMs;
+    });
+
     const items = await Promise.all(
-      conversations.map(async (conversation) => {
+      visibleConversations.map(async (conversation) => {
         const unreadCount = await this.prisma.productChatMessage.count({
           where: {
             conversationId: conversation.id,

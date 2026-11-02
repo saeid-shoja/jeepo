@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { formatPrice, SITE_EMAIL, SITE_NAME_FA } from '@offroad/shared';
+import { formatPrice, SITE_EMAIL, SITE_NAME_FA, SITE_URL } from '@offroad/shared';
 import { Resend } from 'resend';
 import type { PaymentMethod } from '../prisma/generated/client';
 import {
@@ -165,6 +165,24 @@ export class MailService {
       bodyHtml,
     });
     await this.send(to, `خوش آمدید به ${SITE_NAME_FA}`, html);
+  }
+
+  async sendProductChatDailyDigest(to: string, name: string): Promise<boolean> {
+    const chatsUrl = `${SITE_URL.replace(/\/$/, '')}/chats`;
+    const bodyHtml = `
+      <p style="margin:0 0 16px;">${escapeHtml(name)} عزیز درود بر شما.</p>
+      <p style="margin:0 0 12px;">شما یک پیام جدید در پنل ${escapeHtml(SITE_NAME_FA)} دارید.</p>
+      <p style="margin:0 0 12px;">لطفا از طریق لینک <a href="${escapeHtml(chatsUrl)}" style="color:#d62828;overflow-wrap:anywhere;">${escapeHtml(chatsUrl)}</a> برای مشاهده پیام خود اقدام کنید.</p>
+      ${emailButton('مشاهده پیام‌ها', chatsUrl)}
+      <p style="margin:24px 0 0;">تیم پشتیبانی ${escapeHtml(SITE_NAME_FA)}.</p>
+    `;
+    const html = buildEmailLayout({
+      title: 'پیام جدید در پنل گفتگو',
+      previewText: 'شما پیام جدیدی در پنل جیپو دارید',
+      bodyHtml,
+    });
+
+    return this.send(to, `پیام جدید در پنل ${SITE_NAME_FA}`, html);
   }
 
   async sendVerificationCode(to: string, name: string, code: string): Promise<void> {

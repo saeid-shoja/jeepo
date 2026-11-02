@@ -17,12 +17,13 @@ import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 import { ADMIN_LIST_PAGE_SIZE, useInfiniteScrollList } from '@/lib/use-infinite-scroll-list';
 
-type ProductTab = 'shop' | 'client' | 'pending_approval' | 'auction';
+type ProductTab = 'shop' | 'client' | 'pending_approval' | 'auction' | 'guarantee';
 
 const TABS: Array<{ id: ProductTab; label: string; icon: typeof Store }> = [
   { id: 'shop', label: 'محصولات فروشگاه', icon: Store },
   { id: 'client', label: 'محصولات کاربران', icon: User },
   { id: 'pending_approval', label: 'نیاز به تأیید', icon: CheckCircle },
+  { id: 'guarantee', label: 'محصولات دارای تضمین', icon: Shield },
   { id: 'auction', label: 'مزایده', icon: Gavel },
 ];
 

@@ -38,6 +38,10 @@ export function StartProductChatButton({
   }
 
   const handleClick = async () => {
+    await startChat();
+  };
+
+  const startChat = async () => {
     setLoading(true);
     try {
       const conversation = await api.productChats.start(productId);

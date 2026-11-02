@@ -183,6 +183,7 @@ model User {
   buyerConversations ProductConversation[] @relation("ConversationBuyer")
   sellerConversations ProductConversation[] @relation("ConversationSeller")
   productChatMessages ProductChatMessage[]
+  productChatEmailDigests ProductChatEmailDigest[]
   paymentSessions PaymentSession[]
   pushSubscriptions PushSubscription[]
 
@@ -472,6 +473,17 @@ model ProductChatMessage {
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+model ProductChatEmailDigest {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateKey   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, dateKey])
+  @@index([dateKey])
 }
 
 model BlogPost {

@@ -36,6 +36,7 @@ import { StartProductChatButton } from '@/components/chat/start-product-chat-but
 import { DeleteListingDialog } from '@/components/profile/delete-listing-dialog';
 import { AdvertiserContactDialog } from '@/components/shop/advertiser-contact-dialog';
 import { FavoriteButton } from '@/components/shop/favorite-button';
+import { GuaranteeBadgeButton } from '@/components/shop/guarantee-badge-button';
 import { GuaranteeInfoDialog } from '@/components/shop/guarantee-info-dialog';
 import { ProductColorSwatches } from '@/components/shop/product-color-swatches';
 import { ProductGallery } from '@/components/shop/product-gallery';
@@ -388,7 +389,7 @@ export function ProductDetailClient() {
               <StartProductChatButton
                 productId={product.id ?? id}
                 className="w-full rounded-xl"
-                label="گفتگو با فروشنده"
+                label="چت با فروشنده"
               />
             )}
           </div>
@@ -495,9 +496,10 @@ export function ProductDetailClient() {
                     onClick={() => setGuaranteeOpen(true)}
                   >
                     <Shield className="size-3" />
-                    تضمین جیپو
+                    دارای تضمین جیپو
                   </button>
                 )}
+                <GuaranteeBadgeButton />
               </div>
             </div>
 

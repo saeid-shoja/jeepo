@@ -8,14 +8,14 @@ export const SITE_NAME_EN = 'jeepo';
 
 export const SITE_EMAIL = `jeepoinfo@gmail.com`;
 
-export const SITE_TELEGRAM_URL = 'https://t.me/jjeepo';
-export const SITE_TELEGRAM_HANDLE = '@jjeepo';
-export const SITE_TELEGRAM_SUPPORT = '@jeepo_support';
+export const SITE_TELEGRAM_URL = 'https://t.me/jeepo_support';
+export const SITE_TELEGRAM_HANDLE = 'پشتیبانی تلگرام';
+export const SITE_TELEGRAM_SUPPORT = 'پشتیبانی تلگرام';
 export const SITE_PHONE_SUPPORT = '+989333092013';
 
 export const SITE_INSTAGRAM_URL =
   'https://www.instagram.com/jeepo_stock_offroad?utm_source=qr&igsh=MTc0bGp5MjM5eXJhcA==';
-export const SITE_INSTAGRAM_HANDLE = '@jeepo_stock_offroad';
+export const SITE_INSTAGRAM_HANDLE = 'اینستاگرام';
 
 /** Default public site URL (override with NEXT_PUBLIC_SITE_URL in production). */
 export const SITE_URL = 'https://jeepo.ir';

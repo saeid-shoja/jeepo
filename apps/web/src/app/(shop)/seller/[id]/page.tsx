@@ -72,7 +72,7 @@ export default function SellerProfilePage() {
           rating={seller.rating}
           verifiedSeller={seller.verifiedSeller}
         />
-        <p className="text-muted-foreground text-sm">{formatSellerRatingLabel(seller.rating)}</p>
+        {/* <p className="text-muted-foreground text-sm">{formatSellerRatingLabel(seller.rating)}</p> */}
       </div>
 
       <dl className="divide-y rounded-xl border">
@@ -92,12 +92,12 @@ export default function SellerProfilePage() {
           label="فروشگاه / کاربر"
           value={seller.accountKind === 'SHOP' ? 'فروشگاه' : 'کاربر معمولی'}
         />
-        <InfoRow
+        {/* <InfoRow
           icon={<Phone className="size-4" />}
           label="شماره تماس"
           value={seller.phone}
           dir="ltr"
-        />
+        /> */}
         <InfoRow icon={<MapPin className="size-4" />} label="شهر و استان" value={location || '—'} />
         <InfoRow icon={<MapPin className="size-4" />} label="آدرس" value={seller.address || '—'} />
         <InfoRow

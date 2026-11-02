@@ -63,7 +63,7 @@ export function ReferralInviteCard({
       </CardHeader>
       <CardContent className="space-y-4 h-full text-sm flex flex-col justify-between p-4 md:p-6">
         <p className="text-muted-foreground leading-relaxed">
-          {`با دعوت دوستان، به ازای هر ثبت‌نام موفق ${REFERRALS_PER_BOOST_CREDIT.toLocaleString('fa-IR')} امتیاز پله‌ کردن رایگان آگهی خود دریافت می‌کنید. با استفاده از این امتیاز شما با هر امتیاز میتوانید از مزایای پله کردن آگهی استفاده کنید.`}{' '}
+          {`با دعوت دوستان، به ازای هر ثبت‌نام موفق ${REFERRALS_PER_BOOST_CREDIT.toLocaleString('fa-IR')} امتیاز پله‌ کردن رایگان آگهی خود دریافت می‌کنید. با استفاده از این امتیاز شما میتوانید از مزایت پله کردن آگهی استفاده کنید.`}
           {referralCount > 0
             ? `تاکنون ${referralCount.toLocaleString('fa-IR')} نفر با کد شما ثبت‌نام کرده‌اند.`
             : null}

@@ -91,6 +91,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.productChatMessage;
   }
 
+  get productChatEmailDigest(): PrismaClient['productChatEmailDigest'] {
+    return this.client.productChatEmailDigest;
+  }
+
   get pendingRegistration(): PrismaClient['pendingRegistration'] {
     return this.client.pendingRegistration;
   }

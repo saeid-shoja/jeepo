@@ -6,6 +6,7 @@ import {
   FREE_CLIENT_NEW_LISTING_LIMIT,
   getGuaranteeProfileMissingFields,
   isVehicleSaleCategory,
+  LIBRARY_PARTS_SLUG,
   PAYMENT_PURPOSES,
   type VehiclePaintCondition,
   // STRENGTHENED_DURATION_DAYS,
@@ -13,7 +14,8 @@ import {
 } from '@offroad/shared';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import type { FieldPath } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 // import { AuctionListingOptions } from '@/components/form/auction-listing-options';
@@ -36,7 +38,7 @@ import { ProductImageUpload } from '@/components/form/product-image-upload';
 import { ProductSituationSelect } from '@/components/form/product-situation-select';
 import { VehicleSaleFields } from '@/components/form/vehicle-sale-fields';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,10 +51,11 @@ import {
 } from '@/lib/listing-draft';
 import { buildPaymentPageUrl } from '@/lib/payment-url';
 import { toastFormValidationErrors } from '@/lib/toast-form-errors';
+import { cn } from '@/lib/utils';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { createNewProductSchema, type NewProductFormValues } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
-import { useCategories } from '@/stores/categories-store';
+import { isCategoryInLibrary, useCategories } from '@/stores/categories-store';
 
 const EMPTY_FORM_VALUES: NewProductFormValues = {
   title: '',
@@ -86,6 +89,43 @@ const EMPTY_FORM_VALUES: NewProductFormValues = {
   gearbox: '',
 };
 
+const FIRST_STEP_FIELDS = [
+  'images',
+  'city',
+  'neighborhood',
+  'categoryId',
+  'categorySlug',
+  'mileageKm',
+  'paintCondition',
+  'productionYear',
+  'productionYearBefore1370',
+  'gearbox',
+  'listingIntent',
+  'title',
+  'description',
+] as const satisfies readonly FieldPath<NewProductFormValues>[];
+
+const SECOND_STEP_FIELDS = [
+  'situation',
+  'price',
+  'salePrice',
+  'newPrice',
+  'stockQuantity',
+  'colors',
+  'carBrands',
+  'phone',
+  'hasGuarantee',
+  'applyStrengthened',
+  'isAuction',
+  'auctionStartPrice',
+  'auctionEndsAtLocal',
+  'realPriceMin',
+  'realPriceMax',
+  'buyNowPrice',
+] as const satisfies readonly FieldPath<NewProductFormValues>[];
+
+const labelStyle = 'text-base font-semibold mt-4 mb-2';
+
 function firstErrorMessage(error: unknown): string | undefined {
   if (!error || typeof error !== 'object') return undefined;
   if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
@@ -100,7 +140,7 @@ function firstErrorMessage(error: unknown): string | undefined {
 export default function NewProductPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { carBrands: carBrandOptions, parts } = useCategories();
+  const { carBrands: carBrandOptions, libraries, parts } = useCategories();
   const [submitResultOpen, setSubmitResultOpen] = useState(false);
   const [submitResultVariant, setSubmitResultVariant] =
     useState<ListingSubmitResultVariant>('published');
@@ -108,6 +148,7 @@ export default function NewProductPage() {
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
   const autoPublishStartedRef = useRef(false);
   const draftHydratedRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
   /** Admin shop catalog may set stock to 0; client ads require ≥ 1. */
   const allowZeroStockRef = useRef(false);
   allowZeroStockRef.current = user?.role === 'ADMIN';
@@ -117,6 +158,8 @@ export default function NewProductPage() {
     atNewLimit: boolean;
   } | null>(null);
   const [sellerProfile, setSellerProfile] = useState<Record<string, unknown> | null>(null);
+  const [formStep, setFormStep] = useState<1 | 2>(1);
+  const [showSecondStepErrors, setShowSecondStepErrors] = useState(false);
 
   const {
     register,
@@ -125,6 +168,9 @@ export default function NewProductPage() {
     watch,
     setValue,
     reset,
+    getValues,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<NewProductFormValues>({
     resolver: (values, context, options) =>
@@ -155,12 +201,16 @@ export default function NewProductPage() {
     () => Boolean(categorySlug && isVehicleSaleCategory(categorySlug)),
     [categorySlug],
   );
+  const showCarBrandPicker = useMemo(
+    () => isCategoryInLibrary(libraries, categoryId, LIBRARY_PARTS_SLUG),
+    [libraries, categoryId],
+  );
 
   const isAdmin = user?.role === 'ADMIN';
   const guaranteeProfileMissing = sellerProfile
     ? getGuaranteeProfileMissingFields(
-        sellerProfile as Parameters<typeof getGuaranteeProfileMissingFields>[0],
-      )
+      sellerProfile as Parameters<typeof getGuaranteeProfileMissingFields>[0],
+    )
     : [];
   const canOfferGuarantee =
     !isAdmin &&
@@ -290,21 +340,21 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition && data.gearbox
           ? {
-              mileageKm: data.mileageKm,
-              paintCondition: data.paintCondition,
-              productionYear: data.productionYear,
-              productionYearBefore1370: data.productionYearBefore1370,
-              gearbox: data.gearbox,
-            }
+            mileageKm: data.mileageKm,
+            paintCondition: data.paintCondition,
+            productionYear: data.productionYear,
+            productionYearBefore1370: data.productionYearBefore1370,
+            gearbox: data.gearbox,
+          }
           : {}),
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -385,6 +435,46 @@ export default function NewProductPage() {
     await submitListing(data);
   };
 
+  const goToDetailsStep = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    setShowSecondStepErrors(false);
+    clearErrors([...FIRST_STEP_FIELDS, ...SECOND_STEP_FIELDS]);
+    const result = createNewProductSchema({ allowZeroStock: allowZeroStockRef.current }).safeParse(
+      getValues(),
+    );
+    const firstStepErrors = result.success
+      ? []
+      : result.error.issues.filter(
+        (issue) =>
+          typeof issue.path[0] === 'string' &&
+          FIRST_STEP_FIELDS.includes(issue.path[0] as (typeof FIRST_STEP_FIELDS)[number]),
+      );
+
+    for (const issue of firstStepErrors) {
+      const field = FIRST_STEP_FIELDS.find((name) => name === issue.path[0]);
+      if (field) setError(field, { type: 'manual', message: issue.message });
+    }
+
+    if (firstStepErrors.length === 0) changeFormStep(2);
+  };
+
+  const changeFormStep = (step: 1 | 2) => {
+    setFormStep(step);
+    requestAnimationFrame(() =>
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
+  };
+
+  const onFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (formStep === 1) {
+      event.preventDefault();
+      void goToDetailsStep();
+      return;
+    }
+    setShowSecondStepErrors(true);
+    void handleSubmit(onValidSubmit, toastFormValidationErrors)(event);
+  };
+
   if (authLoading) {
     return <div className="text-muted-foreground px-4 py-16 text-center">در حال بارگذاری...</div>;
   }
@@ -399,244 +489,277 @@ export default function NewProductPage() {
       ) : (
         <ListingFormTips />
       )}
-      <form
-        onSubmit={handleSubmit(onValidSubmit, toastFormValidationErrors)}
-        className="space-y-4"
-        noValidate
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">اطلاعات اصلی</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 px-3 md:px-6">
-            <div className="space-y-2">
-              <Label>دسته‌بندی</Label>
-              <Controller
-                name="categoryId"
-                control={control}
-                render={({ field }) => (
-                  <ProductCategoryPicker value={field.value} onValueChange={field.onChange} />
-                )}
-              />
-              <FieldError message={errors.categoryId?.message} />
-            </div>
-
-            {showVehicleFields && (
-              <VehicleSaleFields
-                mileageKm={mileageKm}
-                paintCondition={paintCondition as VehiclePaintCondition | ''}
-                productionYear={productionYear}
-                productionYearBefore1370={productionYearBefore1370}
-                gearbox={gearbox}
-                onMileageChange={(v) => setValue('mileageKm', v, { shouldValidate: true })}
-                onPaintConditionChange={(v) =>
-                  setValue('paintCondition', v, { shouldValidate: true })
-                }
-                onProductionYearChange={(v) =>
-                  setValue('productionYear', v, { shouldValidate: true })
-                }
-                onProductionYearBefore1370Change={(v) =>
-                  setValue('productionYearBefore1370', v, { shouldValidate: true })
-                }
-                onGearboxChange={(v) => setValue('gearbox', v, { shouldValidate: true })}
-                mileageError={errors.mileageKm?.message}
-                paintError={errors.paintCondition?.message}
-                productionYearError={errors.productionYear?.message}
-                gearboxError={errors.gearbox?.message}
-              />
-            )}
-
-            {!isAdmin && (
-              <Controller
-                name="listingIntent"
-                control={control}
-                render={({ field }) => (
-                  <ListingIntentField value={field.value} onChange={field.onChange} />
-                )}
-              />
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="title">عنوان آگهی</Label>
-              <Input
-                id="title"
-                placeholder="مثلاً: لاستیک ۳۳ اینچ برند .. "
-                {...register('title')}
-              />
-              <FieldError message={errors.title?.message} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">توضیحات</Label>
-              <Textarea
-                id="description"
-                rows={5}
-                placeholder="توضیحات کامل محصول..."
-                {...register('description')}
-              />
-              <FieldError message={errors.description?.message} />
-            </div>
-
-            <div className="space-y-2">
-              <Controller
-                name="situation"
-                control={control}
-                render={({ field }) => (
-                  <ProductSituationSelect value={field.value} onChange={field.onChange} />
-                )}
-              />
-              {situation === 'NEW' && newQuota && !isAdmin && (
-                <p
-                  className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
-                >
-                  آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
-                  {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
-                  {newQuota.atNewLimit
-                    ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
-                    : ''}
-                </p>
-              )}
-              <Label htmlFor="price">{isAuction ? 'قیمت پایه (اختیاری)' : 'قیمت (تومان)'}</Label>
-              <Controller
-                name="price"
-                control={control}
-                render={({ field }) => (
-                  <PriceInput id="price" value={field.value} onChange={field.onChange} />
-                )}
-              />
-              <FieldError message={errors.price?.message} />
-            </div>
-
-            {!isAuction && (
-              <div className="space-y-2">
-                <Label htmlFor="salePrice">قیمت با تخفیف (اختیاری)</Label>
+      <form ref={formRef} onSubmit={onFormSubmit} className="space-y-4" noValidate>
+        {formStep === 1 && (
+          <>
+            <Card>
+              <CardContent className="px-3 md:px-6">
                 <Controller
-                  name="salePrice"
+                  name="images"
                   control={control}
                   render={({ field }) => (
-                    <PriceInput id="salePrice" value={field.value} onChange={field.onChange} />
+                    <ProductImageUpload images={field.value} onChange={field.onChange} />
                   )}
                 />
-                <FieldError message={errors.salePrice?.message} />
-              </div>
-            )}
-
-            {!isAuction && situation === 'USED' && (
-              <div className="space-y-2">
-                <Label htmlFor="newPrice">قیمت نو محصول (تومان)</Label>
+                <FieldError message={firstErrorMessage(errors.images)} />
+                <Label className={cn(labelStyle)}>استان، شهر و محله</Label>
                 <Controller
-                  name="newPrice"
+                  name="city"
                   control={control}
                   render={({ field }) => (
-                    <PriceInput id="newPrice" value={field.value} onChange={field.onChange} />
+                    <CitySelect value={field.value ?? ''} onChange={field.onChange} />
                   )}
                 />
-                <p className="text-muted-foreground text-xs">
-                  قیمت تقریبی نوی محصول برای محصول کارکرده را وارد کنید.
-                </p>
-                <FieldError message={errors.newPrice?.message} />
-              </div>
-            )}
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">محله</Label>
+                  <Input
+                    id="neighborhood"
+                    type="text"
+                    maxLength={20}
+                    placeholder="مثلاً ونک"
+                    {...register('neighborhood')}
+                  />
+                  <FieldError message={errors.neighborhood?.message} />
+                </div>
+              </CardContent>
+            </Card>
 
-            {!isAuction && (
-              <div className="space-y-2">
-                <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
-                <DigitsInput
-                  id="stockQuantity"
-                  inputMode="numeric"
-                  maxLength={4}
-                  {...register('stockQuantity', { setValueAs: parseIntegerInput })}
-                />
-                <p className="text-muted-foreground text-xs">
-                  {isAdmin
-                    ? 'پیش‌فرض ۱ عدد است. برای محصول ناموجود می‌توانید ۰ بگذارید و بعداً موجودی را افزایش دهید.'
-                    : 'حداقل ۱ عدد. اگر چند عدد برای فروش دارید، تعداد را وارد کنید.'}
-                </p>
-                <FieldError message={errors.stockQuantity?.message} />
-              </div>
-            )}
+            <Card>
+              <CardContent className="space-y-3 px-3 md:px-6">
+                <Label className={cn(labelStyle)}>دسته‌بندی و مشخصات مرتبط</Label>
+                <div className="space-y-2">
+                  <Label>دسته‌بندی</Label>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    render={({ field }) => (
+                      <ProductCategoryPicker value={field.value} onValueChange={field.onChange} />
+                    )}
+                  />
+                  <FieldError message={errors.categoryId?.message} />
+                </div>
 
-            {!isAuction && (
-              <div className="space-y-2">
-                <Label>رنگ (اختیاری)</Label>
-                <Controller
-                  name="colors"
-                  control={control}
-                  render={({ field }) => (
-                    <ProductColorPicker value={field.value ?? []} onChange={field.onChange} />
-                  )}
-                />
-                <p className="text-muted-foreground text-xs">
-                  می‌توانید چند رنگ را انتخاب کنید. رنگ «چند رنگ» برای کالاهای ترکیبی است.
-                </p>
-                <FieldError message={errors.colors?.message} />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <CarBrandPicker
-          options={carBrandOptions}
-          value={carBrands}
-          onChange={(brands) => setValue('carBrands', brands, { shouldValidate: true })}
-        />
-
-        <Card>
-          <CardContent className="space-y-2 pt-6 p-4 md:p-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-center">
-              <Controller
-                name="city"
-                control={control}
-                render={({ field }) => (
-                  <CitySelect value={field.value ?? ''} onChange={field.onChange} />
+                {showVehicleFields && (
+                  <VehicleSaleFields
+                    mileageKm={mileageKm}
+                    paintCondition={paintCondition as VehiclePaintCondition | ''}
+                    productionYear={productionYear}
+                    productionYearBefore1370={productionYearBefore1370}
+                    gearbox={gearbox}
+                    onMileageChange={(v) => setValue('mileageKm', v, { shouldValidate: true })}
+                    onPaintConditionChange={(v) =>
+                      setValue('paintCondition', v, { shouldValidate: true })
+                    }
+                    onProductionYearChange={(v) =>
+                      setValue('productionYear', v, { shouldValidate: true })
+                    }
+                    onProductionYearBefore1370Change={(v) =>
+                      setValue('productionYearBefore1370', v, { shouldValidate: true })
+                    }
+                    onGearboxChange={(v) => setValue('gearbox', v, { shouldValidate: true })}
+                    mileageError={errors.mileageKm?.message}
+                    paintError={errors.paintCondition?.message}
+                    productionYearError={errors.productionYear?.message}
+                    gearboxError={errors.gearbox?.message}
+                  />
                 )}
+
+                {!isAdmin && (
+                  <Controller
+                    name="listingIntent"
+                    control={control}
+                    render={({ field }) => (
+                      <ListingIntentField value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="title">عنوان آگهی</Label>
+                  <Input
+                    id="title"
+                    placeholder="مثلاً: لاستیک سایز ۳۳ برند .. "
+                    {...register('title')}
+                  />
+                  <FieldError message={errors.title?.message} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">توضیحات</Label>
+                  <Textarea
+                    id="description"
+                    rows={5}
+                    placeholder="توضیحات کامل محصول..."
+                    {...register('description')}
+                  />
+                  <FieldError message={errors.description?.message} />
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {formStep === 2 && (
+          <>
+            <Card>
+              <CardContent className="space-y-5 px-3 md:px-6">
+                <Label className={cn(labelStyle)}>جزییات و قیمت محصول</Label>
+                <div className="space-y-2">
+                  <Controller
+                    name="situation"
+                    control={control}
+                    render={({ field }) => (
+                      <ProductSituationSelect value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                  {situation === 'NEW' && newQuota && !isAdmin && (
+                    <p
+                      className={`text-xs ${newQuota.atNewLimit ? 'text-destructive' : 'text-muted-foreground'}`}
+                    >
+                      آگهی‌های نو فعال: {(newQuota.activeNewCount ?? 0).toLocaleString('fa-IR')} از{' '}
+                      {(newQuota.newLimit ?? FREE_CLIENT_NEW_LISTING_LIMIT).toLocaleString('fa-IR')}
+                      {newQuota.atNewLimit
+                        ? ' — سقف پر است؛ برای ثبت آگهی نو، ابتدا یکی را غیرفعال کنید.'
+                        : ''}
+                    </p>
+                  )}
+                  <Label htmlFor="price" className="mt-4">
+                    {isAuction ? 'قیمت پایه (اختیاری)' : 'قیمت (تومان)'}
+                  </Label>
+                  <Controller
+                    name="price"
+                    control={control}
+                    render={({ field }) => (
+                      <PriceInput id="price" value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                  <FieldError message={showSecondStepErrors ? errors.price?.message : undefined} />
+                </div>
+
+                {!isAuction && (
+                  <div className="space-y-2">
+                    <Label htmlFor="salePrice">قیمت با تخفیف (اختیاری)</Label>
+                    <Controller
+                      name="salePrice"
+                      control={control}
+                      render={({ field }) => (
+                        <PriceInput id="salePrice" value={field.value} onChange={field.onChange} />
+                      )}
+                    />
+                    <FieldError
+                      message={showSecondStepErrors ? errors.salePrice?.message : undefined}
+                    />
+                  </div>
+                )}
+
+                {!isAuction && situation === 'USED' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="newPrice">قیمت نو محصول (تومان)</Label>
+                    <Controller
+                      name="newPrice"
+                      control={control}
+                      render={({ field }) => (
+                        <PriceInput id="newPrice" value={field.value} onChange={field.onChange} />
+                      )}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      قیمت تقریبی نوی محصول برای محصول کارکرده را وارد کنید.
+                    </p>
+                    <FieldError
+                      message={showSecondStepErrors ? errors.newPrice?.message : undefined}
+                    />
+                  </div>
+                )}
+
+                {!isAuction && (
+                  <PremiumProductOptions
+                    productPrice={price}
+                    hasGuarantee={hasGuarantee}
+                    onGuaranteeChange={(value) =>
+                      setValue('hasGuarantee', value, { shouldValidate: true })
+                    }
+                    guaranteeDisabled={!canOfferGuarantee}
+                    guaranteeProfileMissing={guaranteeProfileMissing}
+                    applyStrengthened={applyStrengthened}
+                    showStrengthened={false}
+                    onStrengthenedChange={(value) =>
+                      setValue('applyStrengthened', value, { shouldValidate: true })
+                    }
+                    showGuarantee={canOfferGuarantee}
+                  />
+                )}
+
+                {!isAuction && (
+                  <div className="space-y-3">
+                    <Label htmlFor="stockQuantity">تعداد موجود برای فروش</Label>
+                    <DigitsInput
+                      id="stockQuantity"
+                      inputMode="numeric"
+                      maxLength={4}
+                      {...register('stockQuantity', { setValueAs: parseIntegerInput })}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      {isAdmin
+                        ? 'پیش‌فرض ۱ عدد است. برای محصول ناموجود می‌توانید ۰ بگذارید و بعداً موجودی را افزایش دهید.'
+                        : 'حداقل ۱ عدد. اگر چند عدد برای فروش دارید، تعداد را وارد کنید.'}
+                    </p>
+                    <FieldError
+                      message={showSecondStepErrors ? errors.stockQuantity?.message : undefined}
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="phone">شماره تماس</Label>
+                  <DigitsInput
+                    id="phone"
+                    type="tel"
+                    placeholder="0912xxxxxxx"
+                    {...register('phone')}
+                  />
+                  <FieldError message={showSecondStepErrors ? errors.phone?.message : undefined} />
+                </div>
+                {!isAuction && (
+                  <div className="space-y-4">
+                    <Label>رنگ (اختیاری)</Label>
+                    <Controller
+                      name="colors"
+                      control={control}
+                      render={({ field }) => (
+                        <ProductColorPicker value={field.value ?? []} onChange={field.onChange} />
+                      )}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      می‌توانید چند رنگ را انتخاب کنید. رنگ «چند رنگ» برای کالاهای ترکیبی است.
+                    </p>
+                    <FieldError
+                      message={showSecondStepErrors ? errors.colors?.message : undefined}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {showCarBrandPicker && (
+              <CarBrandPicker
+                options={carBrandOptions}
+                value={carBrands}
+                onChange={(brands) => setValue('carBrands', brands, { shouldValidate: true })}
               />
-              <div className="space-y-2 md:mb-1.5">
-                <Label htmlFor="neighborhood">محله</Label>
-                <Input
-                  id="neighborhood"
-                  type="text"
-                  maxLength={20}
-                  placeholder="مثلاً ونک"
-                  {...register('neighborhood')}
-                />
-                <FieldError message={errors.neighborhood?.message} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">شماره تماس</Label>
-                <DigitsInput
-                  id="phone"
-                  type="tel"
-                  placeholder="0912xxxxxxx"
-                  {...register('phone')}
-                />
-                <FieldError message={errors.phone?.message} />
-              </div>
-            </div>
+            )}
+
             <Controller
-              name="images"
+              name="isAuction"
               control={control}
-              render={({ field }) => (
-                <ProductImageUpload images={field.value} onChange={field.onChange} />
-              )}
-            />
-            <FieldError message={firstErrorMessage(errors.images)} />
-          </CardContent>
-        </Card>
-
-        <Controller
-          name="isAuction"
-          control={control}
-          render={() => (
-            <>
-              {/* مزایده — موقتاً غیرفعال
+              render={() => (
+                <>
+                  {/* مزایده — موقتاً غیرفعال
               <AuctionListingOptions ... />
               */}
-            </>
-          )}
-        />
+                </>
+              )}
+            />
 
-        {/* <Controller
+            {/* <Controller
           name="isAuction"
           control={control}
           render={() => (
@@ -666,33 +789,39 @@ export default function NewProductPage() {
             />
           )}
         /> */}
-
-        {!isAuction && (
-          <PremiumProductOptions
-            productPrice={price}
-            hasGuarantee={hasGuarantee}
-            onGuaranteeChange={(value) => setValue('hasGuarantee', value, { shouldValidate: true })}
-            guaranteeDisabled={!canOfferGuarantee}
-            guaranteeProfileMissing={guaranteeProfileMissing}
-            applyStrengthened={applyStrengthened}
-            showStrengthened={false}
-            onStrengthenedChange={(value) =>
-              setValue('applyStrengthened', value, { shouldValidate: true })
-            }
-            showGuarantee={canOfferGuarantee}
-          />
+          </>
         )}
-        <Button type="submit" className="w-full" size="lg" disabled={isSubmittingListing}>
-          {isSubmittingListing ? (
-            <>
-              <Loader2 className="size-5 animate-spin" />
-              در حال ثبت آگهی...
-            </>
-          ) : (
-            'ثبت آگهی'
+        <div className="grid grid-cols-2 gap-2 w-full">
+          {formStep === 2 && (
+            <Button
+              type="button"
+              variant="outline"
+              className="col-span-1"
+              size="lg"
+              onClick={() => changeFormStep(1)}
+              disabled={isSubmittingListing}
+            >
+              مرحله قبل
+            </Button>
           )}
-        </Button>
-      </form>
+          {formStep === 1 ? (
+            <Button type="button" className="col-span-2" size="lg" onClick={(e) => goToDetailsStep(e)}>
+              مرحله بعد
+            </Button>
+          ) : (
+            <Button type="submit" className="col-span-1" size="lg" disabled={isSubmittingListing}>
+              {isSubmittingListing ? (
+                <>
+                  <Loader2 className="size-5 animate-spin" />
+                  در حال ثبت آگهی...
+                </>
+              ) : (
+                'ثبت آگهی'
+              )}
+            </Button>
+          )}
+        </div>
+      </form >
 
       {/* تقویت آگهی — موقتاً غیرفعال
       <ListingPremiumPaymentDialog
@@ -707,11 +836,11 @@ export default function NewProductPage() {
       />
       */}
 
-      <ListingSubmitResultDialog
+      < ListingSubmitResultDialog
         open={submitResultOpen}
         variant={submitResultVariant}
         onGoToDashboard={goToDashboard}
       />
-    </div>
+    </div >
   );
 }

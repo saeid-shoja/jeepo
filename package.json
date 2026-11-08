@@ -11,6 +11,7 @@
     "format": "biome check --write .",
     "check": "biome check . && pnpm build:turbo",
     "prepare:runflare-api": "node scripts/prepare-runflare-api.mjs",
+    "prepare:runflare-admin": "node scripts/prepare-runflare-admin.mjs",
     "prepare:runflare-web": "node scripts/prepare-runflare-web.mjs",
     "prepare:runflare-shop": "node scripts/prepare-runflare-shop.mjs",
     "sync:vendors": "node scripts/sync-shared-vendors.mjs",

@@ -57,7 +57,7 @@ function CategoryTreeNode({
         className={cn(
           'hover:bg-muted/70 flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 text-start text-sm transition-colors',
           'border-b border-black/10 dark:border-gray-600',
-          isSelected && 'bg-primary/10 text-primary font-medium',
+          isSelected && 'bg-primary/30 text-primary font-medium',
         )}
         style={{ paddingRight: `${depth * 14 + 12}px`, paddingLeft: '12px' }}
       >
@@ -155,14 +155,14 @@ export function ProductCategoryPicker({ value, onValueChange }: ProductCategoryP
 
   return (
     <div className="space-y-3" role="radiogroup" aria-label="دسته‌بندی آگهی">
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-[10px]">
         {selectedPath ? (
           <>
             انتخاب شده:{' '}
             <span className="text-foreground font-medium">{selectedPath.join(' › ')}</span>
           </>
         ) : (
-          'ابتدا گروه را انتخاب کنید، سپس فقط یک دسته‌بندی نهایی'
+          'ابتدا گروه دسته بندی را انتخاب کنید، سپس یک زیردسته‌بندی '
         )}
       </p>
 
@@ -177,7 +177,7 @@ export function ProductCategoryPicker({ value, onValueChange }: ProductCategoryP
               className={cn(
                 'rounded-full border px-3 py-1.5 text-sm transition-colors',
                 isActive
-                  ? 'border-primary bg-primary/10 text-primary font-medium'
+                  ? 'border-primary bg-primary/90 text-white font-semibold shadow-2xl shadow-primary/30'
                   : 'hover:bg-muted/60',
               )}
             >

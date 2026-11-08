@@ -76,7 +76,7 @@ export function PremiumProductOptions({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-1">
         <CardTitle className="text-base">آپشن‌های ویژه</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -170,7 +170,7 @@ export function PremiumProductOptions({
                       {hasValidPrice && (
                         <>
                           {' '}
-                          (سهم {GUARANTEE_FEE_RATE.toLocaleString('fa-IR')}٪ برای این آگهی:{' '}
+                          (سهم {GUARANTEE_FEE_RATE.toLocaleString('fa-IR')} برای این آگهی:{' '}
                           <strong>{formatPrice(guaranteeFee)} تومان</strong>)
                         </>
                       )}

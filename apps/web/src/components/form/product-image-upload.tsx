@@ -129,16 +129,15 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
     <div className={cn('space-y-2 mt-4', className)}>
       <div className="flex w-full flex-col gap-4">
         <div className="shrink-0 space-y-2 w-full">
-          <Label
-            htmlFor="product-images"
-            className="w-full flex flex-col items-start gap-2"
-          >
-            <p className='text-base font-semibold'>انتخاب تصاویر و ویدیو</p>
+          <Label htmlFor="product-images" className="w-full flex flex-col items-start gap-2">
+            <p className="text-base font-semibold">انتخاب تصاویر و ویدیو</p>
             <span className="text-muted-foreground text-xs leading-relaxed">
-              ({processing
+              (
+              {processing
                 ? 'در حال آماده‌سازی فایل‌ها...'
                 : `تصویر حداکثر ۲۰۰ کیلوبایت · ویدیو حداکثر ${PRODUCT_VIDEO_MAX_DURATION_SEC.toLocaleString('fa-IR')} ثانیه و ۲ مگابایت`}
-              )</span>
+              )
+            </span>
             <div className="text-muted-foreground flex md:w-26 w-12 h-12 md:h-26 items-center justify-center rounded-sm border border-dashed">
               <ImagePlus className="size-6 opacity-50" />
             </div>

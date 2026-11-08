@@ -30,12 +30,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { toastFormValidationErrors } from '@/lib/toast-form-errors';
+import { cn } from '@/lib/utils';
 import { parseIntegerInput } from '@/lib/validations/digits';
 import { createEditProductSchema, type EditProductFormValues } from '@/lib/validations/product';
 import { useAuth } from '@/stores/auth-store';
 import { isCategoryInLibrary, useCategories } from '@/stores/categories-store';
-import { cn } from '@/lib/utils';
-
 
 const labelStyle = 'text-base font-semibold mt-4 mb-2';
 const FIRST_STEP_FIELDS = [
@@ -240,10 +239,10 @@ export default function EditProductPage() {
         ...(isShop
           ? {}
           : {
-            newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
-            situation: data.situation,
-            listingIntent: data.listingIntent,
-          }),
+              newPrice: data.situation === 'USED' && data.newPrice > 0 ? data.newPrice : null,
+              situation: data.situation,
+              listingIntent: data.listingIntent,
+            }),
       });
       toast.success('آگهی با موفقیت ذخیره شد');
       router.push('/dashboard');
@@ -253,7 +252,7 @@ export default function EditProductPage() {
   };
 
   const goToDetailsStep = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    e?.preventDefault()
+    e?.preventDefault();
     clearErrors([...FIRST_STEP_FIELDS, ...SECOND_STEP_FIELDS]);
     const result = createEditProductSchema({ allowZeroStock: allowZeroStockRef.current }).safeParse(
       getValues(),
@@ -261,10 +260,10 @@ export default function EditProductPage() {
     const firstStepErrors = result.success
       ? []
       : result.error.issues.filter(
-        (issue) =>
-          typeof issue.path[0] === 'string' &&
-          FIRST_STEP_FIELDS.includes(issue.path[0] as (typeof FIRST_STEP_FIELDS)[number]),
-      );
+          (issue) =>
+            typeof issue.path[0] === 'string' &&
+            FIRST_STEP_FIELDS.includes(issue.path[0] as (typeof FIRST_STEP_FIELDS)[number]),
+        );
 
     for (const issue of firstStepErrors) {
       const field = FIRST_STEP_FIELDS.find((name) => name === issue.path[0]);
@@ -523,7 +522,12 @@ export default function EditProductPage() {
             </Button>
           )}
           {formStep === 1 ? (
-            <Button type="button" className="col-span-2" size="lg" onClick={(e) => goToDetailsStep(e)}>
+            <Button
+              type="button"
+              className="col-span-2"
+              size="lg"
+              onClick={(e) => goToDetailsStep(e)}
+            >
               مرحله بعد
             </Button>
           ) : (
@@ -533,6 +537,6 @@ export default function EditProductPage() {
           )}
         </div>
       </form>
-    </div >
+    </div>
   );
 }

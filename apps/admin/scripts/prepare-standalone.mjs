@@ -8,7 +8,10 @@ import { fileURLToPath } from 'node:url';
 const appDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function findStandaloneDir() {
-  const candidates = [join(appDir, '.next/standalone/apps/admin'), join(appDir, '.next/standalone')];
+  const candidates = [
+    join(appDir, '.next/standalone/apps/admin'),
+    join(appDir, '.next/standalone'),
+  ];
 
   for (const dir of candidates) {
     if (existsSync(join(dir, 'server.js'))) return dir;

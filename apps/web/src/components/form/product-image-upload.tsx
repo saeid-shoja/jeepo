@@ -127,14 +127,18 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
 
   return (
     <div className={cn('space-y-2 mt-4', className)}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="shrink-0 space-y-2">
-          <Label
-            htmlFor="product-images"
-            className="w-full flex justify-between items-center gap-2"
-          >
-            <p>انتخاب تصاویر و ویدیو</p>
-            <div className="text-muted-foreground flex w-26 h-12 md:h-26 items-center justify-center rounded-sm border border-dashed">
+      <div className="flex w-full flex-col gap-4">
+        <div className="shrink-0 space-y-2 w-full">
+          <Label htmlFor="product-images" className="w-full flex flex-col items-start gap-2">
+            <p className="text-base font-semibold">انتخاب تصاویر و ویدیو</p>
+            <span className="text-muted-foreground text-xs leading-relaxed">
+              (
+              {processing
+                ? 'در حال آماده‌سازی فایل‌ها...'
+                : `تصویر حداکثر ۲۰۰ کیلوبایت · ویدیو حداکثر ${PRODUCT_VIDEO_MAX_DURATION_SEC.toLocaleString('fa-IR')} ثانیه و ۲ مگابایت`}
+              )
+            </span>
+            <div className="text-muted-foreground flex md:w-26 w-12 h-12 md:h-26 items-center justify-center rounded-sm border border-dashed">
               <ImagePlus className="size-6 opacity-50" />
             </div>
           </Label>
@@ -148,15 +152,10 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
             className="hidden cursor-pointer file:me-3 file:rounded-sm file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground disabled:opacity-60"
             onChange={(e) => void handleFiles(e.target.files)}
           />
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {processing
-              ? 'در حال آماده‌سازی فایل‌ها...'
-              : `تصویر حداکثر ۲۰۰ کیلوبایت · ویدیو حداکثر ${PRODUCT_VIDEO_MAX_DURATION_SEC.toLocaleString('fa-IR')} ثانیه و ۲ مگابایت`}
-          </p>
         </div>
 
         {images.length > 0 && (
-          <ul className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-2 w-full">
             {images.map((src, i) => {
               const isVideo = isProductVideoUrl(src);
               return (
@@ -201,12 +200,6 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
             })}
           </ul>
         )}
-
-        {/* {images.length === 0 && (
-          <div className="text-muted-foreground flex size-20 items-center justify-center rounded-sm border border-dashed">
-            <ImagePlus className="size-6 opacity-50" />
-          </div>
-        )} */}
       </div>
 
       <FormError message={error} />

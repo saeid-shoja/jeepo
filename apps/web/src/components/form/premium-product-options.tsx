@@ -4,9 +4,9 @@ import {
   BOOST_LISTING_FEE,
   formatPrice,
   GUARANTEE_FEE_LABEL,
-  GUARANTEE_FEE_RATE,
   GUARANTEE_LISTING_RULES,
   getGuaranteeFee,
+  getGuaranteeFeePercent,
   STRENGTHENED_DURATION_DAYS,
   STRENGTHENED_LISTING_FEE,
 } from '@offroad/shared';
@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { getSiteUrl } from '@/lib/seo';
 
 type PremiumProductOptionsProps = {
   productPrice: number;
@@ -66,8 +67,10 @@ export function PremiumProductOptions({
   isBoosted = false,
   onBoostedChange,
 }: PremiumProductOptionsProps) {
+  const baseUrl = getSiteUrl();
   const hasValidPrice = Number.isFinite(productPrice) && productPrice > 0;
   const guaranteeFee = getGuaranteeFee(productPrice);
+  const guaranteeFeePercent = getGuaranteeFeePercent(productPrice);
 
   const showAnyOption =
     (showGuarantee && !guaranteeDisabled) || showStrengthened || (showBoost && onBoostedChange);
@@ -76,7 +79,7 @@ export function PremiumProductOptions({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-1">
         <CardTitle className="text-base">آپشن‌های ویژه</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -110,7 +113,7 @@ export function PremiumProductOptions({
                   </p>
                 ) : (
                   <p className="text-muted-foreground text-xs">
-                    پس از فروش در سایت: {formatPrice(guaranteeFee)} تومان ({GUARANTEE_FEE_LABEL})
+                    پس از فروش در سایت: {formatPrice(guaranteeFee)} تومان کارمزد فروش
                   </p>
                 )}
                 {hasValidPrice && guaranteeProfileMissing.length > 0 && (
@@ -158,7 +161,13 @@ export function PremiumProductOptions({
                       می‌شود.
                     </p>
                     <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-50">
-                      <p className="mb-2 font-semibold">شرایط انتشار:</p>
+                      <p className="mb-2 font-semibold">
+                        شرایط انتشار:(
+                        <Link className="underline text-blue-500" href={`/rules`}>
+                          قوانین کامل تضمین فروشگاه
+                        </Link>
+                        )
+                      </p>
                       <ul className="list-disc space-y-1 pr-4">
                         {GUARANTEE_LISTING_RULES.map((rule) => (
                           <li key={rule}>{rule}</li>
@@ -170,7 +179,7 @@ export function PremiumProductOptions({
                       {hasValidPrice && (
                         <>
                           {' '}
-                          (سهم {GUARANTEE_FEE_RATE.toLocaleString('fa-IR')}٪ برای این آگهی:{' '}
+                          (سهم {guaranteeFeePercent.toLocaleString('fa-IR')}٪ برای این آگهی:{' '}
                           <strong>{formatPrice(guaranteeFee)} تومان</strong>)
                         </>
                       )}

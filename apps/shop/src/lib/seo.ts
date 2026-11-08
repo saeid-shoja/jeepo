@@ -50,7 +50,7 @@ function merchantOfferExtras(siteUrl: string) {
       '@type': 'MerchantReturnPolicy',
       applicableCountry: 'IR',
       returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
-      merchantReturnLink: `${siteUrl}/roles`,
+      merchantReturnLink: `${siteUrl}/rules`,
     },
     shippingDetails: {
       '@type': 'OfferShippingDetails',

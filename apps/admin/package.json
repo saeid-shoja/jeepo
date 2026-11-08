@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",
-    "prebuild": "node scripts/clean-next.mjs",
+    "prebuild": "node -e \"const fs=require('fs');const path=require('path');const cp=require('child_process');const target=[path.resolve(process.cwd(),'scripts/sync-shared-vendors.mjs'),path.resolve(process.cwd(),'../../scripts/sync-shared-vendors.mjs'),path.resolve(process.cwd(),'../scripts/sync-shared-vendors.mjs')].find((p)=>fs.existsSync(p));if(!target){console.log('sync-shared-vendors.mjs not found; skipping.');process.exit(0);}cp.execFileSync(process.execPath,[target,'admin'],{stdio:'inherit'});\" && node scripts/clean-next.mjs",
     "build": "next build",
-    "start": "next start",
+    "postbuild": "node scripts/prepare-standalone.mjs",
+    "start": "node scripts/start-standalone.mjs",
     "lint": "biome check ."
   },
   "dependencies": {
-    "@offroad/shared": "workspace:*",
+    "@offroad/shared": "file:./vendor/offroad-shared",
     "@tiptap/extension-code-block-lowlight": "^3.31.3",
     "@tiptap/extension-image": "^3.31.3",
     "@tiptap/extension-link": "^3.30.5",
@@ -23,17 +24,17 @@
     "@tiptap/starter-kit": "^3.30.5",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.510.0",
-    "next": "^15.3.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "next": "^15.5.29",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "recharts": "^2.15.0",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.7.0"
   }

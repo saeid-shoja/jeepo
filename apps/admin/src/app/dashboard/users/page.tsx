@@ -29,6 +29,7 @@ type UserRow = {
   maxActiveNewListings?: number | null;
   activeListingCount?: number;
   activeNewListingCount?: number;
+  walletBalance?: number;
   effectiveListingLimit?: number;
   effectiveNewListingLimit?: number;
   defaultListingLimit?: number;
@@ -402,6 +403,7 @@ export default function AdminUsersPage() {
                 <th className="px-4 py-3 text-right">شهر</th>
                 <th className="px-4 py-3 text-right">آگهی فعال</th>
                 <th className="px-4 py-3 text-right">آگهی نو</th>
+                <th className="px-4 py-3 text-right">کیف پول</th>
                 <th className="px-4 py-3 text-right">نقش</th>
                 <th className="px-4 py-3 text-right">تاریخ ثبت نام</th>
                 <th className="px-4 py-3 text-right">عملیات</th>
@@ -439,6 +441,9 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 text-xs">{formatListingQuota(u)}</td>
                   <td className="px-4 py-3 text-xs">{formatNewListingQuota(u)}</td>
+                  <td className="px-4 py-3 text-xs">
+                    {(u.walletBalance ?? 0).toLocaleString('fa-IR')} تومان
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}

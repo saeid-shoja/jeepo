@@ -3,5 +3,6 @@ export { CreateAdminUserDto } from './create-admin-user.dto';
 export { FindAdminProductsQueryDto } from './find-admin-products-query.dto';
 export { FindAdminUsersQueryDto } from './find-admin-users-query.dto';
 export { SetProductsGuaranteeDto } from './set-products-guarantee.dto';
+export { SetUserWalletBalanceDto } from './set-user-wallet-balance.dto';
 export { UpdateAdminUserDto } from './update-admin-user.dto';
 export { UpdateProductStatusDto } from './update-product-status.dto';

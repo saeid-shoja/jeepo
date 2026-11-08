@@ -10,6 +10,7 @@ import {
   Phone,
   ShoppingBag,
   User,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -128,6 +129,15 @@ function DashboardContent() {
             </Button>
           </div>
         </div>
+        {profile && (
+          <div className="mt-4 flex items-center gap-2 rounded-md border bg-muted/40 px-4 py-3">
+            <Wallet className="size-4 text-primary" />
+            <span className="text-sm font-medium">موجودی کیف پول</span>
+            <span className="ms-auto font-bold text-primary">
+              {(profile.walletBalance ?? 0).toLocaleString('fa-IR')} تومان
+            </span>
+          </div>
+        )}
         {profile && (
           <div className="md:flex md:flex-wrap grid grid-cols-2 items-center gap-1 border-t mt-4 pt-3">
             <Link

@@ -26,6 +26,20 @@ export type LibraryNode = {
   children: LibraryNode[];
 };
 
+export function isCategoryInLibrary(
+  libraries: LibraryNode[],
+  categoryId: string,
+  librarySlug: string,
+): boolean {
+  const containsCategory = (node: LibraryNode): boolean =>
+    node.id === categoryId || node.children.some(containsCategory);
+
+  return libraries.some(
+    (library) =>
+      library.slug === librarySlug && library.kind === 'PART' && containsCategory(library),
+  );
+}
+
 type CategoriesState = {
   parts: PartCategory[];
   carBrands: CarBrandOption[];

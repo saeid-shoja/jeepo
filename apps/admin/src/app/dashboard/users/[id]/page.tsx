@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useAdminAccess } from '@/lib/admin-access-context';
 import { adminApi } from '@/lib/api';
 
 type UserDetail = {
@@ -27,6 +28,7 @@ type UserDetail = {
   address?: string | null;
   postalCode?: string | null;
   violationReportCount: number;
+  walletBalance: number;
   accountKind: UserAccountKind;
   verifiedSeller: boolean;
   rating?: number | null;
@@ -44,14 +46,17 @@ type UserDetail = {
 export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { profile } = useAdminAccess();
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingWallet, setSavingWallet] = useState(false);
 
   const [violationReportCount, setViolationReportCount] = useState('0');
   const [verifiedSeller, setVerifiedSeller] = useState(false);
   const [accountKind, setAccountKind] = useState<UserAccountKind>('REGULAR');
   const [rating, setRating] = useState('');
+  const [walletBalance, setWalletBalance] = useState('0');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,6 +67,7 @@ export default function AdminUserDetailPage() {
       setVerifiedSeller(Boolean(data.verifiedSeller));
       setAccountKind(data.accountKind === 'SHOP' ? 'SHOP' : 'REGULAR');
       setRating(data.rating == null ? '' : String(data.rating));
+      setWalletBalance(String(data.walletBalance ?? 0));
     } catch {
       toast.error('بارگذاری کاربر ناموفق بود');
       router.push('/dashboard/users');
@@ -103,6 +109,25 @@ export default function AdminUserDetailPage() {
       toast.error(err instanceof Error ? err.message : 'ذخیره ناموفق بود');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveWalletBalance = async () => {
+    const balance = Number(walletBalance);
+    if (!Number.isSafeInteger(balance) || balance < 0 || balance > 2_147_483_647) {
+      toast.error('موجودی کیف پول باید عدد صحیح و غیرمنفی باشد');
+      return;
+    }
+
+    setSavingWallet(true);
+    try {
+      await adminApi.setUserWalletBalance(id, balance);
+      toast.success('موجودی کیف پول ذخیره شد');
+      await load();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'ذخیره موجودی ناموفق بود');
+    } finally {
+      setSavingWallet(false);
     }
   };
 
@@ -164,9 +189,43 @@ export default function AdminUserDetailPage() {
             value={`${user.activeNewListingCount.toLocaleString('fa-IR')} / ${user.effectiveNewListingLimit.toLocaleString('fa-IR')}`}
           />
           <Field label="کل محصولات" value={user.totalProducts.toLocaleString('fa-IR')} />
+          <Field
+            label="موجودی کیف پول"
+            value={`${user.walletBalance.toLocaleString('fa-IR')} تومان`}
+          />
           <Field label="امتیاز فعلی" value={formatSellerRatingLabel(user.rating)} />
         </dl>
       </section>
+
+      {profile?.isSuperAdmin ? (
+        <section className="space-y-3 rounded-xl border bg-white p-4">
+          <h2 className="font-semibold">مدیریت کیف پول</h2>
+          <div className="space-y-1">
+            <label className="text-sm font-medium" htmlFor="admin-wallet-balance">
+              موجودی کیف پول (تومان)
+            </label>
+            <input
+              id="admin-wallet-balance"
+              type="number"
+              min={0}
+              max={2_147_483_647}
+              step={1}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              value={walletBalance}
+              onChange={(e) => setWalletBalance(e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            disabled={savingWallet}
+            onClick={() => void saveWalletBalance()}
+            className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm disabled:opacity-60"
+          >
+            {savingWallet ? <Loader2 className="size-4 animate-spin" /> : null}
+            ذخیره موجودی کیف پول
+          </button>
+        </section>
+      ) : null}
 
       <section className="space-y-3 rounded-xl border bg-white p-4">
         <h2 className="font-semibold">مدارک هویتی</h2>

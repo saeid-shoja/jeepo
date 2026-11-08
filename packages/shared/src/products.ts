@@ -62,10 +62,21 @@ export const LISTING_PAYMENT_GRACE_DAYS = 3;
 export const AD_ACTIVE_DAYS = 75;
 
 /** Listing premium fees (Toman) */
-export const GUARANTEE_FEE_RATE = 0.05;
-export const GUARANTEE_FEE_PERCENT = Math.round(GUARANTEE_FEE_RATE * 100);
+export const GUARANTEE_FEE_LOW_TIER_MAX_PRICE_TOMAN = 10_000_000;
+export const GUARANTEE_FEE_LOW_TIER_RATE = 0.05;
+export const GUARANTEE_FEE_MID_TIER_MAX_PRICE_TOMAN = 25_000_000;
+export const GUARANTEE_FEE_MID_TIER_RATE = 0.07;
+export const GUARANTEE_FEE_HIGH_TIER_RATE = 0.1;
 /** User-facing label for guarantee commission (percentage part; purchase fees may apply separately). */
-export const GUARANTEE_FEE_LABEL = `${GUARANTEE_FEE_PERCENT.toLocaleString('fa-IR')}٪ قیمت فروش به‌علاوه کارمزد تراکنش`;
+export const GUARANTEE_FEE_LABEL = `${Math.round(GUARANTEE_FEE_LOW_TIER_RATE * 100).toLocaleString('fa-IR')}٪ تا ${formatPrice(GUARANTEE_FEE_LOW_TIER_MAX_PRICE_TOMAN)} تومان، ${Math.round(
+  GUARANTEE_FEE_MID_TIER_RATE * 100,
+).toLocaleString('fa-IR')}٪ برای بیش از ${formatPrice(
+  GUARANTEE_FEE_LOW_TIER_MAX_PRICE_TOMAN,
+)} تا کمتر از ${formatPrice(GUARANTEE_FEE_MID_TIER_MAX_PRICE_TOMAN)} تومان، و ${Math.round(
+  GUARANTEE_FEE_HIGH_TIER_RATE * 100,
+).toLocaleString('fa-IR')}٪ از ${formatPrice(
+  GUARANTEE_FEE_MID_TIER_MAX_PRICE_TOMAN,
+)} تومان به بالا تا سقف مجاز؛ به‌علاوه کارمزد تراکنش`;
 /** پله شده — one-time bump to top (updates listedAt) */
 export const BOOST_LISTING_FEE = 100_000;
 /** تقویت شده — pinned on top for 4 days (ignores listedAt while active) */
@@ -89,9 +100,24 @@ export function listingPaymentDueAt(from = new Date()): Date {
   return due;
 }
 
-export function getGuaranteeFee(productPrice: number): number {
+export function getGuaranteeFeeRate(productPrice: number): number {
   if (!Number.isFinite(productPrice) || productPrice <= 0) return 0;
-  return Math.round(productPrice * GUARANTEE_FEE_RATE);
+  if (productPrice <= GUARANTEE_FEE_LOW_TIER_MAX_PRICE_TOMAN) {
+    return GUARANTEE_FEE_LOW_TIER_RATE;
+  }
+  if (productPrice < GUARANTEE_FEE_MID_TIER_MAX_PRICE_TOMAN) {
+    return GUARANTEE_FEE_MID_TIER_RATE;
+  }
+  return GUARANTEE_FEE_HIGH_TIER_RATE;
+}
+
+export function getGuaranteeFeePercent(productPrice: number): number {
+  return Math.round(getGuaranteeFeeRate(productPrice) * 100);
+}
+
+export function getGuaranteeFee(productPrice: number): number {
+  const feeRate = getGuaranteeFeeRate(productPrice);
+  return feeRate > 0 ? Math.round(productPrice * feeRate) : 0;
 }
 
 /** Max listing price (Toman) for guarantee — except motorcycle/ATV categories. */

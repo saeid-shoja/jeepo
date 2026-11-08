@@ -147,6 +147,8 @@ model User {
   bankAccount                       String?
   /// Admin-editable count of reported violations.
   violationReportCount       Int       @default(0)
+  /// Wallet balance in Toman.
+  walletBalance              Int       @default(0)
   /// Shop account vs regular user.
   accountKind                UserAccountKind @default(REGULAR)
   /// Admin-granted verified seller badge.

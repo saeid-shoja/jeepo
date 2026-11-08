@@ -50,7 +50,7 @@ function merchantOfferExtras(siteUrl: string) {
       '@type': 'MerchantReturnPolicy',
       applicableCountry: 'IR',
       returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
-      merchantReturnLink: `${siteUrl}/roles`,
+      merchantReturnLink: `${siteUrl}/rules`,
     },
     shippingDetails: {
       '@type': 'OfferShippingDetails',
@@ -360,7 +360,12 @@ export function buildProductJsonLd(product: ServerProduct) {
 
   const breadcrumbs = [
     { '@type': 'ListItem', position: 1, name: 'خانه', item: siteUrl },
-    { '@type': 'ListItem', position: 2, name: 'محصولات', item: `${siteUrl}/products` },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'محصولات',
+      item: `${siteUrl}/products`,
+    },
   ];
 
   if (product.category) {
@@ -450,8 +455,18 @@ export function buildCategoryJsonLd(name: string, slug: string, productCount?: n
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'خانه', item: siteUrl },
-        { '@type': 'ListItem', position: 2, name: 'دسته‌بندی‌ها', item: `${siteUrl}/categories` },
-        { '@type': 'ListItem', position: 3, name, item: `${siteUrl}/category/${slug}` },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'دسته‌بندی‌ها',
+          item: `${siteUrl}/categories`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name,
+          item: `${siteUrl}/category/${slug}`,
+        },
       ],
     },
   };
@@ -515,7 +530,12 @@ export function buildArticleJsonLd(post: BlogPost) {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'خانه', item: siteUrl },
-        { '@type': 'ListItem', position: 2, name: 'وبلاگ', item: `${siteUrl}/blog` },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'وبلاگ',
+          item: `${siteUrl}/blog`,
+        },
         {
           '@type': 'ListItem',
           position: 3,

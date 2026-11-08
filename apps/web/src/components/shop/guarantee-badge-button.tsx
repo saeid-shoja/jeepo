@@ -31,7 +31,7 @@ function renderParagraph(paragraph: string, onClose: () => void) {
       result.push(
         <Link
           key={`link-${index}`}
-          href="/roles"
+          href="/rules"
           className="text-primary font-medium underline-offset-4 hover:underline"
           onClick={onClose}
         >

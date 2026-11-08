@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, LogOut, MapPin, Phone, ShoppingBag, User } from 'lucide-react';
+import { Bookmark, LogOut, MapPin, Phone, ShoppingBag, User, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -102,6 +102,15 @@ function ProfileContent() {
             </Button>
           </div>
         </div>
+        {profile && (
+          <div className="mt-4 flex items-center gap-2 rounded-md border bg-muted/40 px-4 py-3">
+            <Wallet className="size-4 text-primary" />
+            <span className="text-sm font-medium">موجودی کیف پول</span>
+            <span className="ms-auto font-bold text-primary">
+              {(profile.walletBalance ?? 0).toLocaleString('fa-IR')} تومان
+            </span>
+          </div>
+        )}
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
           <Link
             href="/orders"

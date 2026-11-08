@@ -23,6 +23,7 @@ import {
   FindAdminProductsQueryDto,
   FindAdminUsersQueryDto,
   SetProductsGuaranteeDto,
+  SetUserWalletBalanceDto,
   UpdateAdminUserDto,
   UpdateProductStatusDto,
 } from './dto';
@@ -78,6 +79,16 @@ export class AdminController {
     @Body() body: UpdateAdminUserDto,
   ) {
     return this.adminService.updateUser(req.user.userId, id, body);
+  }
+
+  @AdminPermission('users')
+  @Patch('users/:id/wallet')
+  setUserWalletBalance(
+    @Request() req: AdminRequest,
+    @Param('id') id: string,
+    @Body() body: SetUserWalletBalanceDto,
+  ) {
+    return this.adminService.setUserWalletBalance(req.user.userId, id, body.walletBalance);
   }
 
   @AdminPermission('users')

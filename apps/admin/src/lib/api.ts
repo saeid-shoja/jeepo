@@ -75,6 +75,11 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+  setUserWalletBalance: (id: string, walletBalance: number) =>
+    request<{ id: string; walletBalance: number }>(`/admin/users/${id}/wallet`, {
+      method: 'PATCH',
+      body: JSON.stringify({ walletBalance }),
+    }),
   getUser: (id: string) => request<any>(`/admin/users/${id}`),
   deleteUser: (id: string) => request<any>(`/admin/users/${id}`, { method: 'DELETE' }),
   userProducts: (userId: string, params?: Record<string, string>) => {

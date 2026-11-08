@@ -154,6 +154,7 @@ export class AdminService {
           city: true,
           maxActiveListings: true,
           maxActiveNewListings: true,
+          walletBalance: true,
           createdAt: true,
           _count: {
             select: {
@@ -195,6 +196,7 @@ export class AdminService {
       city: user.city,
       maxActiveListings: user.maxActiveListings,
       maxActiveNewListings: user.maxActiveNewListings,
+      walletBalance: user.walletBalance,
       activeListingCount: user._count.products,
       activeNewListingCount: newCountByUser.get(user.id) ?? 0,
       effectiveListingLimit: resolveUserListingLimit(user.maxActiveListings),
@@ -385,6 +387,7 @@ export class AdminService {
         city: true,
         maxActiveListings: true,
         maxActiveNewListings: true,
+        walletBalance: true,
         nationalId: true,
         address: true,
         postalCode: true,
@@ -421,6 +424,7 @@ export class AdminService {
       city: updated.city,
       maxActiveListings: updated.maxActiveListings,
       maxActiveNewListings: updated.maxActiveNewListings,
+      walletBalance: updated.walletBalance,
       nationalId: updated.nationalId,
       address: updated.address,
       postalCode: updated.postalCode,
@@ -436,6 +440,25 @@ export class AdminService {
       defaultNewListingLimit: FREE_CLIENT_NEW_LISTING_LIMIT,
       createdAt: updated.createdAt,
     };
+  }
+
+  async setUserWalletBalance(actorId: string, id: string, walletBalance: number) {
+    const actor = await this.getAdminActor(actorId);
+    this.assertSuperAdmin(actor);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { walletBalance },
+      select: { id: true, walletBalance: true },
+    });
+
+    return updated;
   }
 
   async getUserDetail(id: string) {
@@ -463,6 +486,7 @@ export class AdminService {
         emailVerified: true,
         emailVerifiedAt: true,
         boostCredits: true,
+        walletBalance: true,
         createdAt: true,
         updatedAt: true,
         _count: {

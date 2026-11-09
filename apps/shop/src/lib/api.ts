@@ -243,7 +243,7 @@ export const api = {
       note?: string;
       paymentMethod: 'ONLINE';
     }) =>
-      request<{ id: string; paymentUrl: string }>('/orders', {
+      request<{ id: string; paymentUrl: string; localTest?: boolean }>('/orders', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

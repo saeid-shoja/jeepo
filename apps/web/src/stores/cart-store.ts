@@ -43,6 +43,8 @@ const cartStorage: StateStorage = {
 
 type CartState = {
   items: CartItem[];
+  hasHydrated: boolean;
+  setHasHydrated: (hasHydrated: boolean) => void;
   addItem: (input: AddToCartInput) => void;
   removeItem: (productId: string, color?: string | null) => void;
   setQuantity: (productId: string, quantity: number, color?: string | null) => void;
@@ -53,6 +55,8 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
+      hasHydrated: false,
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
       addItem: (input) => {
         const maxQty = input.maxQuantity;
@@ -127,6 +131,9 @@ export const useCartStore = create<CartState>()(
       name: CART_STORAGE_KEY,
       storage: createJSONStorage(() => cartStorage),
       partialize: (state) => ({ items: state.items }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
@@ -134,6 +141,7 @@ export const useCartStore = create<CartState>()(
 /** Convenience hook with derived totals */
 export function useCart() {
   const items = useCartStore((s) => s.items);
+  const hasHydrated = useCartStore((s) => s.hasHydrated);
   const addItem = useCartStore((s) => s.addItem);
   const removeItem = useCartStore((s) => s.removeItem);
   const setQuantity = useCartStore((s) => s.setQuantity);
@@ -141,6 +149,7 @@ export function useCart() {
 
   return {
     items,
+    hasHydrated,
     itemCount: cartItemCount(items),
     subtotal: cartSubtotal(items),
     addItem,

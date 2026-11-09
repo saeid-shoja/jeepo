@@ -92,7 +92,7 @@ function CheckoutLineItem({ item }: { item: OrderPreviewItem }) {
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, itemCount } = useCart();
+  const { items, itemCount, hasHydrated } = useCart();
   const router = useRouter();
   const [preview, setPreview] = useState<OrderPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
@@ -126,6 +126,7 @@ export default function CheckoutPage() {
   }, [user, setValue]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (items.length === 0) {
       router.replace('/cart');
       return;
@@ -159,7 +160,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, router]);
+  }, [hasHydrated, items, router]);
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
@@ -175,7 +176,7 @@ export default function CheckoutPage() {
         paymentMethod: 'ONLINE',
       });
       if (localTest) {
-        router.push(`/checkout/success?orderId=${encodeURIComponent(id)}&localTest=1`);
+        window.location.assign(`/checkout/success?orderId=${encodeURIComponent(id)}&localTest=1`);
         return;
       }
       if (paymentUrl) {
@@ -183,7 +184,7 @@ export default function CheckoutPage() {
         window.location.assign(paymentUrl);
         return;
       }
-      router.push(`/checkout/success?orderId=${id}`);
+      window.location.assign(`/checkout/success?orderId=${encodeURIComponent(id)}`);
     } catch (err: unknown) {
       setRedirectingToGateway(false);
       toast.error(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
@@ -202,7 +203,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (authLoading || !user || items.length === 0) {
+  if (!hasHydrated || authLoading || !user || items.length === 0) {
     return (
       <div className="flex justify-center px-4 py-20">
         <Loader2 className="text-muted-foreground size-8 animate-spin" />

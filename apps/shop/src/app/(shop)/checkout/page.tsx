@@ -135,7 +135,7 @@ function clearCheckoutDraft() {
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, itemCount, clearCart } = useCart();
+  const { items, itemCount } = useCart();
   const router = useRouter();
   const [preview, setPreview] = useState<OrderPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
@@ -229,13 +229,11 @@ export default function CheckoutPage() {
         note: data.note || undefined,
         paymentMethod: 'ONLINE',
       });
-      clearCart();
       if (paymentUrl) {
         setRedirectingToGateway(true);
         window.location.assign(paymentUrl);
         return;
       }
-      toast.success('سفارش با موفقیت ثبت شد');
       router.push(`/checkout/success?orderId=${id}`);
     } catch (err: unknown) {
       setRedirectingToGateway(false);

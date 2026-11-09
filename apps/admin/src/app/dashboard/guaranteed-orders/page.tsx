@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice } from '@offroad/shared';
+import { formatPrice, getGuaranteeFeeRate } from '@offroad/shared';
 import { CheckCircle2, RefreshCw, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -16,11 +16,24 @@ type GuaranteedItem = {
   packagingImages?: string[];
   shippingReceipt?: string | null;
   shippedAt?: string | null;
+  guaranteeDeadlineAt?: string | null;
+  guaranteeCancellationReason?: string | null;
+  guaranteeWalletRefundedAt?: string | null;
+  guaranteeRefundAmount?: number | null;
+  guaranteeSellerPaidAt?: string | null;
+  guaranteeSellerFeeAmount?: number | null;
+  guaranteeSellerPayoutAmount?: number | null;
   product?: {
     id: string;
     title: string;
     userId?: string | null;
-    user?: { id?: string; name?: string; phone?: string | null; email: string | null } | null;
+    user?: {
+      id?: string;
+      name?: string;
+      phone?: string | null;
+      email?: string | null;
+      city?: string | null;
+    } | null;
   } | null;
 };
 
@@ -29,12 +42,20 @@ type GuaranteedOrder = {
   createdAt: string;
   total: number;
   paidAt?: string | null;
-  user?: { id: string; name: string; phone?: string | null; email?: string | null } | null;
+  address?: string | null;
+  phone?: string | null;
+  user?: {
+    id: string;
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+    city?: string | null;
+  } | null;
   items?: GuaranteedItem[];
 };
 
 type Filter = 'action' | 'processing' | 'cancelled' | 'closed' | 'all';
-type AdminAction = 'PAY_SELLER' | 'APPROVE_CANCEL' | 'MARK_REFUNDED' | 'UNDER_REVIEW';
+type AdminAction = 'PAY_SELLER' | 'APPROVE_CANCEL' | 'UNDER_REVIEW';
 
 const STATUS_LABELS: Record<string, string> = {
   WAITING_SELLER_CONFIRMATION: 'در انتظار تأیید فروشنده',
@@ -42,23 +63,23 @@ const STATUS_LABELS: Record<string, string> = {
   READY_TO_SHIP: 'آماده ارسال',
   SHIPPED: 'ارسال شده',
   BUYER_CONFIRMED: 'تأیید دریافت خریدار',
+  SUCCESSFUL: 'موفق؛ در انتظار واریز به فروشنده',
   BUYER_CANCELLED: 'لغو توسط خریدار',
   REFUND_PENDING: 'در انتظار اقدام برای لغو',
   UNDER_REVIEW: 'در حال بررسی',
-  CANCELLED: 'لغو تأیید شد · بازپرداخت در انتظار انجام',
+  CANCELLED: 'لغو شده',
   REFUNDED: 'بازپرداخت انجام شد',
   PAID_TO_SELLER: 'وجه به فروشنده پرداخت شد',
 };
 
-const CANCELLED_STATUSES = new Set(['BUYER_CANCELLED', 'REFUND_PENDING', 'CANCELLED', 'REFUNDED']);
+const CANCELLED_STATUSES = new Set(['CANCELLED', 'REFUNDED']);
 const ACTION_STATUSES = new Set([
   'BUYER_CONFIRMED',
   'BUYER_CANCELLED',
   'REFUND_PENDING',
   'UNDER_REVIEW',
-  'CANCELLED',
 ]);
-const CLOSED_STATUSES = new Set(['PAID_TO_SELLER']);
+const CLOSED_STATUSES = new Set(['SUCCESSFUL', 'PAID_TO_SELLER']);
 
 function ActionButton({
   disabled,
@@ -93,6 +114,7 @@ export default function GuaranteedOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('action');
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  const [extensionDays, setExtensionDays] = useState<Record<string, string>>({});
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -142,13 +164,50 @@ export default function GuaranteedOrdersPage() {
     confirmText: string,
   ) => {
     if (!window.confirm(confirmText)) return;
+    const reason =
+      action === 'APPROVE_CANCEL'
+        ? (window.prompt('دلیل لغو سفارش را وارد کنید') ?? undefined)
+        : undefined;
+    if (action === 'APPROVE_CANCEL' && reason === undefined) return;
     setBusyItemId(itemId);
     try {
-      await adminApi.resolveGuaranteedOrderItem(orderId, itemId, action);
+      await adminApi.resolveGuaranteedOrderItem(orderId, itemId, action, reason);
       toast.success('وضعیت سفارش تضمینی به‌روزرسانی شد');
       await fetchOrders();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'تغییر وضعیت ناموفق بود');
+    } finally {
+      setBusyItemId(null);
+    }
+  };
+
+  const extendDeadline = async (orderId: string, itemId: string) => {
+    const days = Number(extensionDays[itemId] ?? '7');
+    if (!Number.isInteger(days) || days < 1 || days > 3650) {
+      toast.error('تعداد روز باید عدد صحیحی بین ۱ تا ۳۶۵۰ باشد');
+      return;
+    }
+    setBusyItemId(itemId);
+    try {
+      await adminApi.extendGuaranteedOrderDeadline(orderId, itemId, days);
+      toast.success(`مهلت سفارش ${days.toLocaleString('fa-IR')} روز تمدید شد`);
+      await fetchOrders();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'تمدید مهلت ناموفق بود');
+    } finally {
+      setBusyItemId(null);
+    }
+  };
+
+  const refundToWallet = async (orderId: string, itemId: string) => {
+    if (!window.confirm('مبلغ این کالا به کیف پول خریدار واریز شود؟')) return;
+    setBusyItemId(itemId);
+    try {
+      const result = await adminApi.refundGuaranteedOrderToWallet(orderId, itemId);
+      toast.success(`مبلغ ${formatPrice(result.refundAmount)} تومان به کیف پول خریدار واریز شد`);
+      await fetchOrders();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'بازپرداخت به کیف پول ناموفق بود');
     } finally {
       setBusyItemId(null);
     }
@@ -202,6 +261,9 @@ export default function GuaranteedOrdersPage() {
           {filtered.map(({ order, item }) => {
             const status = item.guaranteeStatus ?? '';
             const busy = busyItemId === item.id;
+            const canExtend =
+              Boolean(item.guaranteeDeadlineAt) &&
+              ['WAITING_SELLER_CONFIRMATION', 'PACKAGING', 'READY_TO_SHIP'].includes(status);
             return (
               <article key={item.id} className="space-y-3 rounded border bg-white p-4">
                 <header className="flex flex-wrap items-start justify-between gap-3">
@@ -224,17 +286,63 @@ export default function GuaranteedOrdersPage() {
                     <p className="text-xs text-gray-500">
                       {order.user?.phone ?? '—'} · {order.user?.email ?? '—'}
                     </p>
+                    <p className="text-xs text-gray-500">شهر: {order.user?.city ?? '—'}</p>
+                    <p className="text-xs text-gray-500">تلفن سفارش: {order.phone ?? '—'}</p>
+                    <p className="text-xs text-gray-500">نشانی تحویل: {order.address ?? '—'}</p>
                   </div>
                   <div className="space-y-1">
                     <p>فروشنده: {item.product?.user?.name ?? '—'}</p>
                     <p className="text-xs text-gray-500">شناسه: {item.product?.userId ?? '—'}</p>
                     <p className="text-xs text-gray-500">
-                      شماره تماس: {item.product?.user?.phone ?? '—'}
-                      ایمیل:‌{item.product?.user?.email ?? '—'}
+                      شماره تماس: {item.product?.user?.phone ?? '—'}· ایمیل:{' '}
+                      {item.product?.user?.email ?? '—'}
                     </p>
+                    <p className="text-xs text-gray-500">شهر: {item.product?.user?.city ?? '—'}</p>
                     <p>مبلغ این قلم: {formatPrice(item.price * item.quantity)} تومان</p>
+                    {status === 'SUCCESSFUL' || status === 'PAID_TO_SELLER' ? (
+                      <p>
+                        کارمزد تضمین ({Math.round(getGuaranteeFeeRate(item.price) * 100)}٪):{' '}
+                        {formatPrice(
+                          item.guaranteeSellerFeeAmount ??
+                            Math.round(
+                              item.price * item.quantity * getGuaranteeFeeRate(item.price),
+                            ),
+                        )}{' '}
+                        تومان
+                      </p>
+                    ) : null}
+                    {item.guaranteeSellerPayoutAmount != null ? (
+                      <p>
+                        مبلغ واریزی فروشنده: {formatPrice(item.guaranteeSellerPayoutAmount)} تومان
+                      </p>
+                    ) : status === 'SUCCESSFUL' ? (
+                      <p>
+                        مبلغ خالص قابل واریز:{' '}
+                        {formatPrice(
+                          Math.round(
+                            item.price * item.quantity * (1 - getGuaranteeFeeRate(item.price)),
+                          ),
+                        )}{' '}
+                        تومان
+                      </p>
+                    ) : null}
                   </div>
                 </div>
+
+                {item.guaranteeDeadlineAt &&
+                ['WAITING_SELLER_CONFIRMATION', 'PACKAGING', 'READY_TO_SHIP'].includes(status) ? (
+                  <p className="text-xs text-gray-600">
+                    مهلت نهایی ارسال: {new Date(item.guaranteeDeadlineAt).toLocaleString('fa-IR')}
+                  </p>
+                ) : null}
+                {status === 'CANCELLED' && item.guaranteeCancellationReason ? (
+                  <div className="rounded bg-red-50 p-3 text-sm text-red-900">
+                    این معامله به دلیل «{item.guaranteeCancellationReason}» لغو شد
+                    {item.guaranteeWalletRefundedAt
+                      ? ` و مبلغ ${formatPrice(item.guaranteeRefundAmount ?? item.price * item.quantity)} تومان در ${new Date(item.guaranteeWalletRefundedAt).toLocaleString('fa-IR')} به کیف پول خریدار بازگشت داده شد.`
+                      : '؛ بازپرداخت به کیف پول خریدار در انتظار انجام است.'}
+                  </div>
+                ) : null}
 
                 <div className="flex flex-wrap items-center gap-3 border-t pt-3 text-sm">
                   {item.packagingVideo ? (
@@ -271,9 +379,9 @@ export default function GuaranteedOrdersPage() {
                   ))}
                 </div>
 
-                {ACTION_STATUSES.has(status) ? (
+                {ACTION_STATUSES.has(status) || canExtend || status === 'SUCCESSFUL' ? (
                   <div className="flex flex-wrap gap-2 border-t pt-3">
-                    {status === 'BUYER_CONFIRMED' || status === 'UNDER_REVIEW' ? (
+                    {status === 'SUCCESSFUL' ? (
                       <ActionButton
                         disabled={busy}
                         tone="green"
@@ -282,7 +390,7 @@ export default function GuaranteedOrdersPage() {
                             order.id,
                             item.id,
                             'PAY_SELLER',
-                            'پرداخت به فروشنده تأیید شود؟',
+                            'مبلغ خالص پس از کسر کارمزد تضمین به کیف پول فروشنده واریز شود؟',
                           )
                         }
                       >
@@ -298,27 +406,11 @@ export default function GuaranteedOrdersPage() {
                             order.id,
                             item.id,
                             'APPROVE_CANCEL',
-                            'لغو سفارش تأیید شود؟ بازپرداخت باید جداگانه انجام شود.',
+                            'لغو سفارش تأیید شود؟ مبلغ پس از تأیید به کیف پول خریدار واریز می‌شود.',
                           )
                         }
                       >
                         تأیید لغو
-                      </ActionButton>
-                    ) : null}
-                    {status === 'CANCELLED' ? (
-                      <ActionButton
-                        disabled={busy}
-                        tone="green"
-                        onClick={() =>
-                          void resolveItem(
-                            order.id,
-                            item.id,
-                            'MARK_REFUNDED',
-                            'آیا بازپرداخت وجه واقعاً انجام شده است؟',
-                          )
-                        }
-                      >
-                        ثبت انجام بازپرداخت
                       </ActionButton>
                     ) : null}
                     {status === 'BUYER_CONFIRMED' || status === 'REFUND_PENDING' ? (
@@ -337,10 +429,53 @@ export default function GuaranteedOrdersPage() {
                         در حال بررسی
                       </ActionButton>
                     ) : null}
+                    {canExtend ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          aria-label="تعداد روز تمدید"
+                          type="number"
+                          min={1}
+                          max={3650}
+                          value={extensionDays[item.id] ?? '7'}
+                          onChange={(event) =>
+                            setExtensionDays((current) => ({
+                              ...current,
+                              [item.id]: event.target.value,
+                            }))
+                          }
+                          className="w-24 rounded border px-2 py-2 text-xs"
+                        />
+                        <ActionButton
+                          disabled={busy}
+                          tone="neutral"
+                          onClick={() => void extendDeadline(order.id, item.id)}
+                        >
+                          تمدید مهلت (روز)
+                        </ActionButton>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : status === 'CANCELLED' && !item.guaranteeWalletRefundedAt ? (
+                  <div className="border-t pt-3">
+                    <ActionButton
+                      disabled={busy}
+                      tone="green"
+                      onClick={() => void refundToWallet(order.id, item.id)}
+                    >
+                      واریز مبلغ به کیف پول خریدار
+                    </ActionButton>
                   </div>
                 ) : status === 'PAID_TO_SELLER' || status === 'REFUNDED' ? (
                   <p className="flex items-center gap-2 border-t pt-3 text-sm text-green-800">
-                    <CheckCircle2 className="size-4" /> اقدام مالی نهایی شده است.
+                    <CheckCircle2 className="size-4" />
+                    {status === 'REFUNDED'
+                      ? 'بازپرداخت قبلی ثبت شده است.'
+                      : `معامله موفق است؛ مبلغ ${formatPrice(item.guaranteeSellerPayoutAmount ?? 0)} تومان پس از کسر کارمزد به کیف پول فروشنده واریز شده است.`}
+                  </p>
+                ) : status === 'CANCELLED' && item.guaranteeWalletRefundedAt ? (
+                  <p className="flex items-center gap-2 border-t pt-3 text-sm text-green-800">
+                    <CheckCircle2 className="size-4" />
+                    مبلغ به کیف پول خریدار واریز شده است.
                   </p>
                 ) : null}
               </article>

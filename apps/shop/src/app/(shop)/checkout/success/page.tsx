@@ -3,13 +3,19 @@
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useCart } from '@/stores/cart-store';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
+  const { clearCart } = useCart();
+
+  useEffect(() => {
+    if (orderId) clearCart();
+  }, [clearCart, orderId]);
 
   return (
     <div className="mx-auto max-w-lg py-16 text-center">

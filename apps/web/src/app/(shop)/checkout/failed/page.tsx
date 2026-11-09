@@ -1,6 +1,6 @@
 'use client';
 
-import { XCircle } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -35,12 +35,24 @@ function FailedContent() {
       {orderId && (
         <p className="text-muted-foreground mt-1 text-xs">شناسه سفارش: {orderId.slice(-8)}</p>
       )}
+      <p className="text-muted-foreground mt-3 text-sm">
+        سبد خریدتان حفظ شده است. می‌توانید دوباره اقدام کنید یا وضعیت سفارش را ببینید.
+      </p>
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Button asChild>
-          <Link href="/checkout">تلاش مجدد</Link>
+          <Link href="/orders">
+            <ShoppingBag className="size-4" />
+            سفارش‌های من
+          </Link>
         </Button>
         <Button variant="outline" asChild>
-          <Link href="/">بازگشت به فروشگاه</Link>
+          <Link href="/checkout">
+            <ShoppingCart className="size-4" />
+            بازگشت به سبد و تلاش دوباره
+          </Link>
+        </Button>
+        <Button variant="ghost" asChild>
+          <Link href="/">ادامه خرید</Link>
         </Button>
       </div>
     </div>

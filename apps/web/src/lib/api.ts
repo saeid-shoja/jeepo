@@ -286,7 +286,7 @@ export const api = {
       note?: string;
       paymentMethod: 'ONLINE';
     }) =>
-      request<{ id: string; paymentUrl: string }>('/orders', {
+      request<{ id: string; paymentUrl: string; localTest?: boolean }>('/orders', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -348,6 +348,8 @@ export const api = {
         amount: number;
         purpose: string;
         productId: string;
+        localTest?: boolean;
+        requiresAdminApproval?: boolean;
       }>('/payments/initiate', { method: 'POST', body: JSON.stringify(data) }),
     getSession: (id: string) =>
       request<{

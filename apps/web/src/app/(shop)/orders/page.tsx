@@ -104,7 +104,14 @@ export default function OrdersPage() {
                   شماره سفارش: {order.id.slice(-8)}
                 </CardTitle>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">{getOrderStatusLabel(order.status)}</Badge>
+                  <Badge variant="secondary">
+                    {order.items?.length > 0 &&
+                    order.items.every((item: any) =>
+                      ['CANCELLED', 'REFUNDED'].includes(item.guaranteeStatus),
+                    )
+                      ? getOrderStatusLabel('CANCELLED')
+                      : getOrderStatusLabel(order.status)}
+                  </Badge>
                   {order.paymentMethod && (
                     <Badge variant="outline">
                       نحوه پرداخت: {PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}

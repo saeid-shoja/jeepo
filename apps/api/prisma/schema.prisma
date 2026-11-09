@@ -73,6 +73,7 @@ enum GuaranteedOrderItemStatus {
   READY_TO_SHIP
   SHIPPED
   BUYER_CONFIRMED
+  SUCCESSFUL
   BUYER_CANCELLED
   REFUND_PENDING
   UNDER_REVIEW
@@ -396,9 +397,17 @@ model OrderItem {
   packagingImages          String[]                     @default([])
   shippingReceipt          String?                      @db.Text
   guaranteeStatusChangedAt DateTime?
+  guaranteeDeadlineAt      DateTime?
+  guaranteeCancellationReason String?                   @db.Text
+  guaranteeWalletRefundedAt DateTime?
+  guaranteeRefundAmount    Int?
+  guaranteeSellerPaidAt    DateTime?
+  guaranteeSellerFeeAmount Int?
+  guaranteeSellerPayoutAmount Int?
   shippedAt                DateTime?
 
   @@index([guaranteeStatus])
+  @@index([guaranteeStatus, guaranteeDeadlineAt])
 }
 
 model Favorite {

@@ -1,10 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Request } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminPermission, Public, Roles } from '../auth/custom.decorator';
+import {
+  isLocalPaymentTestRequest,
+  type LocalPaymentTestRequest,
+} from '../payments/local-payment-test';
 import { PaymentsService } from '../payments/payments.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import {
   CreateOrderDto,
+  ExtendGuaranteedOrderDeadlineDto,
   PreviewOrderDto,
   ResolveGuaranteedOrderItemDto,
   SubmitPackagingEvidenceDto,
@@ -20,6 +25,7 @@ export class OrdersController {
   constructor(
     private ordersService: OrdersService,
     private paymentsService: PaymentsService,
+    @Inject('SHOP_WEB_URL') private readonly shopWebUrl: string,
   ) {}
 
   @Roles('ADMIN')
@@ -58,10 +64,31 @@ export class OrdersController {
   }
 
   @Post()
-  async create(@Request() req: { user: { userId: string } }, @Body() body: CreateOrderDto) {
+  async create(
+    @Request()
+    req: LocalPaymentTestRequest & {
+      headers: LocalPaymentTestRequest['headers'] & { origin?: string };
+      user: { userId: string };
+    },
+    @Body() body: CreateOrderDto,
+  ) {
     const order = await this.ordersService.create(req.user.userId, body);
-    const { paymentUrl } = await this.paymentsService.initiateForOrder(order.id, req.user.userId);
-    return { ...order, paymentUrl };
+    const shopCheckout = req.headers.origin ? this.isShopCheckoutOrigin(req.headers.origin) : false;
+    const { paymentUrl, localTest } = await this.paymentsService.initiateForOrder(
+      order.id,
+      req.user.userId,
+      isLocalPaymentTestRequest(req),
+      shopCheckout,
+    );
+    return { ...order, paymentUrl, localTest };
+  }
+
+  private isShopCheckoutOrigin(origin: string): boolean {
+    try {
+      return new URL(origin).origin === new URL(this.shopWebUrl).origin;
+    } catch {
+      return false;
+    }
   }
 
   @Roles('ADMIN')
@@ -135,6 +162,24 @@ export class OrdersController {
     @Param('itemId') itemId: string,
     @Body() body: ResolveGuaranteedOrderItemDto,
   ) {
-    return this.ordersService.adminResolveItem(orderId, itemId, body.action);
+    return this.ordersService.adminResolveItem(orderId, itemId, body.action, body.reason);
+  }
+
+  @Roles('ADMIN')
+  @AdminPermission('orders')
+  @Patch(':id/items/:itemId/extend-deadline')
+  extendGuaranteedOrderDeadline(
+    @Param('id') orderId: string,
+    @Param('itemId') itemId: string,
+    @Body() body: ExtendGuaranteedOrderDeadlineDto,
+  ) {
+    return this.ordersService.extendGuaranteedOrderDeadline(orderId, itemId, body.days);
+  }
+
+  @Roles('ADMIN')
+  @AdminPermission('orders')
+  @Post(':id/items/:itemId/refund-to-wallet')
+  refundGuaranteedOrderToWallet(@Param('id') orderId: string, @Param('itemId') itemId: string) {
+    return this.ordersService.refundGuaranteedOrderToWallet(orderId, itemId);
   }
 }

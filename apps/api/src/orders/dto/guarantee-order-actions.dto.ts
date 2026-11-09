@@ -4,7 +4,9 @@ import {
   ArrayMinSize,
   IsArray,
   IsIn,
+  IsInt,
   IsNumber,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -37,6 +39,19 @@ export class SubmitShippingEvidenceDto {
 }
 
 export class ResolveGuaranteedOrderItemDto {
-  @IsIn(['PAY_SELLER', 'APPROVE_CANCEL', 'MARK_REFUNDED', 'UNDER_REVIEW'])
-  action!: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'MARK_REFUNDED' | 'UNDER_REVIEW';
+  @IsIn(['PAY_SELLER', 'APPROVE_CANCEL', 'UNDER_REVIEW'])
+  action!: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'UNDER_REVIEW';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class ExtendGuaranteedOrderDeadlineDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1, { message: 'تمدید مهلت باید حداقل یک روز باشد' })
+  @Max(3650, { message: 'تمدید مهلت نمی‌تواند بیشتر از ۳۶۵۰ روز باشد' })
+  days!: number;
 }

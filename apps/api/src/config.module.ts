@@ -18,6 +18,13 @@ function webUrl(): string {
   return SITE_URL.replace(/\/$/, '');
 }
 
+function shopWebUrl(): string {
+  const fromEnv = process.env.SHOP_WEB_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, '');
+  if (process.env.NODE_ENV !== 'production') return 'http://localhost:3002';
+  return 'https://shop.jeepo.ir';
+}
+
 function zibalMerchant(): string {
   const merchant = process.env.ZIBAL_MERCHANT?.trim();
   if (merchant) return merchant;
@@ -107,6 +114,10 @@ function vapidSubject(): string {
       useValue: webUrl(),
     },
     {
+      provide: 'SHOP_WEB_URL',
+      useValue: shopWebUrl(),
+    },
+    {
       provide: 'TELEGRAM_BOT_TOKEN',
       useValue: telegramBotToken(),
     },
@@ -147,6 +158,7 @@ function vapidSubject(): string {
     'ZIBAL_MERCHANT',
     'ZIBAL_CALLBACK_URL',
     'WEB_URL',
+    'SHOP_WEB_URL',
     'TELEGRAM_BOT_TOKEN',
     'TELEGRAM_BOT_USERNAME',
     'TELEGRAM_WEBHOOK_SECRET',

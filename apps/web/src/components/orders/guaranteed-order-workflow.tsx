@@ -15,12 +15,13 @@ const GUARANTEE_STATUS_LABELS: Record<string, string> = {
   READY_TO_SHIP: 'آماده ارسال',
   SHIPPED: 'ارسال شده',
   BUYER_CONFIRMED: 'تأیید دریافت خریدار، نیازمند اقدام ادمین',
+  SUCCESSFUL: 'معامله موفق؛ در انتظار واریز به فروشنده',
   BUYER_CANCELLED: 'لغو توسط خریدار',
   REFUND_PENDING: 'در انتظار بازپرداخت',
   UNDER_REVIEW: 'در حال بررسی ادمین',
   REFUNDED: 'بازپرداخت انجام شد',
   PAID_TO_SELLER: 'وجه به فروشنده پرداخت شد',
-  CANCELLED: 'لغو تأیید شد · بازپرداخت در انتظار انجام',
+  CANCELLED: 'لغو شده',
 };
 
 type GuaranteedItem = {
@@ -32,6 +33,10 @@ type GuaranteedItem = {
   packagingImages?: string[];
   shippingReceipt?: string | null;
   shippedAt?: string | null;
+  guaranteeDeadlineAt?: string | null;
+  guaranteeCancellationReason?: string | null;
+  guaranteeWalletRefundedAt?: string | null;
+  guaranteeRefundAmount?: number | null;
   product?: { title?: string } | null;
 };
 
@@ -75,11 +80,6 @@ function statusLabel(status: string | null): string {
   return status ? (GUARANTEE_STATUS_LABELS[status] ?? status) : 'بدون تضمین جیپو';
 }
 
-function proofDeadlineOpen(order: GuaranteedOrder): boolean {
-  const start = new Date(order.paidAt ?? order.createdAt).getTime();
-  return Date.now() >= start + 7 * 24 * 60 * 60 * 1000;
-}
-
 function buyerReviewOpen(item: GuaranteedItem): boolean {
   if (!item.shippedAt) return false;
   return Date.now() <= new Date(item.shippedAt).getTime() + 7 * 24 * 60 * 60 * 1000;
@@ -94,13 +94,10 @@ export function GuaranteedBuyerOrderItems({
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const run = async (orderId: string, itemId: string, action: 'cancel' | 'confirm' | 'report') => {
+  const run = async (orderId: string, itemId: string, action: 'confirm' | 'report') => {
     setBusyId(itemId);
     try {
-      if (action === 'cancel') {
-        await api.orders.buyerCancel(orderId, itemId);
-        toast.success('لغو سفارش ثبت شد؛ بازپرداخت توسط ادمین پیگیری می‌شود');
-      } else if (action === 'confirm') {
+      if (action === 'confirm') {
         await api.orders.buyerConfirm(orderId, itemId);
         toast.success('دریافت کالا تأیید شد');
       } else {
@@ -128,7 +125,6 @@ export function GuaranteedBuyerOrderItems({
     <div className="space-y-3">
       {items.map(({ order, item }) => {
         const status = item.guaranteeStatus ?? '';
-        const canCancel = status === 'WAITING_SELLER_CONFIRMATION' && proofDeadlineOpen(order);
         const canReview = status === 'SHIPPED' && buyerReviewOpen(item);
         return (
           <section key={item.id} className="space-y-3 border-t py-3 text-sm">
@@ -140,6 +136,21 @@ export function GuaranteedBuyerOrderItems({
             </div>
             <p>شماره سفارش: {order.id.slice(-8)}</p>
             <p>مبلغ کالا: {formatPrice(item.price * item.quantity)} تومان</p>
+            {item.guaranteeDeadlineAt &&
+            ['WAITING_SELLER_CONFIRMATION', 'PACKAGING', 'READY_TO_SHIP'].includes(status) ? (
+              <p className="text-muted-foreground text-xs">
+                مهلت فروشنده برای ارسال:{' '}
+                {new Date(item.guaranteeDeadlineAt).toLocaleString('fa-IR')}
+              </p>
+            ) : null}
+            {status === 'CANCELLED' && item.guaranteeCancellationReason ? (
+              <p className="rounded bg-red-50 p-3 text-red-900">
+                این معامله به دلیل «{item.guaranteeCancellationReason}» لغو شد
+                {item.guaranteeWalletRefundedAt
+                  ? ` و مبلغ ${formatPrice(item.guaranteeRefundAmount ?? item.price * item.quantity)} تومان به کیف پول جیپو شما بازگشت داده شد.`
+                  : '؛ بازپرداخت به کیف پول شما در انتظار انجام است.'}
+              </p>
+            ) : null}
             {item.packagingVideo && (
               <a
                 href={item.packagingVideo}
@@ -176,15 +187,6 @@ export function GuaranteedBuyerOrderItems({
                 مشاهده رسید ارسال
               </a>
             ) : null}
-            {canCancel ? (
-              <Button
-                variant="destructive"
-                disabled={busyId === item.id}
-                onClick={() => void run(order.id, item.id, 'cancel')}
-              >
-                لغو خرید به‌دلیل عدم تأیید فروشنده
-              </Button>
-            ) : null}
             {canReview ? (
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -202,10 +204,9 @@ export function GuaranteedBuyerOrderItems({
                 </Button>
               </div>
             ) : null}
-            {status === 'BUYER_CONFIRMED' ? (
+            {status === 'SUCCESSFUL' || status === 'PAID_TO_SELLER' ? (
               <p className="text-muted-foreground">
-                شما محصول خود را با موفقیت و با تضمین جیپو دریافت کردید و پرداخت فروشنده در انتظار
-                تأیید ادمین است.
+                معامله تضمینی موفقیت‌آمیز است و در تاریخچه سفارش‌های شما ثبت شده است.
               </p>
             ) : null}
           </section>
@@ -322,6 +323,25 @@ export function GuaranteedSellerOrders({
               </p>
               <p>مبلغ کالا: {formatPrice(item.price * item.quantity)} تومان</p>
               {order.address && <p>آدرس تحویل: {order.address}</p>}
+              {item.guaranteeDeadlineAt &&
+              ['WAITING_SELLER_CONFIRMATION', 'PACKAGING', 'READY_TO_SHIP'].includes(status) ? (
+                <p className="text-muted-foreground text-xs">
+                  مهلت نهایی ارسال: {new Date(item.guaranteeDeadlineAt).toLocaleString('fa-IR')}
+                </p>
+              ) : null}
+              {status === 'CANCELLED' && item.guaranteeCancellationReason ? (
+                <p className="rounded bg-red-50 p-3 text-red-900">
+                  این معامله به دلیل «{item.guaranteeCancellationReason}» لغو شد
+                  {item.guaranteeWalletRefundedAt
+                    ? ` و مبلغ ${formatPrice(item.guaranteeRefundAmount ?? item.price * item.quantity)} تومان به کیف پول خریدار بازگشت داده شد.`
+                    : '؛ بازپرداخت به کیف پول خریدار در انتظار انجام است.'}
+                </p>
+              ) : null}
+              {status === 'SUCCESSFUL' || status === 'PAID_TO_SELLER' ? (
+                <p className="text-muted-foreground">
+                  معامله تضمینی موفقیت‌آمیز است و در تاریخچه سفارش‌های فروش شما ثبت شده است.
+                </p>
+              ) : null}
               {status === 'WAITING_SELLER_CONFIRMATION' ? (
                 <Button
                   disabled={busyId === item.id}

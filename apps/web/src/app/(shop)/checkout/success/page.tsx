@@ -3,13 +3,20 @@
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useCart } from '@/stores/cart-store';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
+  const localTest = searchParams.get('localTest') === '1';
+  const { clearCart } = useCart();
+
+  useEffect(() => {
+    if (orderId) clearCart();
+  }, [clearCart, orderId]);
 
   return (
     <div className="mx-auto max-w-lg py-16 text-center">
@@ -20,6 +27,9 @@ function SuccessContent() {
           ? `سفارش ${orderId.slice(-8)} ثبت و پرداخت شد.`
           : 'به زودی با شما تماس گرفته می‌شود.'}
       </p>
+      {localTest && (
+        <p className="mt-2 text-amber-700 text-sm">پرداخت آزمایشی محلی؛ وجهی دریافت نشده است.</p>
+      )}
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Button asChild>
           <Link href="/orders">مشاهده سفارش‌ها</Link>

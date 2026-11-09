@@ -77,6 +77,17 @@ function PaymentPageContent() {
         gateway,
         nextPurpose,
       });
+      if (result.localTest) {
+        const params = new URLSearchParams({
+          paymentSessionId: result.paymentSessionId,
+          productId: result.productId,
+          purpose: result.purpose,
+        });
+        if (result.requiresAdminApproval) params.set('requiresAdminApproval', '1');
+        params.set('localTest', '1');
+        router.push(`/payment/success?${params.toString()}`);
+        return;
+      }
       window.location.assign(result.paymentUrl);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'اتصال به درگاه پرداخت ناموفق بود');

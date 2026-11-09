@@ -345,6 +345,68 @@ export class MailService {
     await this.send(to, subject, html);
   }
 
+  async sendGuaranteedOrderCancellation(
+    to: string,
+    name: string,
+    payload: OrderEmailPayload,
+    details: {
+      productTitle: string;
+      quantity: number;
+      itemAmount: number;
+      reason: string;
+      audience: 'buyer' | 'seller';
+      walletRefunded: boolean;
+    },
+  ): Promise<void> {
+    const refundedText = details.walletRefunded
+      ? `مبلغ ${formatPrice(details.itemAmount)} تومان به کیف پول جیپو شما بازگشت داده شد.`
+      : `مبلغ ${formatPrice(details.itemAmount)} تومان پس از انجام بازپرداخت به کیف پول خریدار بازمی‌گردد.`;
+    const intro =
+      details.audience === 'buyer'
+        ? details.walletRefunded
+          ? `معامله کالای «${escapeHtml(details.productTitle)}» به دلیل «${escapeHtml(details.reason)}» لغو شد. ${refundedText}`
+          : `معامله کالای «${escapeHtml(details.productTitle)}» به دلیل «${escapeHtml(details.reason)}» لغو شد. بازگشت مبلغ به کیف پول جیپو در انتظار اقدام ادمین است.`
+        : `معامله کالای «${escapeHtml(details.productTitle)}» به دلیل «${escapeHtml(details.reason)}» لغو شد. ${refundedText}`;
+    const heading =
+      details.audience === 'buyer'
+        ? details.walletRefunded
+          ? 'مبلغ سفارش به کیف پول شما بازگشت داده شد'
+          : 'سفارش تضمینی شما لغو شد'
+        : 'سفارش تضمینی لغو شد';
+    const html = buildOrderEmailHtml(payload, heading, `سلام ${escapeHtml(name)}، ${intro}`);
+    await this.send(to, `${heading} — سفارش ${payload.orderId.slice(-8)} | ${SITE_NAME_FA}`, html);
+  }
+
+  async sendGuaranteedSellerPayout(
+    to: string,
+    sellerName: string,
+    payload: OrderEmailPayload,
+    details: {
+      grossAmount: number;
+      feeAmount: number;
+      feePercent: number;
+      payoutAmount: number;
+    },
+  ): Promise<void> {
+    const breakdown = emailInfoBox(`
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:6px 0;color:#64748b;width:160px;">مبلغ معامله</td><td>${formatPrice(details.grossAmount)} تومان</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">کارمزد تضمین (${details.feePercent}٪)</td><td>${formatPrice(details.feeAmount)} تومان</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">واریز به کیف پول شما</td><td><strong style="color:#15803d;">${formatPrice(details.payoutAmount)} تومان</strong></td></tr>
+      </table>
+    `);
+    const html = buildOrderEmailHtml(
+      payload,
+      'مبلغ معامله تضمینی به کیف پول شما واریز شد',
+      `سلام ${escapeHtml(sellerName)}، معامله تضمینی سفارش شما با موفقیت نهایی شد و مبلغ خالص پس از کسر کارمزد تضمین به کیف پول جیپو شما واریز شد.<br/>${breakdown}`,
+    );
+    await this.send(
+      to,
+      `واریز موفق معامله تضمینی — سفارش ${payload.orderId.slice(-8)} | ${SITE_NAME_FA}`,
+      html,
+    );
+  }
+
   async sendGuaranteedOrderAdminAlert(
     to: string,
     details: {

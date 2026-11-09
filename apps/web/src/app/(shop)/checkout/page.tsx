@@ -92,7 +92,7 @@ function CheckoutLineItem({ item }: { item: OrderPreviewItem }) {
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, itemCount, clearCart } = useCart();
+  const { items, itemCount } = useCart();
   const router = useRouter();
   const [preview, setPreview] = useState<OrderPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
@@ -163,7 +163,7 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
-      const { id, paymentUrl } = await api.orders.create({
+      const { id, paymentUrl, localTest } = await api.orders.create({
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -174,13 +174,15 @@ export default function CheckoutPage() {
         note: data.note || undefined,
         paymentMethod: 'ONLINE',
       });
-      clearCart();
+      if (localTest) {
+        router.push(`/checkout/success?orderId=${encodeURIComponent(id)}&localTest=1`);
+        return;
+      }
       if (paymentUrl) {
         setRedirectingToGateway(true);
         window.location.assign(paymentUrl);
         return;
       }
-      toast.success('سفارش با موفقیت ثبت شد');
       router.push(`/checkout/success?orderId=${id}`);
     } catch (err: unknown) {
       setRedirectingToGateway(false);

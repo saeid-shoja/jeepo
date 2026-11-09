@@ -1,5 +1,6 @@
 export { CreateOrderDto } from './create-order.dto';
 export {
+  ExtendGuaranteedOrderDeadlineDto,
   ResolveGuaranteedOrderItemDto,
   SubmitPackagingEvidenceDto,
   SubmitShippingEvidenceDto,

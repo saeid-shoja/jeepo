@@ -89,7 +89,7 @@ export class PaymentsService {
     };
   }
 
-  async initiateListingPayment(userId: string, body: InitiatePaymentDto) {
+  async initiateListingPayment(userId: string, body: InitiatePaymentDto, localPaymentTest = false) {
     if (body.gateway !== PAYMENT_GATEWAYS.ZIBAL) {
       throw new BadRequestException('درگاه پرداخت انتخاب‌شده هنوز فعال نیست');
     }
@@ -121,6 +121,32 @@ export class PaymentsService {
         nextPurpose: body.nextPurpose ?? null,
       },
     });
+
+    if (localPaymentTest) {
+      const requiresAdminApproval = await this.fulfillListingPaymentPurpose(
+        session.productId,
+        session.purpose,
+      );
+      await this.prisma.paymentSession.update({
+        where: { id: session.id },
+        data: {
+          status: 'COMPLETED',
+          refNumber: 'LOCAL-TEST',
+          paidAt: new Date(),
+        },
+      });
+
+      return {
+        paymentSessionId: session.id,
+        paymentUrl: '',
+        trackId: 'LOCAL-TEST',
+        amount,
+        purpose: body.purpose,
+        productId: product.id,
+        localTest: true,
+        requiresAdminApproval,
+      };
+    }
 
     this.logger.log(
       `Initiating Zibal payment session ${session.id} (${body.purpose}) — ${amountRial} Rial`,
@@ -198,7 +224,9 @@ export class PaymentsService {
   async initiateForOrder(
     orderId: string,
     userId: string,
-  ): Promise<{ paymentUrl: string; trackId: string }> {
+    localPaymentTest = false,
+    shopCheckout = false,
+  ): Promise<{ paymentUrl: string; trackId: string; localTest?: boolean }> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { user: { select: { phone: true } } },
@@ -216,13 +244,24 @@ export class PaymentsService {
       throw new BadRequestException('مبلغ سفارش برای پرداخت آنلاین کافی نیست');
     }
 
+    if (localPaymentTest) {
+      const paidAt = new Date();
+      const trackId = `LOCAL-TEST-${order.id}`;
+      await this.ordersService.fulfillAfterPayment(order.id, {
+        trackId,
+        refNumber: 'LOCAL-TEST',
+        paidAt,
+      });
+      return { paymentUrl: '', trackId, localTest: true };
+    }
+
     this.logger.log(
       `Initiating Zibal payment for order ${order.id} — ${amountRial} Rial, callback ${this.callbackUrl}`,
     );
 
     const response = await this.zibal.requestPayment({
       amount: amountRial,
-      callbackUrl: this.callbackUrl,
+      callbackUrl: this.getCheckoutCallbackUrl(shopCheckout ? 'shop' : 'web'),
       orderId: order.id,
       description: `سفارش ${SITE_NAME_FA} — ${order.id.slice(-8)}`,
       mobile: order.phone ?? order.user.phone,
@@ -245,6 +284,12 @@ export class PaymentsService {
       paymentUrl: this.zibal.getStartUrl(trackId),
       trackId,
     };
+  }
+
+  private getCheckoutCallbackUrl(app: 'shop' | 'web'): string {
+    const callbackUrl = new URL(this.callbackUrl);
+    callbackUrl.searchParams.set('checkoutApp', app);
+    return callbackUrl.toString();
   }
 
   private async findOrderForCallback(orderId?: string, trackId?: string | null) {
@@ -471,23 +516,10 @@ export class PaymentsService {
     }
 
     try {
-      let requiresAdminApproval = false;
-
-      switch (session.purpose) {
-        case PAYMENT_PURPOSES.LISTING_FEE: {
-          const result = await this.productsService.fulfillListingFeePayment(session.productId);
-          requiresAdminApproval = result.requiresAdminApproval;
-          break;
-        }
-        case PAYMENT_PURPOSES.LISTING_STRENGTHENED:
-          await this.productsService.fulfillStrengthenedPayment(session.productId);
-          break;
-        case PAYMENT_PURPOSES.LISTING_BOOST:
-          await this.productsService.fulfillBoostPayment(session.productId);
-          break;
-        default:
-          throw new BadRequestException('نوع پرداخت نامعتبر است');
-      }
+      const requiresAdminApproval = await this.fulfillListingPaymentPurpose(
+        session.productId,
+        session.purpose,
+      );
 
       await this.prisma.paymentSession.update({
         where: { id: session.id },
@@ -517,6 +549,23 @@ export class PaymentsService {
         purpose: session.purpose,
         reason: 'fulfillment_failed',
       };
+    }
+  }
+
+  private async fulfillListingPaymentPurpose(productId: string, purpose: PaymentPurpose) {
+    switch (purpose) {
+      case PAYMENT_PURPOSES.LISTING_FEE: {
+        const result = await this.productsService.fulfillListingFeePayment(productId);
+        return result.requiresAdminApproval;
+      }
+      case PAYMENT_PURPOSES.LISTING_STRENGTHENED:
+        await this.productsService.fulfillStrengthenedPayment(productId);
+        return false;
+      case PAYMENT_PURPOSES.LISTING_BOOST:
+        await this.productsService.fulfillBoostPayment(productId);
+        return false;
+      default:
+        throw new BadRequestException('نوع پرداخت نامعتبر است');
     }
   }
 }

@@ -106,12 +106,23 @@ export const adminApi = {
   resolveGuaranteedOrderItem: (
     orderId: string,
     itemId: string,
-    action: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'MARK_REFUNDED' | 'UNDER_REVIEW',
+    action: 'PAY_SELLER' | 'APPROVE_CANCEL' | 'UNDER_REVIEW',
+    reason?: string,
   ) =>
     request<any>(`/orders/${orderId}/items/${itemId}/admin-action`, {
       method: 'PATCH',
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, reason }),
     }),
+  extendGuaranteedOrderDeadline: (orderId: string, itemId: string, days: number) =>
+    request<any>(`/orders/${orderId}/items/${itemId}/extend-deadline`, {
+      method: 'PATCH',
+      body: JSON.stringify({ days }),
+    }),
+  refundGuaranteedOrderToWallet: (orderId: string, itemId: string) =>
+    request<{ id: string; refundAmount: number; refundedAt: string }>(
+      `/orders/${orderId}/items/${itemId}/refund-to-wallet`,
+      { method: 'POST' },
+    ),
   setProductsGuarantee: (data: {
     enabled: boolean;
     productId?: string;

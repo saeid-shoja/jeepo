@@ -15,6 +15,7 @@ function PaymentSuccessContent() {
   const productId = searchParams.get('productId');
   const nextPurposeParam = searchParams.get('nextPurpose');
   const requiresAdminApproval = searchParams.get('requiresAdminApproval') === '1';
+  const localTest = searchParams.get('localTest') === '1';
 
   const purpose = purposeParam && isPaymentPurpose(purposeParam) ? purposeParam : null;
   const nextPurpose =
@@ -34,6 +35,9 @@ function PaymentSuccessContent() {
             ? ' آگهی شما منتشر شد.'
             : ''}
       </p>
+      {localTest && (
+        <p className="mt-2 text-amber-700 text-sm">پرداخت آزمایشی محلی؛ وجهی دریافت نشده است.</p>
+      )}
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         {productId && nextPurpose ? (

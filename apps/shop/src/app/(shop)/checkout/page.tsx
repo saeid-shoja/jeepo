@@ -135,7 +135,7 @@ function clearCheckoutDraft() {
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, itemCount, clearCart } = useCart();
+  const { items, itemCount, hasHydrated } = useCart();
   const router = useRouter();
   const [preview, setPreview] = useState<OrderPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
@@ -174,6 +174,7 @@ export default function CheckoutPage() {
   }, [user, setValue]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (items.length === 0) {
       router.replace('/cart');
       return;
@@ -207,7 +208,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, router]);
+  }, [hasHydrated, items, router]);
 
   const onSubmit = async (data: CheckoutFormValues) => {
     if (!user) {
@@ -218,7 +219,7 @@ export default function CheckoutPage() {
     }
 
     try {
-      const { id, paymentUrl } = await api.orders.create({
+      const { id, paymentUrl, localTest } = await api.orders.create({
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -229,14 +230,16 @@ export default function CheckoutPage() {
         note: data.note || undefined,
         paymentMethod: 'ONLINE',
       });
-      clearCart();
+      if (localTest) {
+        window.location.assign(`/checkout/success?orderId=${encodeURIComponent(id)}&localTest=1`);
+        return;
+      }
       if (paymentUrl) {
         setRedirectingToGateway(true);
         window.location.assign(paymentUrl);
         return;
       }
-      toast.success('سفارش با موفقیت ثبت شد');
-      router.push(`/checkout/success?orderId=${id}`);
+      window.location.assign(`/checkout/success?orderId=${encodeURIComponent(id)}`);
     } catch (err: unknown) {
       setRedirectingToGateway(false);
       toast.error(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
@@ -255,7 +258,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0) {
+  if (!hasHydrated || items.length === 0) {
     return (
       <div className="flex justify-center px-4 py-20">
         <Loader2 className="text-muted-foreground size-8 animate-spin" />

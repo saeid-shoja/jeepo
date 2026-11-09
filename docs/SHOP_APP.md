@@ -24,36 +24,20 @@ pnpm dev                   # همه اپ‌ها (shop روی 3002)
 pnpm --filter @offroad/shop dev
 ```
 
-### متغیرهای محیطی (`apps/shop/.env.local`)
-
-```env
-# آدرس API (همان web)
-NEXT_PUBLIC_API_URL=http://localhost:4000
-
-# آدرس عمومی این ساب‌دامین (SEO، sitemap، OG)
-NEXT_PUBLIC_SITE_URL=http://localhost:3002
-
-# آدرس سایت اصلی (لینک ثبت‌نام در صفحه ورود)
-NEXT_PUBLIC_MAIN_SITE_URL=http://localhost:3000
-
-# اختیاری
-NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=
-```
-
 ## مسیرهای فعال در shop
 
-| مسیر | توضیح |
-|------|--------|
-| `/` | صفحه اصلی + اسلایدر + محصولات فروشگاه |
-| `/products` | لیست محصولات (فقط SHOP) |
-| `/product/[id]` | جزئیات محصول |
-| `/categories` | دسته‌بندی‌ها |
-| `/category/[slug]` | محصولات یک دسته |
-| `/cart` | سبد خرید |
-| `/checkout` | تسویه حساب |
-| `/orders` | سفارش‌های کاربر (نیاز به ورود) |
-| `/favorites` | علاقه‌مندی‌ها (نیاز به ورود) |
-| `/login` | ورود |
+| مسیر               | توضیح                                 |
+| ------------------ | ------------------------------------- |
+| `/`                | صفحه اصلی + اسلایدر + محصولات فروشگاه |
+| `/products`        | لیست محصولات (فقط SHOP)               |
+| `/product/[id]`    | جزئیات محصول                          |
+| `/categories`      | دسته‌بندی‌ها                          |
+| `/category/[slug]` | محصولات یک دسته                       |
+| `/cart`            | سبد خرید                              |
+| `/checkout`        | تسویه حساب                            |
+| `/orders`          | سفارش‌های کاربر (نیاز به ورود)        |
+| `/favorites`       | علاقه‌مندی‌ها (نیاز به ورود)          |
+| `/login`           | ورود                                  |
 
 ## استقرار (ساب‌دامین)
 

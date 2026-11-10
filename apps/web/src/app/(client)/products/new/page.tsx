@@ -209,8 +209,8 @@ export default function NewProductPage() {
   const isAdmin = user?.role === 'ADMIN';
   const guaranteeProfileMissing = sellerProfile
     ? getGuaranteeProfileMissingFields(
-        sellerProfile as Parameters<typeof getGuaranteeProfileMissingFields>[0],
-      )
+      sellerProfile as Parameters<typeof getGuaranteeProfileMissingFields>[0],
+    )
     : [];
   const canOfferGuarantee =
     !isAdmin &&
@@ -340,21 +340,21 @@ export default function NewProductPage() {
         isAuction: data.isAuction,
         ...(showVehicleFields && data.mileageKm != null && data.paintCondition && data.gearbox
           ? {
-              mileageKm: data.mileageKm,
-              paintCondition: data.paintCondition,
-              productionYear: data.productionYear,
-              productionYearBefore1370: data.productionYearBefore1370,
-              gearbox: data.gearbox,
-            }
+            mileageKm: data.mileageKm,
+            paintCondition: data.paintCondition,
+            productionYear: data.productionYear,
+            productionYearBefore1370: data.productionYearBefore1370,
+            gearbox: data.gearbox,
+          }
           : {}),
         ...(data.isAuction
           ? {
-              auctionStartPrice: data.auctionStartPrice,
-              auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
-              realPriceMin: data.realPriceMin,
-              realPriceMax: data.realPriceMax,
-              buyNowPrice: data.buyNowPrice,
-            }
+            auctionStartPrice: data.auctionStartPrice,
+            auctionEndsAt: dateTimeLocalToIso(data.auctionEndsAtLocal),
+            realPriceMin: data.realPriceMin,
+            realPriceMax: data.realPriceMax,
+            buyNowPrice: data.buyNowPrice,
+          }
           : {}),
       });
 
@@ -445,10 +445,10 @@ export default function NewProductPage() {
     const firstStepErrors = result.success
       ? []
       : result.error.issues.filter(
-          (issue) =>
-            typeof issue.path[0] === 'string' &&
-            FIRST_STEP_FIELDS.includes(issue.path[0] as (typeof FIRST_STEP_FIELDS)[number]),
-        );
+        (issue) =>
+          typeof issue.path[0] === 'string' &&
+          FIRST_STEP_FIELDS.includes(issue.path[0] as (typeof FIRST_STEP_FIELDS)[number]),
+      );
 
     for (const issue of firstStepErrors) {
       const field = FIRST_STEP_FIELDS.find((name) => name === issue.path[0]);
@@ -507,7 +507,12 @@ export default function NewProductPage() {
                   name="city"
                   control={control}
                   render={({ field }) => (
-                    <CitySelect value={field.value ?? ''} onChange={field.onChange} />
+                    <CitySelect
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      required
+                      error={errors.city?.message}
+                    />
                   )}
                 />
                 <div className="space-y-2">

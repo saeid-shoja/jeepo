@@ -130,7 +130,9 @@ export function ProductImageUpload({ images, onChange, className }: ProductImage
       <div className="flex w-full flex-col gap-4">
         <div className="shrink-0 space-y-2 w-full">
           <Label htmlFor="product-images" className="w-full flex flex-col items-start gap-2">
-            <p className="text-base font-semibold">انتخاب تصاویر و ویدیو</p>
+            <p className="text-base font-semibold">
+              انتخاب تصاویر و ویدیو <span className="text-destructive">*</span>
+            </p>
             <span className="text-muted-foreground text-xs leading-relaxed">
               (
               {processing

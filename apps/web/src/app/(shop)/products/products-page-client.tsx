@@ -13,7 +13,7 @@ import {
 import { ProductsLoadMore } from '@/components/shop/products-load-more';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { api } from '@/lib/api';
 import {
   getRestorePagesLoaded,
@@ -138,7 +138,7 @@ export function ProductsPageClient() {
     if (listScrollKey().startsWith('/products')) {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
-  }, [queryKey]);
+  }, []);
 
   const handleApplyFilters = () => {
     setMobileFiltersOpen(false);
@@ -151,7 +151,7 @@ export function ProductsPageClient() {
 
   const closeFilter = () => {
     setMobileFiltersOpen(false);
-  }
+  };
 
   const filterSidebar = (
     <ProductsFilterSidebar
@@ -228,9 +228,13 @@ export function ProductsPageClient() {
                   فیلترها
                 </Button>
               </SheetTrigger>
-              <SheetContent showCloseButton={false} side="right" className="w-full overflow-y-auto sm:max-w-md pt-4">
+              <SheetContent
+                showCloseButton={false}
+                side="right"
+                className="w-full overflow-y-auto sm:max-w-md pt-4"
+              >
                 <SheetHeader className="flex items-center w-full justify-center">
-                  <SheetTitle className='font-bold text-lg'>فیلتر محصولات</SheetTitle>
+                  <SheetTitle className="font-bold text-lg">فیلتر محصولات</SheetTitle>
                 </SheetHeader>
                 <div className="mt-1">{filterSidebar}</div>
               </SheetContent>

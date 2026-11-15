@@ -197,25 +197,8 @@ export function ProductChatsPanel({
       setThread((prev) =>
         prev
           ? {
-            ...prev,
-            messages: [...prev.messages, message],
-            lastMessage: {
-              id: message.id,
-              body: message.body,
-              senderId: message.senderId,
-              isMine: message.isMine,
-              readAt: message.readAt,
-              createdAt: message.createdAt,
-            },
-          }
-          : prev,
-      );
-      setConversations((prev) =>
-        prev.map((item) =>
-          item.id === selectedId
-            ? {
-              ...item,
-              lastMessageAt: message.createdAt,
+              ...prev,
+              messages: [...prev.messages, message],
               lastMessage: {
                 id: message.id,
                 body: message.body,
@@ -225,6 +208,23 @@ export function ProductChatsPanel({
                 createdAt: message.createdAt,
               },
             }
+          : prev,
+      );
+      setConversations((prev) =>
+        prev.map((item) =>
+          item.id === selectedId
+            ? {
+                ...item,
+                lastMessageAt: message.createdAt,
+                lastMessage: {
+                  id: message.id,
+                  body: message.body,
+                  senderId: message.senderId,
+                  isMine: message.isMine,
+                  readAt: message.readAt,
+                  createdAt: message.createdAt,
+                },
+              }
             : item,
         ),
       );
@@ -239,18 +239,18 @@ export function ProductChatsPanel({
     conversations.find((c) => c.id === selectedId) ??
     (thread && selectedId === thread.id
       ? {
-        id: thread.id,
-        productId: thread.productId,
-        buyerId: thread.buyerId,
-        sellerId: thread.sellerId,
-        role: thread.role,
-        lastMessageAt: thread.lastMessageAt,
-        createdAt: thread.createdAt,
-        unreadCount: 0,
-        otherParty: thread.otherParty,
-        product: thread.product,
-        lastMessage: thread.lastMessage,
-      }
+          id: thread.id,
+          productId: thread.productId,
+          buyerId: thread.buyerId,
+          sellerId: thread.sellerId,
+          role: thread.role,
+          lastMessageAt: thread.lastMessageAt,
+          createdAt: thread.createdAt,
+          unreadCount: 0,
+          otherParty: thread.otherParty,
+          product: thread.product,
+          lastMessage: thread.lastMessage,
+        }
       : null);
 
   return (
@@ -266,7 +266,7 @@ export function ProductChatsPanel({
               هنوز گفتگویی ندارید
             </div>
           ) : (
-            <ul className="max-h-[calc(100dvh-15rem)] divide-y overflow-y-auto lg:max-h-[calc(100vh-16rem)]">
+            <ul className="max-h-[calc(90dvh-15rem)] divide-y overflow-y-auto">
               {conversations.map((conversation) => (
                 <li key={conversation.id}>
                   <button
@@ -277,7 +277,7 @@ export function ProductChatsPanel({
                       'hover:bg-accent flex w-full gap-3 px-4 py-3 text-start transition-colors',
                       selectedId === conversation.id && 'bg-accent',
                       conversation.unreadCount > 0 &&
-                      'border-s-2 border-primary bg-primary/5 hover:bg-primary/10',
+                        'border-s-2 border-primary bg-primary/5 hover:bg-primary/10',
                     )}
                   >
                     <div className="bg-muted relative h-12 w-12 shrink-0 overflow-hidden rounded-md">
@@ -336,12 +336,12 @@ export function ProductChatsPanel({
 
       <Card
         className={cn(
-          'flex min-h-[calc(100dvh-12rem)] flex-col overflow-hidden lg:min-h-[calc(100vh-16rem)]',
+          'flex min-h-[calc(40dvh-12rem)] max-h-[calc(90dvh-12rem)] flex-col overflow-hidden lg:min-h-[calc(60vh-16rem)]',
           !mobileThreadOpen && 'hidden lg:flex',
         )}
       >
         {!selectedId || !selectedSummary ? (
-          <CardContent className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm">
+          <CardContent className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-8! text-center text-sm">
             <MessageCircle className="h-10 w-10 opacity-40" />
             یک گفتگو را انتخاب کنید
           </CardContent>

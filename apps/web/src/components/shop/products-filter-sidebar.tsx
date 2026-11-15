@@ -135,7 +135,7 @@ export function ProductsFilterSidebar({
   onChange,
   onApply,
   onReset,
-  onClose
+  onClose,
 }: ProductsFilterSidebarProps) {
   const priceRange: [number, number] = [filters.minPrice, filters.maxPrice];
 

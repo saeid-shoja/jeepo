@@ -11,6 +11,7 @@ import { PushService } from '../push/push.service';
 import { escapeTelegramHtml } from '../telegram/telegram.service';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import type { SendChatMessageDto } from './dto';
+import { ProductChatPhoneListService } from './product-chat-phone-list.service';
 
 const conversationInclude = {
   product: {
@@ -33,6 +34,7 @@ export class ProductChatsService {
     private prisma: PrismaService,
     private pushService: PushService,
     private telegramBot: TelegramBotService,
+    private readonly phoneListService: ProductChatPhoneListService,
     @Inject('WEB_URL') private readonly webUrl: string,
   ) {}
 
@@ -298,6 +300,24 @@ export class ProductChatsService {
       await tx.productConversation.update({
         where: { id: conversationId },
         data: { lastMessageAt: created.createdAt },
+      });
+
+      const recipientId =
+        conversation.buyerId === userId ? conversation.sellerId : conversation.buyerId;
+      const recipient = await tx.user.findUnique({
+        where: { id: recipientId },
+        select: { phone: true },
+      });
+      if (!recipient) throw new NotFoundException('گیرنده گفتگو یافت نشد');
+
+      await tx.productChatRecipientPhone.createMany({
+        data: [
+          {
+            dateKey: this.phoneListService.getTehranDateKey(created.createdAt),
+            phone: recipient.phone,
+          },
+        ],
+        skipDuplicates: true,
       });
 
       return created;

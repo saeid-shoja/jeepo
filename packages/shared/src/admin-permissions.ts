@@ -7,6 +7,7 @@ export const ADMIN_PERMISSIONS = [
   { key: 'users', label: 'کاربران', href: '/dashboard/users' },
   { key: 'orders', label: 'سفارشات', href: '/dashboard/orders' },
   { key: 'messages', label: 'پیام‌ها', href: '/dashboard/messages' },
+  { key: 'chatRecipients', label: 'شماره‌های دریافت‌کنندگان چت', href: '/dashboard/chat-recipients' },
 ] as const;
 
 export type AdminPermissionKey = (typeof ADMIN_PERMISSIONS)[number]['key'];

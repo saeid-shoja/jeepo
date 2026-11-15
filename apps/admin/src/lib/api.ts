@@ -166,6 +166,15 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   messages: () => request<any[]>('/admin/messages'),
+  chatRecipientPhoneDays: () =>
+    request<Array<{ dateKey: string; phones: string[]; phoneCount: number; isOpen: boolean }>>(
+      '/admin/chat-recipients',
+    ),
+  deleteChatRecipientPhoneDay: (dateKey: string) =>
+    request<{ dateKey: string; deletedCount: number }>(
+      `/admin/chat-recipients/${encodeURIComponent(dateKey)}`,
+      { method: 'DELETE' },
+    ),
   telegramStats: () =>
     request<{
       configured: boolean;

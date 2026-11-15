@@ -17,14 +17,33 @@ import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/stores/auth-store';
+import { useChatsUnreadStore } from '@/stores/chats-unread-store';
+import { useMessagesUnreadStore } from '@/stores/messages-unread-store';
 
 export function Navbar() {
   const { user, loading, logout } = useAuth();
+  const unreadMessagesCount = useMessagesUnreadStore((s) => s.count);
+  const refreshUnreadMessages = useMessagesUnreadStore((s) => s.refresh);
+  const resetUnreadMessages = useMessagesUnreadStore((s) => s.reset);
+  const unreadChatsCount = useChatsUnreadStore((s) => s.count);
+  const refreshUnreadChats = useChatsUnreadStore((s) => s.refresh);
+  const resetUnreadChats = useChatsUnreadStore((s) => s.reset);
+  const hasUnreadItems = unreadMessagesCount > 0 || unreadChatsCount > 0;
   const [menuOpen, setMenuOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
 
   const closeMenu = () => setMenuOpen(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      void refreshUnreadMessages();
+      void refreshUnreadChats();
+    } else {
+      resetUnreadMessages();
+      resetUnreadChats();
+    }
+  }, [user?.id, refreshUnreadMessages, resetUnreadMessages, refreshUnreadChats, resetUnreadChats]);
 
   useEffect(() => {
     lastY.current = window.scrollY;
@@ -95,14 +114,20 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9"
+              className="relative h-9 w-9"
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="منو"
+              aria-label={hasUnreadItems ? 'منو، پیام خوانده‌نشده' : 'منو'}
             >
               {menuOpen ? (
                 <X className="min-h-8 min-w-8 shrink-0" />
               ) : (
                 <Menu className="min-h-8 min-w-8 shrink-0" />
+              )}
+              {user && hasUnreadItems && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1 left-1 size-2.5 rounded-full bg-red-500 ring-2 ring-background"
+                />
               )}
             </Button>
             {loading ? (

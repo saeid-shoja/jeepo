@@ -8,6 +8,7 @@ import {
   LogOut,
   Megaphone,
   Package,
+  Phone,
   ShieldCheck,
   ShoppingCart,
   Users,
@@ -27,6 +28,7 @@ const NAV_ICONS = {
   orders: ShoppingCart,
   guaranteedOrders: ShieldCheck,
   messages: Megaphone,
+  chatRecipients: Phone,
 } as const;
 
 type NavEntry = {

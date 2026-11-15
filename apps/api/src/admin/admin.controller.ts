@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminPermission, Roles } from '../auth/custom.decorator';
 import { CreateMessageDto } from '../messages/dto';
 import { MessagesService } from '../messages/messages.service';
+import { ProductChatPhoneListService } from '../product-chats/product-chat-phone-list.service';
 import { SWAGGER_BEARER_KEY } from '../swagger';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { AdminService } from './admin.service';
@@ -41,6 +42,7 @@ export class AdminController {
     private adminService: AdminService,
     private messagesService: MessagesService,
     private telegramBotService: TelegramBotService,
+    private readonly productChatPhoneListService: ProductChatPhoneListService,
   ) {}
 
   @Get('me')
@@ -158,6 +160,18 @@ export class AdminController {
   @Get('messages')
   listMessages() {
     return this.messagesService.listBatches();
+  }
+
+  @AdminPermission('chatRecipients')
+  @Get('chat-recipients')
+  listChatRecipientPhones() {
+    return this.productChatPhoneListService.listDays();
+  }
+
+  @AdminPermission('chatRecipients')
+  @Delete('chat-recipients/:dateKey')
+  deleteChatRecipientPhones(@Param('dateKey') dateKey: string) {
+    return this.productChatPhoneListService.deleteFinalizedDay(dateKey);
   }
 
   @AdminPermission('messages')

@@ -310,7 +310,7 @@ export function ProductDetailClient() {
 
   const priceOnlyCard = !product.isAuction && !(canBuy && stockQuantity > 0) && (
     <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
-      <CardContent className="space-y-2 px-5 py-5">
+      <CardContent className="space-y-2 px-5 py-5 bg-blue-100 dark:bg-card">
         <ProductPriceDisplay price={product.price} salePrice={product.salePrice} variant="detail" />
         {product.newPrice != null && product.newPrice > 0 && (
           <p className="text-muted-foreground text-sm">
@@ -332,7 +332,7 @@ export function ProductDetailClient() {
 
   const sellerCard = isClient && (
     <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
-      <CardHeader className="border-b border-border/60 px-5 py-4">
+      <CardHeader className="border-b border-border/60 px-5 pt-4! pb-3!">
         <CardTitle className="text-base font-semibold">اطلاعات فروشنده</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 px-5 py-5">
@@ -452,7 +452,7 @@ export function ProductDetailClient() {
           </div>
 
           {/* Middle: title + specs + description */}
-          <div className="min-w-0 space-y-5 lg:col-span-4">
+          <div className="min-w-0 space-y-2 lg:col-span-4">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <h1 className="text-xl leading-snug font-bold sm:text-2xl">{product.title}</h1>
@@ -504,13 +504,12 @@ export function ProductDetailClient() {
             </div>
 
             {/* Mobile: price / purchase before specs */}
-            <div className="space-y-4 lg:hidden">
-              {purchaseCard}
-              {priceOnlyCard}
-            </div>
-
-            <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
-              <CardHeader className="border-b border-border/60 px-5 py-4">
+            <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm mt-4">
+              <div className="space-y-4 lg:hidden">
+                {purchaseCard}
+                {priceOnlyCard}
+              </div>
+              <CardHeader className="border-b border-border/60 px-5 pt-4! pb-3!">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Package className="text-muted-foreground size-4" />
                   ویژگی‌های محصول
@@ -530,7 +529,7 @@ export function ProductDetailClient() {
             </Card>
 
             <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-sm">
-              <CardHeader className="border-b border-border/60 px-5 py-4">
+              <CardHeader className="border-b border-border/60 px-5 pt-4! pb-3!">
                 <CardTitle className="text-base font-semibold">توضیحات</CardTitle>
               </CardHeader>
               <CardContent className="px-5 py-5">

@@ -2,7 +2,6 @@
 
 import { Bell } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/stores/auth-store';
@@ -11,16 +10,6 @@ import { useMessagesUnreadStore } from '@/stores/messages-unread-store';
 export function MessagesNavButton() {
   const { user } = useAuth();
   const unreadCount = useMessagesUnreadStore((s) => s.count);
-  const refresh = useMessagesUnreadStore((s) => s.refresh);
-  const reset = useMessagesUnreadStore((s) => s.reset);
-
-  useEffect(() => {
-    if (!user) {
-      reset();
-      return;
-    }
-    void refresh();
-  }, [user, refresh, reset]);
 
   if (!user) return null;
 
@@ -41,16 +30,6 @@ export function MessagesNavButton() {
 export function MessagesMobileLink({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
   const unreadCount = useMessagesUnreadStore((s) => s.count);
-  const refresh = useMessagesUnreadStore((s) => s.refresh);
-  const reset = useMessagesUnreadStore((s) => s.reset);
-
-  useEffect(() => {
-    if (!user) {
-      reset();
-      return;
-    }
-    void refresh();
-  }, [user, refresh, reset]);
 
   if (!user) return null;
 
@@ -62,7 +41,7 @@ export function MessagesMobileLink({ onNavigate }: { onNavigate?: () => void }) 
     >
       <span className="flex items-center gap-2">
         <Bell className="h-4 w-4" />
-        پیام‌ها
+        اعلان ها
       </span>
       <Badge variant="secondary">{unreadCount.toLocaleString('fa-IR')} جدید</Badge>
     </Link>

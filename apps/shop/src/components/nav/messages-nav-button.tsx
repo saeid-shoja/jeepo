@@ -26,7 +26,7 @@ export function MessagesNavButton() {
 
   return (
     <Button variant="card" asChild className="relative h-10 w-10">
-      <Link href="/dashboard?tab=messages" aria-label="پیام‌ها">
+      <Link href="/dashboard?tab=messages" aria-label="اعلان ها">
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <Badge className="absolute -top-2 -left-2 flex h-3.5 w-3.5 items-center justify-center rounded-full px-1 text-[10px]">
@@ -62,7 +62,7 @@ export function MessagesMobileLink({ onNavigate }: { onNavigate?: () => void }) 
     >
       <span className="flex items-center gap-2">
         <Bell className="h-4 w-4" />
-        پیام‌ها
+        اعلان ها
       </span>
       <Badge variant="secondary">{unreadCount.toLocaleString('fa-IR')} جدید</Badge>
     </Link>

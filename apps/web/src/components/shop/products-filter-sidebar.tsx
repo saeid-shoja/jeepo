@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPrice } from '@offroad/shared';
-import { ChevronDown, Filter, RotateCcw } from 'lucide-react';
+import { ChevronDown, Filter, RotateCcw, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,7 @@ interface ProductsFilterSidebarProps {
   onChange: (patch: Partial<ProductsFilters>) => void;
   onApply: () => void;
   onReset: () => void;
+  onClose: () => void;
 }
 
 function FilterSection({ title, children }: { title: string; children: ReactNode }) {
@@ -134,6 +135,7 @@ export function ProductsFilterSidebar({
   onChange,
   onApply,
   onReset,
+  onClose,
 }: ProductsFilterSidebarProps) {
   const priceRange: [number, number] = [filters.minPrice, filters.maxPrice];
 
@@ -263,7 +265,11 @@ export function ProductsFilterSidebar({
           </Button>
           <Button variant="outline" onClick={onReset} className="w-full">
             <RotateCcw className="h-4 w-4" />
-            پاک کردن
+            پاک کردن فیلترها
+          </Button>
+          <Button variant="outline" onClick={onClose} className="w-full">
+            <X className="h-4 w-4" />
+            انصراف
           </Button>
         </div>
       </CardContent>

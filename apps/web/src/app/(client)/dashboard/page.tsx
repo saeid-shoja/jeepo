@@ -186,7 +186,7 @@ function DashboardContent() {
           </TabsTrigger>
           <TabsTrigger value="messages" className="gap-2">
             <Mail className="size-4" />
-            پیام‌ها
+            اعلان ها
             {unreadCount > 0 && (
               <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1 text-[10px]">
                 {unreadCount > 99 ? '99+' : unreadCount.toLocaleString('fa-IR')}

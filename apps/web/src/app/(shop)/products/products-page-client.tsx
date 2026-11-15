@@ -138,7 +138,7 @@ export function ProductsPageClient() {
     if (listScrollKey().startsWith('/products')) {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
-  }, [queryKey]);
+  }, []);
 
   const handleApplyFilters = () => {
     setMobileFiltersOpen(false);
@@ -149,6 +149,10 @@ export function ProductsPageClient() {
     setMobileFiltersOpen(false);
   };
 
+  const closeFilter = () => {
+    setMobileFiltersOpen(false);
+  };
+
   const filterSidebar = (
     <ProductsFilterSidebar
       filters={filters}
@@ -156,6 +160,7 @@ export function ProductsPageClient() {
       onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
       onApply={handleApplyFilters}
       onReset={handleResetFilters}
+      onClose={closeFilter}
     />
   );
 
@@ -223,11 +228,15 @@ export function ProductsPageClient() {
                   فیلترها
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-                <SheetHeader>
-                  <SheetTitle>فیلتر محصولات</SheetTitle>
+              <SheetContent
+                showCloseButton={false}
+                side="right"
+                className="w-full overflow-y-auto sm:max-w-md pt-4"
+              >
+                <SheetHeader className="flex items-center w-full justify-center">
+                  <SheetTitle className="font-bold text-lg">فیلتر محصولات</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4">{filterSidebar}</div>
+                <div className="mt-1">{filterSidebar}</div>
               </SheetContent>
             </Sheet>
           </div>

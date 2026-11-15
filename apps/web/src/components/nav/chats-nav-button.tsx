@@ -2,7 +2,6 @@
 
 import { MessageCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/stores/auth-store';
@@ -11,16 +10,6 @@ import { useChatsUnreadStore } from '@/stores/chats-unread-store';
 export function ChatsNavButton() {
   const { user } = useAuth();
   const unreadCount = useChatsUnreadStore((s) => s.count);
-  const refresh = useChatsUnreadStore((s) => s.refresh);
-  const reset = useChatsUnreadStore((s) => s.reset);
-
-  useEffect(() => {
-    if (!user) {
-      reset();
-      return;
-    }
-    void refresh();
-  }, [user, refresh, reset]);
 
   if (!user) return null;
 
@@ -41,16 +30,6 @@ export function ChatsNavButton() {
 export function ChatsMobileLink({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
   const unreadCount = useChatsUnreadStore((s) => s.count);
-  const refresh = useChatsUnreadStore((s) => s.refresh);
-  const reset = useChatsUnreadStore((s) => s.reset);
-
-  useEffect(() => {
-    if (!user) {
-      reset();
-      return;
-    }
-    void refresh();
-  }, [user, refresh, reset]);
 
   if (!user) return null;
 

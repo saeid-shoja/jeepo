@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPrice, timeAgo } from '@offroad/shared';
-import { MessageCircle, Send } from 'lucide-react';
+import { ArrowRight, MessageCircle, Send } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,19 +24,40 @@ type ProductChatsPanelProps = {
   productIdHint?: string | null;
 };
 
+function pushMobileThreadHistoryEntry() {
+  if (window.history.state?.mobileChatThread) return;
+  window.history.pushState(
+    { ...window.history.state, mobileChatThread: true },
+    '',
+    window.location.href,
+  );
+}
+
 export function ProductChatsPanel({
   initialConversationId = null,
   productIdHint = null,
 }: ProductChatsPanelProps) {
   const refreshUnread = useChatsUnreadStore((s) => s.refresh);
   const [conversations, setConversations] = useState<ProductConversationSummary[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(initialConversationId);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [thread, setThread] = useState<ProductConversationDetail | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingThread, setLoadingThread] = useState(false);
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileReady, setIsMobileReady] = useState(false);
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const updateIsMobile = () => setIsMobile(mediaQuery.matches);
+    updateIsMobile();
+    setIsMobileReady(true);
+    mediaQuery.addEventListener('change', updateIsMobile);
+    return () => mediaQuery.removeEventListener('change', updateIsMobile);
+  }, []);
 
   const loadConversations = useCallback(async () => {
     setLoadingList(true);
@@ -84,6 +105,7 @@ export function ProductChatsPanel({
   );
 
   const bootstrap = useCallback(async () => {
+    if (!isMobileReady) return;
     const productId = productIdHint?.trim();
     if (productId) {
       try {
@@ -92,7 +114,11 @@ export function ProductChatsPanel({
           const exists = prev.some((item) => item.id === started.id);
           return exists ? prev : [started, ...prev];
         });
+        if (isMobile) {
+          pushMobileThreadHistoryEntry();
+        }
         setSelectedId(started.id);
+        setMobileThreadOpen(true);
         return;
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'شروع گفتگو ناموفق بود');
@@ -100,13 +126,28 @@ export function ProductChatsPanel({
     }
 
     const items = await loadConversations();
-    const targetId = initialConversationId ?? (items.length > 0 ? items[0].id : null);
+    const targetId = initialConversationId ?? (isMobile ? null : (items[0]?.id ?? null));
+    if (isMobile && initialConversationId) {
+      pushMobileThreadHistoryEntry();
+    }
     setSelectedId(targetId);
-  }, [productIdHint, initialConversationId, loadConversations]);
+    setMobileThreadOpen(Boolean(isMobile && initialConversationId));
+  }, [productIdHint, initialConversationId, isMobile, isMobileReady, loadConversations]);
 
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (mobileThreadOpen) {
+        setMobileThreadOpen(false);
+        setSelectedId(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [mobileThreadOpen]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -130,8 +171,21 @@ export function ProductChatsPanel({
   // }, [thread?.messages.length, selectedId]);
 
   const handleSelect = (id: string) => {
+    if (isMobile && !mobileThreadOpen) {
+      pushMobileThreadHistoryEntry();
+    }
     setSelectedId(id);
+    setMobileThreadOpen(true);
     setDraft('');
+  };
+
+  const handleBackToList = () => {
+    if (window.history.state?.mobileChatThread) {
+      window.history.back();
+      return;
+    }
+    setMobileThreadOpen(false);
+    setSelectedId(null);
   };
 
   const handleSend = async () => {
@@ -201,7 +255,7 @@ export function ProductChatsPanel({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-6">
-      <Card className="overflow-hidden">
+      <Card className={cn('overflow-hidden', mobileThreadOpen && 'hidden lg:block')}>
         <CardContent className="p-0">
           <div className="border-b px-4 py-3 font-medium">گفتگوها</div>
           {loadingList ? (
@@ -212,15 +266,18 @@ export function ProductChatsPanel({
               هنوز گفتگویی ندارید
             </div>
           ) : (
-            <ul className="max-h-[60vh] divide-y overflow-y-auto lg:max-h-[calc(100vh-16rem)]">
+            <ul className="max-h-[calc(90dvh-15rem)] divide-y overflow-y-auto">
               {conversations.map((conversation) => (
                 <li key={conversation.id}>
                   <button
                     type="button"
                     onClick={() => handleSelect(conversation.id)}
+                    aria-label={`${conversation.product.title}${conversation.unreadCount > 0 ? `، ${conversation.unreadCount.toLocaleString('fa-IR')} پیام خوانده‌نشده` : ''}`}
                     className={cn(
                       'hover:bg-accent flex w-full gap-3 px-4 py-3 text-start transition-colors',
                       selectedId === conversation.id && 'bg-accent',
+                      conversation.unreadCount > 0 &&
+                        'border-s-2 border-primary bg-primary/5 hover:bg-primary/10',
                     )}
                   >
                     <div className="bg-muted relative h-12 w-12 shrink-0 overflow-hidden rounded-md">
@@ -241,11 +298,19 @@ export function ProductChatsPanel({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <p className="truncate text-sm font-medium">{conversation.product.title}</p>
-                        {conversation.unreadCount > 0 && (
-                          <Badge className="shrink-0 rounded-full px-1.5 text-[10px]">
-                            {conversation.unreadCount.toLocaleString('fa-IR')}
-                          </Badge>
-                        )}
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {conversation.unreadCount > 0 && (
+                            <>
+                              <span
+                                aria-hidden="true"
+                                className="h-2 w-2 rounded-full bg-primary ring-2 ring-primary/20"
+                              />
+                              <Badge className="rounded-full px-1.5 text-[10px]">
+                                {conversation.unreadCount.toLocaleString('fa-IR')}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <p className="text-muted-foreground truncate text-xs">
                         {conversation.otherParty.name}
@@ -269,15 +334,30 @@ export function ProductChatsPanel({
         </CardContent>
       </Card>
 
-      <Card className="flex min-h-[420px] flex-col overflow-hidden lg:min-h-[calc(100vh-16rem)]">
+      <Card
+        className={cn(
+          'flex min-h-[calc(40dvh-12rem)] max-h-[calc(90dvh-12rem)] flex-col overflow-hidden lg:min-h-[calc(60vh-16rem)]',
+          !mobileThreadOpen && 'hidden lg:flex',
+        )}
+      >
         {!selectedId || !selectedSummary ? (
-          <CardContent className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm">
+          <CardContent className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-8! text-center text-sm">
             <MessageCircle className="h-10 w-10 opacity-40" />
             یک گفتگو را انتخاب کنید
           </CardContent>
         ) : (
           <>
             <div className="flex items-center gap-3 border-b px-4 py-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 lg:hidden"
+                onClick={handleBackToList}
+                aria-label="بازگشت به فهرست گفتگوها"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </Button>
               <div className="bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-md">
                 {selectedSummary.product.image ? (
                   <Image

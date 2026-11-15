@@ -507,7 +507,12 @@ export default function NewProductPage() {
                   name="city"
                   control={control}
                   render={({ field }) => (
-                    <CitySelect value={field.value ?? ''} onChange={field.onChange} />
+                    <CitySelect
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      required
+                      error={errors.city?.message}
+                    />
                   )}
                 />
                 <div className="space-y-2">

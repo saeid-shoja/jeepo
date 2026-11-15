@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { dateTimeLocalToIso } from '@/components/form/datetime-picker';
 import {
   dataUrlByteSize,
+  isProductVideoUrl,
   isVideoDataUrl,
   isWebpDataUrl,
   PRODUCT_IMAGE_MAX_BYTES,
@@ -61,6 +62,13 @@ const neighborhoodField = z
 
 function createImagesField(requireWebp: boolean) {
   return z.array(z.string()).superRefine((images, ctx) => {
+    if (!images.some((image) => !isProductVideoUrl(image))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'حداقل یک تصویر برای آگهی انتخاب کنید',
+      });
+    }
+
     images.forEach((image, index) => {
       if (/^https?:\/\//i.test(image)) return;
 
@@ -129,7 +137,7 @@ const sharedProductFieldsBase = {
   /** Synced from selected category — used to require vehicle-sale fields. */
   categorySlug: z.string().optional().or(z.literal('')),
   listingIntent: listingIntentSchema,
-  city: z.string().optional(),
+  city: z.string().trim().min(1, 'استان و شهر را انتخاب کنید'),
   neighborhood: neighborhoodField.optional().or(z.literal('')),
   phone: phoneField,
   situation: situationSchema,

@@ -497,6 +497,17 @@ model ProductChatEmailDigest {
   @@index([dateKey])
 }
 
+model ProductChatRecipientPhone {
+  id          String    @id @default(cuid())
+  dateKey     String
+  phone       String
+  finalizedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([dateKey, phone])
+  @@index([dateKey, finalizedAt])
+}
+
 model BlogPost {
   id             String         @id @default(cuid())
   slug           String         @unique
